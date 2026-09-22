@@ -377,6 +377,57 @@ footer a { color: #f0c9a8; }
   .reveal { opacity: 1; transform: none; }
 }
 
+/* ---------- КАЛЕНДАРЬ БРОНИ ---------- */
+.cal { background: var(--bg); border: 1.5px solid var(--line); border-radius: 14px; padding: 12px; }
+.cal-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+.cal-head b { font-size: 15px; }
+.cal-nav {
+  width: 34px; height: 34px; border-radius: 10px; border: 1px solid var(--line);
+  background: var(--surface); color: var(--muted); font-size: 16px;
+}
+.cal-nav:hover { color: var(--ink); border-color: var(--accent); }
+.cal-week { display: grid; grid-template-columns: repeat(7, 1fr); margin-bottom: 4px; }
+.cal-week span { text-align: center; font-size: 11px; font-weight: 700; color: var(--muted); text-transform: uppercase; }
+.cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 3px; }
+.cal-day {
+  aspect-ratio: 1; border: 0; border-radius: 9px; background: transparent;
+  font-size: 13.5px; font-weight: 600; color: var(--ink);
+  display: grid; place-items: center; transition: background .15s, color .15s;
+}
+.cal-day:hover:not(:disabled):not(.empty) { background: var(--accent-soft); color: var(--accent-dark); }
+.cal-day:disabled { color: #cfc8bc; cursor: default; }
+.cal-day.empty { background: transparent; cursor: default; }
+.cal-day.today { box-shadow: inset 0 0 0 1.5px var(--gold); }
+.cal-day.in-range { background: var(--accent-soft); color: var(--accent-dark); border-radius: 0; }
+.cal-day.range-start, .cal-day.range-end { background: var(--accent); color: #fff; }
+.cal-day.range-start { border-radius: 9px 0 0 9px; }
+.cal-day.range-end { border-radius: 0 9px 9px 0; }
+.cal-day.range-start.range-end { border-radius: 9px; }
+.hint { font-size: 12.5px; color: var(--muted); margin: 6px 0 0; }
+
+/* ---------- СТАТУС НОМЕРА ---------- */
+.busy-badge {
+  position: absolute; top: 14px; right: 14px;
+  background: #b4362b; color: #fff; border-radius: 10px;
+  padding: 5px 14px; font-size: 12.5px; font-weight: 800; letter-spacing: .04em;
+  box-shadow: 0 6px 18px rgba(180, 54, 43, .4);
+}
+.room-busy .room-photo img { filter: grayscale(.7) brightness(.85); }
+.room-busy .room-price { opacity: .55; }
+
+/* ---------- АДМИН-ПАНЕЛЬ ---------- */
+.admin-rooms { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+.admin-room {
+  display: flex; align-items: center; gap: 10px;
+  background: var(--bg); border: 1px solid var(--line); border-radius: 12px; padding: 10px 14px;
+}
+.admin-name { flex: 1; font-size: 14px; font-weight: 600; }
+.admin-chip { border-radius: 999px; padding: 4px 12px; font-size: 12px; }
+.admin-chip.free { background: var(--green-soft); color: var(--green); }
+.admin-chip.busy { background: #f7e3e1; color: #b4362b; }
+.admin-toggle { min-height: 40px; padding: 0 14px; font-size: 13.5px; }
+.admin-note { color: var(--muted); font-size: 13.5px; }
+
 </style>
 
 <script type="application/ld+json">
@@ -486,10 +537,11 @@ footer a { color: #f0c9a8; }
     </div>
 
     <div class="rooms">
-      <article class="room reveal">
+      <article class="room reveal" data-room="studio-4">
         <div class="room-photo">
           <img src="img/room-studio-4.jpg" alt="Студия с кухней: двуспальная кровать, диван и кухонная зона" width="1456" height="816" loading="lazy" decoding="async" />
           <span class="room-addr">Цветочная 162</span>
+          <span class="busy-badge" hidden>Занят</span>
           <span class="room-price">от 2 500 ₽ <small>/ сутки</small></span>
         </div>
         <div class="room-body">
@@ -504,10 +556,11 @@ footer a { color: #f0c9a8; }
         </div>
       </article>
 
-      <article class="room reveal d1">
+      <article class="room reveal d1" data-room="studio-comfort">
         <div class="room-photo">
           <img src="img/room-studio-comfort.jpg" alt="Студия комфорт: просторная комната с кухней и обеденным столом" width="1456" height="816" loading="lazy" decoding="async" />
           <span class="room-addr">Цветочная 162</span>
+          <span class="busy-badge" hidden>Занят</span>
           <span class="room-price">от 3 000 ₽ <small>/ сутки</small></span>
         </div>
         <div class="room-body">
@@ -522,10 +575,11 @@ footer a { color: #f0c9a8; }
         </div>
       </article>
 
-      <article class="room reveal">
+      <article class="room reveal" data-room="apart-2">
         <div class="room-photo">
           <img src="img/room-apart-2.jpg" alt="Апартаменты для двоих: аккуратная комната с кухонной зоной" width="1456" height="816" loading="lazy" decoding="async" />
           <span class="room-addr">Железнодорожная 180</span>
+          <span class="busy-badge" hidden>Занят</span>
           <span class="room-price">от 2 000 ₽ <small>/ сутки</small></span>
         </div>
         <div class="room-body">
@@ -540,10 +594,11 @@ footer a { color: #f0c9a8; }
         </div>
       </article>
 
-      <article class="room reveal d1">
+      <article class="room reveal d1" data-room="kitchen-3">
         <div class="room-photo">
           <img src="img/room-kitchen-3.jpg" alt="Номер с собственной кухней: двуспальная и односпальная кровати" width="1456" height="816" loading="lazy" decoding="async" />
           <span class="room-addr">Железнодорожная 180</span>
+          <span class="busy-badge" hidden>Занят</span>
           <span class="room-price">от 2 500 ₽ <small>/ сутки</small></span>
         </div>
         <div class="room-body">
@@ -720,6 +775,7 @@ footer a { color: #f0c9a8; }
       <p><a href="tel:+79189451223">8 918 945-12-23</a></p>
       <p><a href="https://t.me/Aleks_krd_23" target="_blank" rel="noopener noreferrer">Telegram</a> · <a href="https://wa.me/79882443223" target="_blank" rel="noopener noreferrer">WhatsApp</a></p>
       <p><a href="#" id="privacyLink">Политика конфиденциальности</a></p>
+      <p class="foot-note"><a href="#" id="adminLink">Для модератора</a></p>
     </div>
   </div>
 </footer>
@@ -751,17 +807,25 @@ footer a { color: #f0c9a8; }
         <input id="fPhone" name="phone" type="tel" autocomplete="tel" placeholder="+7 ___ ___-__-__" required />
         <p class="err" id="errPhone">Нужен телефон, чтобы перезвонить.</p>
       </div>
-      <div class="field-row">
-        <div class="field">
-          <label for="fDates">Даты (необязательно)</label>
-          <input id="fDates" name="dates" type="text" placeholder="Напр., 12–15 июня" />
+      <div class="field">
+        <label id="calLabelText">Даты заезда и выезда</label>
+        <div class="cal" role="group" aria-labelledby="calLabelText">
+          <div class="cal-head">
+            <button class="cal-nav" type="button" id="calPrev" aria-label="Предыдущий месяц">←</button>
+            <b id="calTitle">—</b>
+            <button class="cal-nav" type="button" id="calNext" aria-label="Следующий месяц">→</button>
+          </div>
+          <div class="cal-week" aria-hidden="true"><span>Пн</span><span>Вт</span><span>Ср</span><span>Чт</span><span>Пт</span><span>Сб</span><span>Вс</span></div>
+          <div class="cal-grid" id="calGrid"></div>
         </div>
-        <div class="field">
-          <label for="fGuests">Гостей</label>
-          <select id="fGuests" name="guests">
-            <option>1</option><option selected>2</option><option>3</option><option>4</option><option>5+</option>
-          </select>
-        </div>
+        <p class="hint" id="calLabel">Выберите дату заезда</p>
+        <input type="hidden" id="fDates" name="dates" />
+      </div>
+      <div class="field">
+        <label for="fGuests">Гостей</label>
+        <select id="fGuests" name="guests">
+          <option>1</option><option selected>2</option><option>3</option><option>4</option><option>5+</option>
+        </select>
       </div>
       <div class="field">
         <label for="fRoom">Номер</label>
@@ -784,6 +848,28 @@ footer a { color: #f0c9a8; }
   </div>
 </div>
 
+<!-- Модалка модератора -->
+<div class="modal-backdrop" id="adminModal" role="dialog" aria-modal="true" aria-labelledby="adminTitle">
+  <div class="modal">
+    <button class="modal-close" type="button" aria-label="Закрыть">×</button>
+    <h3 id="adminTitle">Панель модератора</h3>
+    <p class="modal-sub">Статусы «свободен / занят» сразу видны посетителям на карточках номеров.</p>
+    <div id="adminLogin">
+      <div class="field">
+        <label for="adminPass">Пароль модератора</label>
+        <input id="adminPass" type="password" autocomplete="current-password" placeholder="Пароль" />
+        <p class="err" id="errAdmin">Неверный пароль или сервис недоступен.</p>
+      </div>
+      <button class="btn green" type="button" id="adminLoginBtn" style="width:100%">Войти</button>
+      <p class="modal-alt">Пароль задаётся секретом MOD_PASSWORD при деплое воркера.</p>
+    </div>
+    <div id="adminPanel" hidden>
+      <ul id="adminRooms" class="admin-rooms"></ul>
+      <p class="form-status" id="adminNote" role="status" aria-live="polite"></p>
+    </div>
+  </div>
+</div>
+
 <!-- Модалка политики -->
 <div class="modal-backdrop policy-modal" id="policyModal" role="dialog" aria-modal="true" aria-labelledby="policyTitle">
   <div class="modal">
@@ -801,11 +887,10 @@ footer a { color: #f0c9a8; }
 <script>
 /**
  * rental-site / main.js
- * Без библиотек: модалки, reveal, валидация и отправка заявки.
+ * Модалки, календарь с выбором промежутка дат, статусы номеров, админ-панель.
  *
- * Отправка: если настроен Cloudflare Worker — шлём туда (токен живёт в секрете).
- * Пока WORKER_URL — плейсхолдер, заявка не теряется: открывается WhatsApp
- * с готовым текстом, плюс показываем телефон.
+ * Заявки: если настроен воркер — уходят в Telegram модератору (чат 7114829971).
+ * Пока WORKER_URL — плейсхолдер, заявка открывается в WhatsApp с готовым текстом.
  */
 (function () {
   'use strict';
@@ -814,11 +899,56 @@ footer a { color: #f0c9a8; }
   var WORKER_URL = 'https://sup23-lead.YOUR_SUBDOMAIN.workers.dev';
   var WA_NUMBER = '79882443223';
 
-  /* ---------- год в подвале ---------- */
+  var ROOMS = [
+    { id: 'studio-4', name: 'Студия с кухней · Цветочная 162' },
+    { id: 'studio-comfort', name: 'Студия комфорт · Цветочная 162' },
+    { id: 'apart-2', name: 'Апартаменты · Железнодорожная 180' },
+    { id: 'kitchen-3', name: 'Номер с кухней · Железнодорожная 180' }
+  ];
+
+  var MONTHS = ['Январь', 'Февраль', 'Март', 'Апрель', 'Май', 'Июнь',
+    'Июль', 'Август', 'Сентябрь', 'Октябрь', 'Ноябрь', 'Декабрь'];
+
+  /* ================= КАЛЕНДАРЬ (чистые функции) ================= */
+
+  function pad(n) { return n < 10 ? '0' + n : '' + n; }
+
+  /** Матрица месяца: ведущие null + даты. Неделя с понедельника. */
+  function monthMatrix(year, month) {
+    var first = new Date(year, month, 1);
+    var offset = (first.getDay() + 6) % 7;
+    var days = new Date(year, month + 1, 0).getDate();
+    var cells = [];
+    for (var i = 0; i < offset; i++) cells.push(null);
+    for (var d = 1; d <= days; d++) cells.push(new Date(year, month, d));
+    return cells;
+  }
+
+  function nightsBetween(a, b) {
+    return Math.round((b - a) / 86400000);
+  }
+
+  function rangeLabel(a, b) {
+    if (!a) return '';
+    if (!b) return pad(a.getDate()) + '.' + pad(a.getMonth() + 1) + ' — выберите выезд';
+    return pad(a.getDate()) + '.' + pad(a.getMonth() + 1) + '–' + pad(b.getDate()) + '.' + pad(b.getMonth() + 1) +
+      ' (' + nightsBetween(a, b) + ' сут.)';
+  }
+
+  function sameDay(a, b) {
+    return a && b && a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
+  }
+
+  function phoneOk(v) {
+    var digits = v.replace(/\D/g, '');
+    return /^[+8]?[\d\s()-]{10,18}$/.test(v.trim()) && digits.length >= 10 && digits.length <= 12;
+  }
+
+  /* ================= базовые штуки ================= */
+
   var yearEl = document.getElementById('year');
   if (yearEl) yearEl.textContent = String(new Date().getFullYear());
 
-  /* ---------- тень шапки ---------- */
   var header = document.getElementById('header');
   if (header) {
     var onScroll = function () { header.classList.toggle('scrolled', window.scrollY > 8); };
@@ -826,7 +956,6 @@ footer a { color: #f0c9a8; }
     onScroll();
   }
 
-  /* ---------- reveal ---------- */
   var revealEls = document.querySelectorAll('.reveal');
   if (revealEls.length) {
     var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -842,9 +971,11 @@ footer a { color: #f0c9a8; }
     }
   }
 
-  /* ---------- модалки ---------- */
+  /* ================= модалки ================= */
+
   var bookModal = document.getElementById('bookModal');
   var policyModal = document.getElementById('policyModal');
+  var adminModal = document.getElementById('adminModal');
   var lastFocus = null;
 
   function openModal(m) {
@@ -852,8 +983,6 @@ footer a { color: #f0c9a8; }
     lastFocus = document.activeElement;
     m.classList.add('open');
     document.body.style.overflow = 'hidden';
-    var first = m.querySelector('input:not(.vh input), select, button.modal-close');
-    if (first) first.focus();
   }
   function closeModal(m) {
     if (!m || !m.classList.contains('open')) return;
@@ -871,29 +1000,201 @@ footer a { color: #f0c9a8; }
       openModal(bookModal);
       return;
     }
-    if (e.target.closest('#privacyLink, #privacyLink2')) {
-      e.preventDefault();
-      openModal(policyModal);
-      return;
-    }
-    if (e.target.closest('.modal-close')) {
-      closeModal(bookModal);
-      closeModal(policyModal);
-      return;
-    }
+    if (e.target.closest('#privacyLink, #privacyLink2')) { e.preventDefault(); openModal(policyModal); return; }
+    if (e.target.closest('#adminLink')) { e.preventDefault(); openAdmin(); return; }
+    if (e.target.closest('.modal-close')) { closeModal(bookModal); closeModal(policyModal); closeModal(adminModal); return; }
     if (e.target === bookModal) closeModal(bookModal);
     if (e.target === policyModal) closeModal(policyModal);
+    if (e.target === adminModal) closeModal(adminModal);
   });
 
   document.addEventListener('keydown', function (e) {
-    if (e.key === 'Escape') { closeModal(bookModal); closeModal(policyModal); }
+    if (e.key === 'Escape') { closeModal(bookModal); closeModal(policyModal); closeModal(adminModal); }
   });
 
-  /* ---------- валидация и отправка ---------- */
-  function phoneOk(v) {
-    var digits = v.replace(/\D/g, '');
-    return /^[+8]?[\d\s()-]{10,18}$/.test(v.trim()) && digits.length >= 10 && digits.length <= 12;
+  /* ================= календарь в модалке ================= */
+
+  var calGrid = document.getElementById('calGrid');
+  var calTitle = document.getElementById('calTitle');
+  var calLabel = document.getElementById('calLabel');
+  var datesInput = document.getElementById('fDates');
+  var today = new Date();
+  today.setHours(0, 0, 0, 0);
+  var view = { y: today.getFullYear(), m: today.getMonth() };
+  var selStart = null;
+  var selEnd = null;
+
+  function renderCalendar() {
+    if (!calGrid) return;
+    calTitle.textContent = MONTHS[view.m] + ' ' + view.y;
+    calGrid.innerHTML = '';
+    monthMatrix(view.y, view.m).forEach(function (day) {
+      var cell = document.createElement('button');
+      cell.type = 'button';
+      if (!day) {
+        cell.className = 'cal-day empty';
+        cell.disabled = true;
+        calGrid.appendChild(cell);
+        return;
+      }
+      cell.className = 'cal-day';
+      cell.textContent = String(day.getDate());
+      cell.setAttribute('data-date', day.toISOString());
+      if (day < today) cell.disabled = true;
+      if (sameDay(day, today)) cell.classList.add('today');
+      if (sameDay(day, selStart)) cell.classList.add('range-start');
+      if (sameDay(day, selEnd)) cell.classList.add('range-end');
+      if (selStart && selEnd && day > selStart && day < selEnd) cell.classList.add('in-range');
+      calGrid.appendChild(cell);
+    });
+    if (calLabel) calLabel.textContent = selStart ? rangeLabel(selStart, selEnd) : 'Выберите дату заезда';
+    if (datesInput) datesInput.value = (selStart && selEnd) ? rangeLabel(selStart, selEnd) : '';
   }
+
+  if (calGrid) {
+    calGrid.addEventListener('click', function (e) {
+      var btn = e.target.closest('.cal-day');
+      if (!btn || btn.disabled || !btn.getAttribute('data-date')) return;
+      var day = new Date(btn.getAttribute('data-date'));
+      if (!selStart || (selStart && selEnd)) { selStart = day; selEnd = null; }
+      else if (day < selStart) { selStart = day; }
+      else if (sameDay(day, selStart)) { selStart = null; }
+      else { selEnd = day; }
+      renderCalendar();
+    });
+    document.getElementById('calPrev').addEventListener('click', function () {
+      view.m--; if (view.m < 0) { view.m = 11; view.y--; } renderCalendar();
+    });
+    document.getElementById('calNext').addEventListener('click', function () {
+      view.m++; if (view.m > 11) { view.m = 0; view.y++; } renderCalendar();
+    });
+    renderCalendar();
+  }
+
+  /* ================= статусы номеров ================= */
+
+  var roomStatus = {};
+  var isConfigured = WORKER_URL.indexOf('YOUR_SUBDOMAIN') === -1;
+
+  function applyStatuses(map) {
+    roomStatus = map || {};
+    ROOMS.forEach(function (r) {
+      var card = document.querySelector('[data-room="' + r.id + '"]');
+      if (!card) return;
+      var busy = roomStatus[r.id] === 'busy';
+      card.classList.toggle('room-busy', busy);
+      var badge = card.querySelector('.busy-badge');
+      if (badge) badge.hidden = !busy;
+      card.querySelectorAll('[data-book="' + r.id + '"]').forEach(function (b) { b.disabled = busy; });
+    });
+    renderAdminRooms();
+  }
+
+  function loadStatuses() {
+    if (!isConfigured) return;
+    fetch(WORKER_URL + '/status')
+      .then(function (r) { return r.json(); })
+      .then(function (d) { if (d && d.ok) applyStatuses(d.rooms); })
+      .catch(function () { /* без статусов сайт работает как раньше */ });
+  }
+  loadStatuses();
+
+  /* ================= админ-панель ================= */
+
+  var adminPass = '';
+
+  function openAdmin() {
+    openModal(adminModal);
+    var login = document.getElementById('adminLogin');
+    var panel = document.getElementById('adminPanel');
+    if (!isConfigured) {
+      login.hidden = true;
+      panel.hidden = false;
+      document.getElementById('adminRooms').innerHTML =
+        '<li class="admin-note">Воркер не настроен: в main.js впишите WORKER_URL после деплоя — тогда здесь появятся переключатели статусов.</li>';
+      return;
+    }
+    if (adminPass) { panel.hidden = false; renderAdminRooms(); }
+    else { login.hidden = false; panel.hidden = true; }
+  }
+
+  function adminFetch(action, room) {
+    return fetch(WORKER_URL + '/admin', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + adminPass },
+      body: JSON.stringify({ action: action, room: room })
+    }).then(function (r) {
+      if (r.status === 401) throw new Error('auth');
+      return r.json();
+    });
+  }
+
+  function renderAdminRooms() {
+    var list = document.getElementById('adminRooms');
+    if (!list || !adminPass) return;
+    list.innerHTML = '';
+    ROOMS.forEach(function (r) {
+      var li = document.createElement('li');
+      li.className = 'admin-room';
+      var busy = roomStatus[r.id] === 'busy';
+
+      var name = document.createElement('span');
+      name.className = 'admin-name';
+      name.textContent = r.name;
+
+      var chip = document.createElement('b');
+      chip.className = 'admin-chip ' + (busy ? 'busy' : 'free');
+      chip.textContent = busy ? 'Занят' : 'Свободен';
+
+      var btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'btn ghost admin-toggle';
+      btn.textContent = busy ? 'Освободить' : 'Занять';
+      btn.addEventListener('click', function () {
+        btn.disabled = true;
+        adminFetch('toggle', r.id)
+          .then(function (d) {
+            if (d && d.ok) {
+              roomStatus[r.id] = d.status;
+              applyStatuses(roomStatus);
+            }
+          })
+          .catch(function () {
+            var note = document.getElementById('adminNote');
+            if (note) note.textContent = 'Ошибка: проверьте пароль (MOD_PASSWORD) и доступность воркера.';
+          })
+          .finally(function () { btn.disabled = false; });
+      });
+
+      li.appendChild(name); li.appendChild(chip); li.appendChild(btn);
+      list.appendChild(li);
+    });
+  }
+
+  var loginBtn = document.getElementById('adminLoginBtn');
+  if (loginBtn) {
+    loginBtn.addEventListener('click', function () {
+      var input = document.getElementById('adminPass');
+      var err = document.getElementById('errAdmin');
+      adminPass = (input.value || '').trim();
+      if (!adminPass) { err.classList.add('show'); return; }
+      loginBtn.disabled = true;
+      adminFetch('list')
+        .then(function (d) {
+          err.classList.remove('show');
+          applyStatuses(d.rooms);
+          document.getElementById('adminLogin').hidden = true;
+          document.getElementById('adminPanel').hidden = false;
+        })
+        .catch(function () {
+          err.classList.add('show');
+          adminPass = '';
+        })
+        .finally(function () { loginBtn.disabled = false; });
+    });
+  }
+
+  /* ================= форма ================= */
 
   function buildText(d) {
     var lines = ['Заявка с сайта sup23.ru', 'Имя: ' + d.name, 'Телефон: ' + d.phone];
@@ -924,7 +1225,7 @@ footer a { color: #f0c9a8; }
 
     var name = (document.getElementById('fName').value || '').trim();
     var phone = (document.getElementById('fPhone').value || '').trim();
-    var dates = (document.getElementById('fDates').value || '').trim();
+    var dates = (datesInput && datesInput.value) || '';
     var guests = document.getElementById('fGuests').value;
     var roomSel = document.getElementById('fRoom');
     var room = roomSel.value;
@@ -934,6 +1235,10 @@ footer a { color: #f0c9a8; }
     var ok = true;
     if (name.length < 2) { showErr('errName', true); ok = false; }
     if (!phoneOk(phone)) { showErr('errPhone', true); ok = false; }
+    if (room && roomStatus[room] === 'busy') {
+      setStatus('Этот номер сейчас занят — выберите другой или позвоните.', 'error');
+      return;
+    }
     if (!ok) return;
 
     var data = { name: name, phone: phone, dates: dates, guests: guests, room: room, roomLabel: roomLabel, website: honeypot };
@@ -941,7 +1246,6 @@ footer a { color: #f0c9a8; }
     btn.disabled = true;
     setStatus('Отправляем…', '');
 
-    var isConfigured = WORKER_URL.indexOf('YOUR_SUBDOMAIN') === -1;
     if (!isConfigured) {
       window.open('https://wa.me/' + WA_NUMBER + '?text=' + encodeURIComponent(buildText(data)), '_blank', 'noopener');
       setStatus('Открыли WhatsApp с вашей заявкой. Если не открылся — позвоните: 8 918 116-45-54.', 'ok');
@@ -958,17 +1262,21 @@ footer a { color: #f0c9a8; }
       .then(function (res) {
         if (res && res.ok) {
           form.reset();
-          setStatus('Заявка отправлена! Перезвоним в ближайшее время.', 'ok');
+          selStart = null; selEnd = null; renderCalendar();
+          setStatus('Заявка отправлена! Сообщение уже у модератора в Telegram.', 'ok');
         } else {
           throw new Error((res && res.error) || 'unknown');
         }
       })
       .catch(function () {
         window.open('https://wa.me/' + WA_NUMBER + '?text=' + encodeURIComponent(buildText(data)), '_blank', 'noopener');
-        setStatus('Сервис недоступен — открыли WhatsApp с заявкой. Или позвоните: 8 918 116-45-54.', 'error');
+        setStatus('Telegram недоступен — открыли WhatsApp с заявкой. Или позвоните: 8 918 116-45-54.', 'error');
       })
       .finally(function () { btn.disabled = false; });
   });
+
+  /* хук для тестов */
+  window.__rental = { monthMatrix: monthMatrix, rangeLabel: rangeLabel, nightsBetween: nightsBetween, phoneOk: phoneOk };
 })();
 
 </script>
