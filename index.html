@@ -2,7 +2,7 @@
 <html lang="ru">
 <head>
 <meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
 <title>Подсолнух — Гостиница в Краснодаре | Уютные номера посуточно</title>
 <meta name="description" content="Гостиница Подсолнух в Краснодаре — уютные номера от 2000 ₽/сутки. Своя кухня, парковка, видеонаблюдение. Бронирование онлайн, заявки приходят в Telegram. ☎ 8 918 116-45-54" />
 <meta name="theme-color" content="#fef6e4" />
@@ -44,7 +44,7 @@
 }
 
 *, *::before, *::after { box-sizing: border-box; }
-html { scroll-behavior: smooth; -webkit-text-size-adjust: 100%; }
+html { scroll-behavior: smooth; -webkit-text-size-adjust: 100%; scroll-padding-top: 88px; overflow-x: hidden; overflow-x: clip; }
 
 body {
   margin: 0;
@@ -52,6 +52,7 @@ body {
   font: 16px/1.6 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   background: var(--bg);
   overflow-x: hidden;
+  overflow-x: clip; /* телефон: страница ровно по ширине экрана, без горизонтального скролла */
 }
 
 /* ---------- ДЕКОРАТИВНЫЕ ПОДСОЛНУХИ ФОНА ---------- */
@@ -112,15 +113,15 @@ body {
 
 /* Плавающие лепестки, падающие сверху */
 .falling-petal {
-  position: fixed; top: -40px; z-index: 1; pointer-events: none;
+  position: absolute; top: -40px; z-index: 1; pointer-events: none;
   animation: fall linear infinite;
   opacity: .75;
 }
 
-img { display: block; max-width: 100%; }
+img { display: block; max-width: 100%; height: auto; }
 a { color: var(--terra-dark); text-decoration: none; }
 button { font: inherit; cursor: pointer; border: 0; background: none; }
-h1,h2,h3 { font-family: 'Unbounded', sans-serif; text-wrap: balance; line-height: 1.15; margin: 0 0 12px; letter-spacing: -0.5px; }
+h1,h2,h3 { font-family: 'Unbounded', sans-serif; text-wrap: balance; line-height: 1.15; margin: 0 0 12px; letter-spacing: -0.5px; max-width: 100%; overflow-wrap: break-word; }
 p { text-wrap: pretty; margin: 0 0 10px; }
 
 :focus-visible { outline: 3px solid var(--sun); outline-offset: 3px; border-radius: 6px; }
@@ -353,23 +354,60 @@ h2 { font-size: clamp(26px, 4vw, 38px); }
 .room:hover::after { opacity: 1; }
 
 .room-photo { position: relative; overflow: hidden; }
-.room-photo img { width: 100%; height: 260px; object-fit: cover; transition: transform .8s ease; }
-.room:hover .room-photo img { transform: scale(1.04); }
+
+/* ---------- СЛАЙДЕР ФОТО НОМЕРА ---------- */
+.photo-slider { position: relative; background: var(--bg-2); }
+.slider-track {
+  display: flex; overflow-x: auto; overflow-y: hidden;
+  scroll-snap-type: x mandatory; overscroll-behavior-x: contain;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none; -ms-overflow-style: none;
+}
+.slider-track::-webkit-scrollbar { display: none; }
+.slide { flex: 0 0 100%; width: 100%; overflow: hidden; scroll-snap-align: start; scroll-snap-stop: always; }
+.slide img { width: 100%; height: 260px; object-fit: cover; transition: transform .8s ease; }
+.room:hover .slide img { transform: scale(1.04); }
+.slider-nav {
+  position: absolute; top: 50%; transform: translateY(-50%);
+  width: 42px; height: 42px; border-radius: 50%;
+  background: rgba(255,255,255,.92); color: var(--ink);
+  font-size: 22px; line-height: 1; display: grid; place-items: center;
+  box-shadow: 0 4px 14px rgba(0,0,0,.2); z-index: 2;
+  transition: background .2s, transform .2s, opacity .2s;
+}
+.slider-nav:hover { background: #fff; transform: translateY(-50%) scale(1.08); }
+.slider-nav:disabled { opacity: 0; pointer-events: none; }
+.slider-prev { left: 10px; }
+.slider-next { right: 10px; }
+.slider-ind {
+  position: absolute; right: 12px; bottom: 14px; z-index: 2;
+  display: flex; align-items: center; gap: 8px;
+  background: rgba(42,34,21,.55); color: #fff;
+  padding: 5px 10px; border-radius: 999px; backdrop-filter: blur(4px);
+}
+.slider-dots { display: flex; gap: 4px; align-items: center; }
+.slider-dot { width: 12px; height: 12px; padding: 0; display: grid; place-items: center; }
+.slider-dot::after {
+  content: ''; width: 7px; height: 7px; border-radius: 50%;
+  background: rgba(255,255,255,.6); transition: background .2s, transform .2s;
+}
+.slider-dot.active::after { background: var(--sun); transform: scale(1.35); }
+.slider-count { font-size: 11.5px; font-weight: 700; color: #fff; letter-spacing: .02em; }
 
 .room-price {
-  position: absolute; bottom: 16px; left: 16px;
+  position: absolute; z-index: 3; bottom: 16px; left: 16px;
   background: rgba(42, 34, 21, .85); color: #fff; backdrop-filter: blur(6px);
   border-radius: 14px; padding: 10px 16px; font-weight: 800; font-size: 16px;
 }
 .room-price small { font-weight: 500; opacity: .85; font-size: 12px; }
 .room-addr {
-  position: absolute; top: 16px; left: 16px;
+  position: absolute; z-index: 3; top: 16px; left: 16px;
   background: rgba(255, 255, 255, .95); border-radius: 12px; padding: 6px 14px;
   font-size: 12.5px; font-weight: 700; color: var(--ink);
   backdrop-filter: blur(4px);
 }
 .status-chip {
-  position: absolute; top: 16px; right: 16px;
+  position: absolute; z-index: 3; top: 16px; right: 16px;
   border-radius: 999px; padding: 6px 14px; font-size: 12px; font-weight: 800;
   letter-spacing: .04em;
   backdrop-filter: blur(6px);
@@ -378,7 +416,7 @@ h2 { font-size: clamp(26px, 4vw, 38px); }
 .status-chip.free { background: rgba(78,125,58,.95); color: #fff; }
 .status-chip.busy { background: rgba(180,54,43,.95); color: #fff; }
 
-.room-busy .room-photo img { filter: grayscale(.75) brightness(.8); }
+.room-busy .slide img { filter: grayscale(.75) brightness(.8); }
 .room-busy .room-price { opacity: .6; }
 .room-busy::after { display: none; }
 
@@ -569,7 +607,7 @@ footer button { color: #ffd33a; font-weight: 600; border-bottom: 1px dashed #ffd
 @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 .modal-backdrop.open { display: flex; }
 .modal {
-  width: min(100%, 540px); max-height: 92vh; overflow: auto;
+  width: min(100%, 540px); max-height: 92vh; max-height: 92dvh; overflow: auto;
   background: var(--surface); border-radius: 26px; padding: 30px;
   box-shadow: var(--shadow-lg); position: relative;
   animation: popIn .35s cubic-bezier(.2,.9,.3,1.4);
@@ -588,7 +626,7 @@ footer button { color: #ffd33a; font-weight: 600; border-bottom: 1px dashed #ffd
 .field label { display: block; font-size: 13px; font-weight: 700; color: var(--ink-soft); margin-bottom: 6px; }
 .field input, .field select {
   width: 100%; border: 2px solid var(--line); border-radius: 14px;
-  background: var(--bg); padding: 14px 16px; font-size: 15px; color: var(--ink);
+  background: var(--bg); padding: 14px 16px; font-size: 16px; color: var(--ink); /* 16px — без автозума на iOS */
   outline: none; font-family: inherit;
   transition: border-color .2s, box-shadow .2s, background .2s;
 }
@@ -720,7 +758,7 @@ footer button { color: #ffd33a; font-weight: 600; border-bottom: 1px dashed #ffd
 .admin-note { color: var(--muted); font-size: 13.5px; padding: 12px; background: var(--sun-soft); border-radius: 12px; margin-top: 10px; }
 .admin-config { margin-top: 18px; padding: 16px; background: var(--bg); border-radius: 14px; border: 1.5px dashed var(--line); }
 .admin-config label { font-size: 12px; font-weight: 700; color: var(--muted); display: block; margin-bottom: 6px; }
-.admin-config input { width:100%; padding: 10px 12px; border: 1.5px solid var(--line); border-radius: 10px; font-size: 13px; background: var(--surface); margin-bottom: 10px; font-family: inherit; }
+.admin-config input { width:100%; padding: 10px 12px; border: 1.5px solid var(--line); border-radius: 10px; font-size: 16px; background: var(--surface); margin-bottom: 10px; font-family: inherit; }
 
 .policy-modal .modal { max-width: 640px; }
 .policy-modal p { font-size: 14px; color: var(--muted); line-height: 1.6; }
@@ -763,6 +801,42 @@ footer button { color: #ffd33a; font-weight: 600; border-bottom: 1px dashed #ffd
   .badge-price { left: 8px; }
   .badge-dist { right: 8px; }
   .big-sunflower { width: 90px; height: 90px; right: -15px; top: -15px; }
+}
+
+@media (max-width: 640px) {
+  .wrap { width: min(100% - 24px, var(--max)); }
+  section { padding: 16px 0 52px; }
+  .stats { gap: 10px; margin-bottom: 44px; }
+  .stat { padding: 16px 10px; }
+  .stat b { font-size: 21px; }
+  .stat span { font-size: 11.5px; }
+  .hero { padding: 28px 0 34px; gap: 28px; }
+  .lead { font-size: 16px; margin-bottom: 18px; }
+  .hero-points li { font-size: 14.5px; padding: 9px 12px; }
+  .slide img { height: 230px; }
+  .room-body { padding: 18px 18px 22px; }
+  .room-body h3 { font-size: 19px; }
+  .room-cta .btn { min-width: 0; flex-basis: 100%; }
+  .rooms-note { padding: 14px 16px; font-size: 14px; }
+  .modal-backdrop { padding: 12px; }
+  .modal { padding: 24px 18px 26px; border-radius: 20px; }
+  .modal h3 { font-size: 20px; padding-right: 44px; }
+  .field-row { grid-template-columns: 1fr; }
+  .map-frame { height: 300px; border-radius: 18px; }
+  .kicker { font-size: 11px; padding: 6px 12px; letter-spacing: .04em; }
+  .badge-float { padding: 10px 12px; font-size: 12.5px; border-radius: 12px; }
+  .badge-float .icon-sun { width: 28px; height: 28px; }
+  .slider-nav { width: 36px; height: 36px; font-size: 18px; }
+  .faq-item { padding: 2px 16px; }
+  .faq-item summary { font-size: 14.5px; }
+  .step { padding: 20px; }
+}
+@media (max-width: 380px) {
+  .logo-flower { width: 36px; height: 36px; }
+  .logo-text strong { font-size: 15px; }
+  .header-book-btn { padding: 0 12px; font-size: 13px; min-height: 40px; }
+  h1 { font-size: 26px; }
+  .slide img { height: 200px; }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -1194,10 +1268,55 @@ footer button { color: #ffd33a; font-weight: 600; border-bottom: 1px dashed #ffd
   };
 
   var ROOMS = [
-    { id: 'studio-4',        name: 'Студия с кухней',           label: 'Студия с кухней · Цветочная 162',           addr: 'Цветочная 162', price: 2500, guests: 'до 4 гостей', img: 'img/room-studio-4.jpg',        desc: 'Двуспальная кровать, диван и кресло-кровать. Кухонная зона, душ и туалет.', chips: ['Кухня','Холодильник','Посуда','Душ/туалет'] },
-    { id: 'studio-comfort',  name: 'Студия комфорт',            label: 'Студия комфорт · Цветочная 162',            addr: 'Цветочная 162', price: 3000, guests: 'до 4 гостей', img: 'img/room-studio-comfort.jpg',  desc: 'Просторная студия: двуспальная кровать, диван, кресло-кровать. Полноценная кухня.', chips: ['Кухня','Холодильник','Посуда','Душ/туалет'] },
-    { id: 'apart-2',         name: 'Апартаменты',               label: 'Апартаменты · Железнодорожная 180',         addr: 'Железнодорожная 180', price: 2000, guests: 'до 2 гостей', img: 'img/room-apart-2.jpg',       desc: 'Уютный номер для двоих с кухонной зоной. Двуспальная кровать, душ и туалет.', chips: ['Кухня','Холодильник','Посуда','Душ/туалет'] },
-    { id: 'kitchen-3',       name: 'Номер с собственной кухней',label: 'Номер с кухней · Железнодорожная 180',      addr: 'Железнодорожная 180', price: 2500, guests: 'до 3 гостей', img: 'img/room-kitchen-3.jpg',    desc: 'Двуспальная и односпальная кровати, своя кухня с техникой и посудой.', chips: ['Кухня','Холодильник','Посуда','Душ/туалет'] }
+    { id: 'single-1', name: 'Одноместный номер', label: 'Одноместный номер · Цветочная 162', addr: 'Цветочная 162', price: 2000, guests: 'до 1 гостя',
+      desc: 'Уютный номер для одного: односпальная кровать, рабочий стол, кухонная зона, душ и туалет.',
+      chips: ['Кухня','Холодильник','Посуда','Душ/туалет'],
+      photos: [
+        { src: 'img/room-single-1.jpg',   alt: 'Одноместный номер: кровать и рабочий стол у окна' },
+        { src: 'img/room-single-1-2.jpg', alt: 'Кухонная зона с холодильником и столом' }
+      ] },
+    { id: 'studio-4', name: 'Студия с кухней', label: 'Студия с кухней · Цветочная 162', addr: 'Цветочная 162', price: 2500, guests: 'до 4 гостей',
+      desc: 'Двуспальная кровать, диван и кресло-кровать. Кухонная зона, душ и туалет.',
+      chips: ['Кухня','Холодильник','Посуда','Душ/туалет'],
+      photos: [
+        { src: 'img/room-studio-4.jpg',   alt: 'Студия с кухней: кровать, диваны и обеденная зона' },
+        { src: 'img/room-studio-4-2.jpg', alt: 'Кухня студии: плита, посуда, обеденный стол' }
+      ] },
+    { id: 'studio-comfort', name: 'Студия комфорт', label: 'Студия комфорт · Цветочная 162', addr: 'Цветочная 162', price: 3000, guests: 'до 4 гостей',
+      desc: 'Просторная студия: двуспальная кровать, диван, кресло-кровать. Полноценная кухня.',
+      chips: ['Кухня','Холодильник','Посуда','Душ/туалет'],
+      photos: [
+        { src: 'img/room-studio-comfort.jpg',   alt: 'Студия комфорт: двуспальная и односпальная кровати, кухня' },
+        { src: 'img/room-studio-comfort-2.jpg', alt: 'Ванная комната студии комфорт' }
+      ] },
+    { id: 'family-4', name: 'Семейный номер', label: 'Семейный номер · Цветочная 162', addr: 'Цветочная 162', price: 3500, guests: 'до 4 гостей',
+      desc: 'Просторный номер для семьи: двуспальная и односпальная кровати, диван, своя кухня, душ и туалет.',
+      chips: ['Кухня','Холодильник','Посуда','Душ/туалет'],
+      photos: [
+        { src: 'img/room-family-4.jpg',   alt: 'Семейный номер: двуспальная и односпальная кровати, диван' },
+        { src: 'img/room-family-4-2.jpg', alt: 'Кухня и обеденная зона семейного номера' }
+      ] },
+    { id: 'apart-2', name: 'Апартаменты', label: 'Апартаменты · Железнодорожная 180', addr: 'Железнодорожная 180', price: 2000, guests: 'до 2 гостей',
+      desc: 'Уютный номер для двоих с кухонной зоной. Двуспальная кровать, душ и туалет.',
+      chips: ['Кухня','Холодильник','Посуда','Душ/туалет'],
+      photos: [
+        { src: 'img/room-apart-2.jpg',   alt: 'Апартаменты: кровать, диван и кухонная зона' },
+        { src: 'img/room-apart-2-2.jpg', alt: 'Душ и туалет в апартаментах' }
+      ] },
+    { id: 'double-2', name: 'Двухместный номер', label: 'Двухместный номер · Железнодорожная 180', addr: 'Железнодорожная 180', price: 2300, guests: 'до 2 гостей',
+      desc: 'Светлый номер для двоих: двуспальная кровать, кресло у окна, кухонная зона, душ и туалет.',
+      chips: ['Кухня','Холодильник','Посуда','Душ/туалет'],
+      photos: [
+        { src: 'img/room-double-2.jpg',   alt: 'Двухместный номер: двуспальная кровать с зелёным пледом' },
+        { src: 'img/room-double-2-2.jpg', alt: 'Кресло и столик у окна в двухместном номере' }
+      ] },
+    { id: 'kitchen-3', name: 'Номер с собственной кухней', label: 'Номер с кухней · Железнодорожная 180', addr: 'Железнодорожная 180', price: 2500, guests: 'до 3 гостей',
+      desc: 'Двуспальная и односпальная кровати, своя кухня с техникой и посудой.',
+      chips: ['Кухня','Холодильник','Посуда','Душ/туалет'],
+      photos: [
+        { src: 'img/room-kitchen-3.jpg',   alt: 'Номер с кухней: кровать, холодильник и кухонный уголок' },
+        { src: 'img/room-kitchen-3-2.jpg', alt: 'Душ и туалет в номере с кухней' }
+      ] }
   ];
 
   var cfg = loadCfg();
@@ -1260,6 +1379,86 @@ footer button { color: #ffd33a; font-weight: 600; border-bottom: 1px dashed #ffd
     revealEls.forEach(function(el){ io.observe(el); });
   }
 
+  // ---------- слайдер фотографий номера ----------
+  function buildSlider(room){
+    var photos = room.photos || [];
+    if(!photos.length) return '';
+    var many = photos.length > 1;
+    var slides = photos.map(function(p){
+      return '<div class="slide"><img src="'+p.src+'" alt="'+p.alt+'" width="1456" height="816" loading="lazy" decoding="async" /></div>';
+    }).join('');
+    var html = '<div class="photo-slider" data-slider>' +
+      '<div class="slider-track" tabindex="0" role="group" aria-label="Фотографии: '+room.name+'">'+slides+'</div>';
+    if(many){
+      var dots = photos.map(function(_, i){
+        return '<button type="button" class="slider-dot'+(i===0?' active':'')+'" data-idx="'+i+'" aria-label="Фото '+(i+1)+' из '+photos.length+'"></button>';
+      }).join('');
+      html += '<button type="button" class="slider-nav slider-prev" aria-label="Предыдущее фото">‹</button>' +
+        '<button type="button" class="slider-nav slider-next" aria-label="Следующее фото">›</button>' +
+        '<div class="slider-ind"><span class="slider-dots">'+dots+'</span><span class="slider-count">1/'+photos.length+'</span></div>';
+    }
+    return html + '</div>';
+  }
+
+  function initSliders(root){
+    (root || document).querySelectorAll('[data-slider]').forEach(function(sl){
+      if(sl.dataset.sliderReady) return;
+      sl.dataset.sliderReady = '1';
+      var track = sl.querySelector('.slider-track');
+      var total = track ? track.children.length : 0;
+      if(!total) return;
+      // дозагружаем фото, когда карточка появилась в зоне видимости — свайп без подтормаживаний
+      if(typeof IntersectionObserver !== 'undefined'){
+        var pio = new IntersectionObserver(function(entries){
+          entries.forEach(function(en){
+            if(!en.isIntersecting) return;
+            track.querySelectorAll('img').forEach(function(im){ im.loading = 'eager'; });
+            pio.disconnect();
+          });
+        }, {rootMargin: '200px 0px'});
+        pio.observe(sl);
+      }
+      if(total < 2) return;
+      var dots = sl.querySelectorAll('.slider-dot');
+      var count = sl.querySelector('.slider-count');
+      var prev = sl.querySelector('.slider-prev');
+      var next = sl.querySelector('.slider-next');
+      var cur = 0, rafId = 0;
+      function idx(){
+        return Math.max(0, Math.min(total-1, Math.round(track.scrollLeft / Math.max(1, track.clientWidth))));
+      }
+      function sync(i){
+        dots.forEach(function(d, di){ d.classList.toggle('active', di === i); });
+        if(count) count.textContent = (i+1)+'/'+total;
+        if(prev) prev.disabled = (i === 0);
+        if(next) next.disabled = (i === total-1);
+      }
+      function paint(i){ if(i !== cur){ cur = i; sync(i); } }
+      function goTo(i){
+        i = Math.max(0, Math.min(total-1, i));
+        cur = i; sync(i);
+        track.scrollTo({ left: i * track.clientWidth, behavior: reduce ? 'auto' : 'smooth' });
+      }
+      track.addEventListener('scroll', function(){
+        if(rafId) return;
+        rafId = requestAnimationFrame(function(){ rafId = 0; paint(idx()); });
+      }, {passive: true});
+      track.addEventListener('keydown', function(e){
+        if(e.key === 'ArrowLeft'){ e.preventDefault(); goTo(idx()-1); }
+        if(e.key === 'ArrowRight'){ e.preventDefault(); goTo(idx()+1); }
+      });
+      if(prev) prev.addEventListener('click', function(){ goTo(idx()-1); });
+      if(next) next.addEventListener('click', function(){ goTo(idx()+1); });
+      dots.forEach(function(d){
+        d.addEventListener('click', function(){ goTo(parseInt(d.dataset.idx, 10) || 0); });
+      });
+      window.addEventListener('resize', function(){
+        track.scrollLeft = cur * track.clientWidth;
+      }, {passive: true});
+      if(prev) prev.disabled = true;
+    });
+  }
+
   // ---------- рендер карточек номеров ----------
   function renderRooms(){
     var list = document.getElementById('roomsList');
@@ -1271,7 +1470,7 @@ footer button { color: #ffd33a; font-weight: 600; border-bottom: 1px dashed #ffd
       art.dataset.room = r.id;
       art.innerHTML =
         '<div class="room-photo">' +
-          '<img src="'+r.img+'" alt="'+r.name+' в гостинице Подсолнух" width="1456" height="816" loading="lazy" decoding="async" />' +
+          buildSlider(r) +
           '<span class="room-addr">'+r.addr+'</span>' +
           '<span class="status-chip '+(busy?'busy':'free')+'">'+(busy?'🚫 Занят':'🌻 Свободен')+'</span>' +
           '<span class="room-price">от '+r.price.toLocaleString('ru-RU')+' ₽ <small>/ сутки</small></span>' +
@@ -1288,6 +1487,7 @@ footer button { color: #ffd33a; font-weight: 600; border-bottom: 1px dashed #ffd
         '</div>';
       list.appendChild(art);
     });
+    initSliders(list);
     if (io) list.querySelectorAll('.reveal').forEach(function(el){ io.observe(el); });
     renderRoomPicker();
   }
@@ -1338,7 +1538,7 @@ footer button { color: #ffd33a; font-weight: 600; border-bottom: 1px dashed #ffd
       btn.dataset.room = r.id;
       if(busy) btn.disabled = true;
       btn.innerHTML =
-        '<img class="opt-photo" src="'+r.img+'" alt="'+r.name+'" loading="lazy" />' +
+        '<img class="opt-photo" src="'+r.photos[0].src+'" alt="'+r.name+'" loading="lazy" />' +
         '<div class="opt-body">' +
           '<span class="opt-name">'+r.name+'</span>' +
           '<div class="opt-price">'+r.price.toLocaleString('ru-RU')+' ₽ <small>/ сутки</small></div>' +
@@ -1617,8 +1817,9 @@ footer button { color: #ffd33a; font-weight: 600; border-bottom: 1px dashed #ffd
   (function petals(){
     if(reduce) return;
     var layer = document.getElementById('decoLayer');
+    var isSmall = window.innerWidth < 700;
     // статические элементы
-    for(var i=0;i<10;i++){
+    for(var i=0;i<(isSmall?5:10);i++){
       var d = document.createElement('div');
       var isLeaf = Math.random()>0.6;
       d.className = 'deco '+(isLeaf?'leaf':'petal');
@@ -1638,7 +1839,7 @@ footer button { color: #ffd33a; font-weight: 600; border-bottom: 1px dashed #ffd
       var size = 14+Math.random()*14;
       p.style.width = size+'px';
       p.style.height = (size*0.65)+'px';
-      p.style.left = (Math.random()*100)+'vw';
+      p.style.left = (Math.random()*100)+'%';
       p.style.background = 'radial-gradient(ellipse at 30% 40%, #ffe082, #f7a93c 70%)';
       p.style.borderRadius = '60% 40% 60% 40% / 70% 60% 40% 30%';
       p.style.filter='drop-shadow(0 2px 6px rgba(200,120,20,.2))';
@@ -1646,16 +1847,16 @@ footer button { color: #ffd33a; font-weight: 600; border-bottom: 1px dashed #ffd
       var dur = 8+Math.random()*10;
       p.style.animationDuration = dur+'s';
       p.style.animationDelay = (-Math.random()*dur)+'s';
-      document.body.appendChild(p);
+      layer.appendChild(p);
       setTimeout(function(){ p.remove(); }, dur*1000+100);
     }
-    setInterval(spawnFallingPetal, 2200);
-    for(var k=0;k<6;k++) setTimeout(spawnFallingPetal, k*400);
+    setInterval(spawnFallingPetal, isSmall?3600:2200);
+    for(var k=0;k<(isSmall?3:6);k++) setTimeout(spawnFallingPetal, k*400);
   })();
 
   // ---------- параллакс лепестков при движении мыши ----------
   document.addEventListener('mousemove', function(e){
-    if(reduce) return;
+    if(reduce || !window.matchMedia || !window.matchMedia('(hover: hover) and (pointer: fine)').matches) return;
     var cx = (e.clientX / window.innerWidth - 0.5) * 2;
     var cy = (e.clientY / window.innerHeight - 0.5) * 2;
     var decos = document.querySelectorAll('.deco-layer .deco');
