@@ -170,7 +170,7 @@ nav a {
   padding: 8px 14px; border-radius: 10px; transition: background .2s, color .2s, transform .2s;
   display: inline-block;
 }
-nav a:hover { color: var(--ink); background: var(--sun-soft); transform: translateY(-1px); }
+nav a:hover { color: var(--ink); background: var(--sun-soft); }
 
 /* на мобильных прячем телефон, TG и навигацию, оставляем только кнопку Забронировать */
 .header-book-btn { white-space: nowrap; }
@@ -190,13 +190,7 @@ nav a:hover { color: var(--ink); background: var(--sun-soft); transform: transla
   transition: transform .2s cubic-bezier(.2,.9,.3,1.3), box-shadow .2s, background .2s;
   position: relative; overflow: hidden;
 }
-.btn::after {
-  content: ''; position: absolute; inset: 0;
-  background: linear-gradient(120deg, transparent, rgba(255,255,255,.45), transparent);
-  transform: translateX(-100%); transition: transform .6s;
-}
-.btn:hover { transform: translateY(-3px); }
-.btn:hover::after { transform: translateX(100%); }
+/* без движения при наведении */
 .btn.primary {
   background: linear-gradient(135deg, #ffd33a, #f29f17);
   color: #3b2804; box-shadow: 0 10px 24px rgba(242, 159, 23, .35);
@@ -253,7 +247,7 @@ h1 {
   backdrop-filter: blur(6px);
   transition: transform .25s, box-shadow .25s, border-color .25s;
 }
-.hero-points li:hover { transform: translateX(6px); border-color: var(--sun); box-shadow: 0 6px 18px rgba(249, 194, 29, .2); }
+.hero-points li:hover { border-color: var(--sun); box-shadow: 0 6px 18px rgba(249, 194, 29, .2); }
 .hero-points .check {
   flex-shrink: 0; width: 24px; height: 24px; border-radius: 50%;
   background: linear-gradient(135deg, #6aa94a, #3e6b28);
@@ -273,7 +267,6 @@ h1 {
   width: 100%; aspect-ratio: 16/10; object-fit: cover;
   transition: transform .8s ease;
 }
-.hero-photo-wrap:hover .hero-photo { transform: scale(1.025); }
 .hero-photo-wrap::after {
   content: ''; position: absolute; inset: 0;
   background: linear-gradient(135deg, transparent 60%, rgba(249,194,29,.25));
@@ -318,7 +311,7 @@ h1 {
   background: radial-gradient(circle, var(--sun-soft), transparent 70%);
   opacity: .6;
 }
-.stat:hover { transform: translateY(-6px) rotate(-1deg); box-shadow: var(--shadow); }
+.stat:hover { box-shadow: var(--shadow); }
 .stat b { display: block; font-family: 'Unbounded'; font-size: 26px; color: var(--terra-dark); }
 .stat span { font-size: 12.5px; color: var(--muted); font-weight: 500; }
 
@@ -350,7 +343,7 @@ h2 { font-size: clamp(26px, 4vw, 38px); }
   opacity: 0; transition: opacity .35s;
   pointer-events: none;
 }
-.room:hover { transform: translateY(-4px); box-shadow: var(--shadow-lg); }
+.room:hover { box-shadow: var(--shadow-lg); }
 .room:hover::after { opacity: 1; }
 
 .room-photo { position: relative; overflow: hidden; }
@@ -366,7 +359,6 @@ h2 { font-size: clamp(26px, 4vw, 38px); }
 .slider-track::-webkit-scrollbar { display: none; }
 .slide { flex: 0 0 100%; width: 100%; overflow: hidden; scroll-snap-align: start; scroll-snap-stop: always; }
 .slide img { width: 100%; height: 260px; object-fit: cover; transition: transform .8s ease; }
-.room:hover .slide img { transform: scale(1.04); }
 .slider-nav {
   position: absolute; top: 50%; transform: translateY(-50%);
   width: 42px; height: 42px; border-radius: 50%;
@@ -375,7 +367,7 @@ h2 { font-size: clamp(26px, 4vw, 38px); }
   box-shadow: 0 4px 14px rgba(0,0,0,.2); z-index: 2;
   transition: background .2s, transform .2s, opacity .2s;
 }
-.slider-nav:hover { background: #fff; transform: translateY(-50%) scale(1.08); }
+.slider-nav:hover { background: #fff; }
 .slider-nav:disabled { opacity: 0; pointer-events: none; }
 .slider-prev { left: 10px; }
 .slider-next { right: 10px; }
@@ -430,7 +422,7 @@ h2 { font-size: clamp(26px, 4vw, 38px); }
   border-radius: 999px; padding: 5px 14px; font-size: 12.5px; font-weight: 700;
   transition: transform .2s, background .2s;
 }
-.chips li:hover { transform: translateY(-2px) rotate(-2deg); background: #ffd33a; }
+.chips li:hover { background: #ffd33a; }
 .room-cta { margin-top: 6px; display: flex; gap: 10px; flex-wrap: wrap; }
 .room-cta .btn { flex: 1; min-width: 150px; }
 .rooms-note {
@@ -453,7 +445,7 @@ h2 { font-size: clamp(26px, 4vw, 38px); }
   background: radial-gradient(circle at 0% 0%, var(--sun-soft), transparent 50%);
   opacity: 0; transition: opacity .3s;
 }
-.benefit:hover { transform: translateY(-3px); box-shadow: var(--shadow); border-color: var(--sun); }
+.benefit:hover { box-shadow: var(--shadow); border-color: var(--sun); }
 .benefit:hover::before { opacity: 1; }
 .benefit-icon {
   width: 52px; height: 52px; border-radius: 16px; flex-shrink: 0;
@@ -463,7 +455,6 @@ h2 { font-size: clamp(26px, 4vw, 38px); }
   transition: transform .3s;
   position: relative; z-index: 1;
 }
-.benefit:hover .benefit-icon { transform: rotate(-8deg) scale(1.1); }
 .benefit > div { position: relative; z-index: 1; }
 .benefit h3 { font-size: 17px; margin: 2px 0 6px; }
 .benefit p { margin: 0; color: var(--muted); font-size: 14px; }
@@ -474,7 +465,6 @@ h2 { font-size: clamp(26px, 4vw, 38px); }
   border: none; box-shadow: var(--shadow);
 }
 .benefit-wide .bw-img img { width: 100%; height: 260px; object-fit: cover; transition: transform .7s; }
-.benefit-wide:hover .bw-img img { transform: scale(1.025); }
 .bw-text { padding: 24px 28px 28px; background: var(--surface); }
 
 /* ---------- РЯДОМ ---------- */
@@ -489,8 +479,8 @@ h2 { font-size: clamp(26px, 4vw, 38px); }
   content: '🌻'; position: absolute; right: -20px; bottom: -30px; font-size: 80px;
   opacity: .06; transition: transform .4s, opacity .3s;
 }
-.near-card:hover { transform: translateY(-3px); box-shadow: var(--shadow); border-color: var(--leaf); }
-.near-card:hover::after { transform: translateY(-8px) rotate(15deg); opacity: .18; }
+.near-card:hover { box-shadow: var(--shadow); border-color: var(--leaf); }
+.near-card:hover::after { opacity: .18; }
 .near-icon {
   width: 46px; height: 46px; border-radius: 14px; flex-shrink: 0;
   background: linear-gradient(135deg, var(--leaf-soft), #c2dfa7); color: var(--leaf-deep);
@@ -511,7 +501,7 @@ h2 { font-size: clamp(26px, 4vw, 38px); }
   padding: 26px; position: relative; overflow: hidden;
   transition: transform .3s, box-shadow .3s;
 }
-.step:hover { transform: translateY(-4px); box-shadow: var(--shadow); }
+.step:hover { box-shadow: var(--shadow); }
 .step::before {
   counter-increment: step; content: counter(step, decimal-leading-zero);
   font-family: 'Unbounded';
@@ -559,7 +549,7 @@ h2 { font-size: clamp(26px, 4vw, 38px); }
   content: '🌻'; position: absolute; right: -10px; top: -10px; font-size: 70px;
   opacity: .08; transform: rotate(-20deg);
 }
-.addr-card:hover { transform: translateY(-4px); box-shadow: var(--shadow); }
+.addr-card:hover { box-shadow: var(--shadow); }
 .addr-card h3 { font-size: 17px; margin-bottom: 8px; display: flex; gap: 10px; align-items: center; }
 .addr-card p { margin: 0 0 12px; color: var(--muted); font-size: 14.5px; }
 .mess-row { display: flex; gap: 10px; flex-wrap: wrap; }
@@ -621,7 +611,7 @@ footer button { color: #ffd33a; font-weight: 600; border-bottom: 1px dashed #ffd
   font-size: 22px; line-height: 1; color: var(--muted);
   transition: transform .2s, background .2s, color .2s;
 }
-.modal-close:hover { color: var(--ink); background: var(--sun-soft); transform: rotate(90deg); }
+.modal-close:hover { color: var(--ink); background: var(--sun-soft); }
 .field { margin-bottom: 16px; }
 .field label { display: block; font-size: 13px; font-weight: 700; color: var(--ink-soft); margin-bottom: 6px; }
 .field input, .field select {
@@ -643,7 +633,7 @@ footer button { color: #ffd33a; font-weight: 600; border-bottom: 1px dashed #ffd
   padding: 0; transition: border-color .25s, transform .2s, box-shadow .25s;
   display: flex; flex-direction: column;
 }
-.room-option:hover:not(.busy) { border-color: var(--sun); transform: translateY(-2px); box-shadow: 0 8px 20px rgba(249,194,29,.2); }
+.room-option:hover:not(.busy) { border-color: var(--sun); box-shadow: 0 8px 20px rgba(249,194,29,.2); }
 .room-option.selected { border-color: var(--sun); background: #fffceb; box-shadow: 0 8px 24px rgba(249,194,29,.35); }
 .room-option.selected::after {
   content: '✓'; position: absolute; top: 8px; right: 8px;
@@ -679,7 +669,7 @@ footer button { color: #ffd33a; font-weight: 600; border-bottom: 1px dashed #ffd
   padding: 10px 4px 8px; transition: border-color .25s, transform .2s, box-shadow .25s, background .25s;
   font-family: 'Unbounded', sans-serif;
 }
-.guest-option:hover { border-color: var(--sun); transform: translateY(-2px); box-shadow: 0 6px 16px rgba(249,194,29,.2); }
+.guest-option:hover { border-color: var(--sun); box-shadow: 0 6px 16px rgba(249,194,29,.2); }
 .guest-option.selected { border-color: var(--sun); background: #fffceb; box-shadow: 0 6px 18px rgba(249,194,29,.3); }
 .guest-option .g-num { font-size: 18px; font-weight: 800; color: var(--ink); display: block; line-height: 1; }
 .guest-option .g-label { font-size: 10px; font-weight: 600; color: var(--muted); font-family: 'Inter', sans-serif; margin-top: 3px; display: block; }
@@ -719,7 +709,7 @@ footer button { color: #ffd33a; font-weight: 600; border-bottom: 1px dashed #ffd
   background: var(--surface); color: var(--ink); font-size: 18px; font-weight: 700;
   transition: background .2s, border-color .2s, transform .2s;
 }
-.cal-nav:hover { background: var(--sun); border-color: var(--sun); color: #fff; transform: scale(1.08); }
+.cal-nav:hover { background: var(--sun); border-color: var(--sun); color: #fff; }
 .cal-week { display: grid; grid-template-columns: repeat(7, 1fr); margin-bottom: 6px; gap: 2px; }
 .cal-week span { text-align: center; font-size: 11px; font-weight: 800; color: var(--muted); text-transform: uppercase; padding: 6px 0; }
 .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 3px; }
@@ -730,7 +720,7 @@ footer button { color: #ffd33a; font-weight: 600; border-bottom: 1px dashed #ffd
   font-family: inherit;
 }
 .cal-day:hover:not(:disabled):not(.empty) {
-  background: var(--sun); color: #fff; transform: scale(1.12);
+  background: var(--sun); color: #fff;
 }
 .cal-day:disabled { color: #cfc0a3; cursor: default; }
 .cal-day.empty { background: transparent; cursor: default; }
@@ -759,6 +749,7 @@ footer button { color: #ffd33a; font-weight: 600; border-bottom: 1px dashed #ffd
 .admin-config { margin-top: 18px; padding: 16px; background: var(--bg); border-radius: 14px; border: 1.5px dashed var(--line); }
 .admin-config label { font-size: 12px; font-weight: 700; color: var(--muted); display: block; margin-bottom: 6px; }
 .admin-config input { width:100%; padding: 10px 12px; border: 1.5px solid var(--line); border-radius: 10px; font-size: 16px; background: var(--surface); margin-bottom: 10px; font-family: inherit; }
+.admin-sync { margin-top: 14px; padding: 14px; background: var(--surface); border: 1.5px dashed var(--line); border-radius: 12px; }
 
 .policy-modal .modal { max-width: 640px; }
 .policy-modal p { font-size: 14px; color: var(--muted); line-height: 1.6; }
@@ -1280,8 +1271,20 @@ h2.split-ready .wi { transform: translateY(125%); transition: transform .85s cub
         <input id="cfgChat" type="text" placeholder="Напр., 7114829971 (узнать у @userinfobot)" />
         <label>🔗 Ссылка на Telegram (для ручной отправки)</label>
         <input id="cfgTgUrl" type="text" placeholder="https://t.me/ckot_23" />
+        <label>📱 Номер WhatsApp (цифры, для кнопки WhatsApp)</label>
+        <input id="cfgWa" type="text" placeholder="79882443223" />
+        <label>📞 Основной телефон (для кнопок «Звонок»)</label>
+        <input id="cfgPhone" type="text" placeholder="+79181164554" />
         <button class="btn primary" type="button" id="adminSaveCfg" style="width:100%">Сохранить настройки</button>
         <p class="admin-note">💡 Если токен не указан — при отправке заявки откроется чат Telegram с готовым текстом. С токеном — заявка уйдёт автоматически вам в личку от бота.</p>
+        <div class="admin-sync">
+          <label>🌐 Синхронизация с сайтом (GitHub)</label>
+          <input id="cfgRepo" type="text" placeholder="ckot23/podsolnuh.io" />
+          <input id="cfgBranch" type="text" placeholder="main" />
+          <input id="cfgGitToken" type="password" autocomplete="off" placeholder="GitHub токен (права Contents: read & write)" />
+          <button class="btn green" type="button" id="adminSaveGlobal" style="width:100%">🔄 Применить для всего сайта</button>
+          <p class="admin-note">⚠️ С GitHub-токеном статусы и настройки сохраняются в data/site.json и применяются ко всему сайту — их увидят все посетители, а не только вы. Токен GitHub хранится только в вашем браузере. ⚠️ Токен бота при глобальной синхронизации попадает в данные страницы (без сервера иначе никак) — заводите отдельного бота только для уведомлений.</p>
+        </div>
       </div>
       <p class="form-status" id="adminNote" role="status" aria-live="polite"></p>
     </div>
@@ -1318,6 +1321,8 @@ h2.split-ready .wi { transform: translateY(125%); transition: transform .85s cub
   var CONFIG_KEY = 'podsolnuh_cfg_v1';
   var STATUS_KEY = 'podsolnuh_status_v1';
   var AUTH_KEY   = 'podsolnuh_auth_v1';
+  var SYNC_KEY   = 'podsolnuh_sync_v1';
+  var SHARED_CACHE_KEY = 'podsolnuh_shared_v1';
   var ADMIN_PASSWORD = 'sunflower'; // <<< поменяйте на свой пароль
 
   var DEFAULT_CFG = {
@@ -1327,6 +1332,14 @@ h2.split-ready .wi { transform: translateY(125%); transition: transform .85s cub
     waNumber: '79882443223',
     phonePrimary: '+79181164554',
   };
+
+  // общие данные сайта — видны всем посетителям
+  var SITE_DATA_PATH = 'data/site.json';
+  var SITE_DATA_URLS = [
+    'https://raw.githubusercontent.com/ckot23/podsolnuh.io/main/data/site.json',
+    SITE_DATA_PATH
+  ];
+  var DEFAULT_SYNC = { repo: 'ckot23/podsolnuh.io', branch: 'main', token: '' };
 
   var ROOMS = [
     { id: 'single-1', name: 'Одноместный номер', label: 'Одноместный номер · Цветочная 162', addr: 'Цветочная 162', price: 2000, guests: 'до 1 гостя',
@@ -1389,7 +1402,9 @@ h2.split-ready .wi { transform: translateY(125%); transition: transform .85s cub
 
   var cfg = loadCfg();
   var statuses = loadStatuses();
+  var sync = loadSync();
   var adminAuthed = !!localStorage.getItem(AUTH_KEY);
+  applySharedData(loadSharedCache(), false);
 
   var MONTHS = ['Январь','Февраль','Март','Апрель','Май','Июнь','Июль','Август','Сентябрь','Октябрь','Ноябрь','Декабрь'];
 
@@ -1408,6 +1423,142 @@ h2.split-ready .wi { transform: translateY(125%); transition: transform .85s cub
     } catch(e){ var m={}; ROOMS.forEach(function(r){ m[r.id]='free'; }); return m; }
   }
   function saveStatuses(){ localStorage.setItem(STATUS_KEY, JSON.stringify(statuses)); }
+
+  // ---------- синхронизация: изменения для ВСЕГО сайта ----------
+  function loadSync(){
+    try { return Object.assign({}, DEFAULT_SYNC, JSON.parse(localStorage.getItem(SYNC_KEY) || '{}')); }
+    catch(e){ return Object.assign({}, DEFAULT_SYNC); }
+  }
+  function saveSync(){ localStorage.setItem(SYNC_KEY, JSON.stringify(sync)); }
+  function loadSharedCache(){
+    try { return JSON.parse(localStorage.getItem(SHARED_CACHE_KEY) || 'null'); }
+    catch(e){ return null; }
+  }
+  function phoneHuman(p){
+    var d = String(p || '').replace(/\D/g, '');
+    if(d.length === 11 && (d[0] === '7' || d[0] === '8')){
+      return '8 ' + d.slice(1,4) + ' ' + d.slice(4,7) + '-' + d.slice(7,9) + '-' + d.slice(9,11);
+    }
+    return String(p || '');
+  }
+  // применяем настройки ко всем ссылкам сайта, а не только к панели
+  function applyCfgToDom(){
+    if(cfg.tgUrl){
+      document.querySelectorAll('a[href*="t.me/"]').forEach(function(a){ a.href = cfg.tgUrl; });
+    }
+    if(cfg.waNumber){
+      var wa = 'https://wa.me/' + String(cfg.waNumber).replace(/\D/g, '');
+      document.querySelectorAll('a[href*="wa.me/"]').forEach(function(a){ a.href = wa; });
+    }
+    if(cfg.phonePrimary){
+      var defDigits = DEFAULT_CFG.phonePrimary.replace(/\D/g, '');
+      document.querySelectorAll('a[href^="tel:"]').forEach(function(a){
+        var h = a.getAttribute('href') || '';
+        if(h.replace(/\D/g, '') === defDigits){ a.href = 'tel:' + cfg.phonePrimary; }
+      });
+    }
+  }
+  function applySharedData(data, rerender){
+    if(!data || typeof data !== 'object') return false;
+    var cfgChanged = false, stChanged = false;
+    if(data.cfg && typeof data.cfg === 'object'){
+      ['tgUrl','waNumber','phonePrimary','botToken','chatId'].forEach(function(k){
+        if(data.cfg[k] && data.cfg[k] !== cfg[k]){ cfg[k] = data.cfg[k]; cfgChanged = true; }
+      });
+      if(cfgChanged) saveCfg();
+    }
+    if(data.statuses && typeof data.statuses === 'object'){
+      ROOMS.forEach(function(r){
+        var v = data.statuses[r.id];
+        if((v === 'busy' || v === 'free') && statuses[r.id] !== v){ statuses[r.id] = v; stChanged = true; }
+      });
+      if(stChanged) saveStatuses();
+    }
+    if((cfgChanged || stChanged) && rerender){
+      applyCfgToDom();
+      renderRooms();
+    }
+    return cfgChanged || stChanged;
+  }
+  function buildSiteData(){
+    return {
+      version: 1,
+      updatedAt: new Date().toISOString(),
+      statuses: statuses,
+      cfg: {
+        tgUrl: cfg.tgUrl,
+        waNumber: cfg.waNumber,
+        phonePrimary: cfg.phonePrimary,
+        botToken: cfg.botToken,
+        chatId: cfg.chatId
+      }
+    };
+  }
+  function pushSiteData(){
+    if(!sync.token || !sync.repo || !sync.branch){
+      return Promise.reject(new Error('не настроена GitHub-синхронизация'));
+    }
+    var content = JSON.stringify(buildSiteData(), null, 2);
+    var b64 = btoa(unescape(encodeURIComponent(content)));
+    var headers = { 'Authorization': 'Bearer ' + sync.token, 'Accept': 'application/vnd.github+json' };
+    return fetch('https://api.github.com/repos/' + sync.repo + '/contents/' + SITE_DATA_PATH + '?ref=' + encodeURIComponent(sync.branch), { headers: headers })
+      .then(function(r){
+        if(r.status === 404) return null;
+        if(!r.ok) throw new Error('чтение файла: HTTP ' + r.status);
+        return r.json();
+      })
+      .then(function(cur){
+        var body = { message: 'Update data/site.json from admin panel', content: b64, branch: sync.branch };
+        if(cur && cur.sha) body.sha = cur.sha;
+        return fetch('https://api.github.com/repos/' + sync.repo + '/contents/' + SITE_DATA_PATH, {
+          method: 'PUT',
+          headers: { 'Authorization': 'Bearer ' + sync.token, 'Content-Type': 'application/json' },
+          body: JSON.stringify(body)
+        });
+      })
+      .then(function(r){
+        return r.json().then(function(j){
+          if(!r.ok) throw new Error((j && j.message) || ('запись файла: HTTP ' + r.status));
+          return j;
+        });
+      });
+  }
+  function fetchSiteData(){
+    var bust = '?t=' + Date.now();
+    var i = 0;
+    (function tryNext(){
+      if(i >= SITE_DATA_URLS.length) return;
+      var url = SITE_DATA_URLS[i++] + bust;
+      fetch(url, { cache: 'no-store' }).then(function(r){
+        if(!r.ok) throw new Error('HTTP ' + r.status);
+        return r.json();
+      }).then(function(d){
+        if(!d || typeof d !== 'object') throw new Error('bad json');
+        try { localStorage.setItem(SHARED_CACHE_KEY, JSON.stringify(d)); } catch(e){}
+        applySharedData(d, true);
+      }).catch(function(){ tryNext(); });
+    })();
+  }
+  function adminMsg(text, state, ms){
+    var note = document.getElementById('adminNote');
+    if(!note) return;
+    note.textContent = text;
+    if(state) note.setAttribute('data-state', state); else note.removeAttribute('data-state');
+    clearTimeout(adminMsg._t);
+    if(ms !== 0) adminMsg._t = setTimeout(function(){ note.textContent = ''; note.removeAttribute('data-state'); }, ms || 3000);
+  }
+  function maybePushGlobal(okMsg){
+    if(!sync.token){
+      adminMsg('💾 Сохранено в этом браузере. Чтобы увидели все посетители — заполните GitHub-синхронизацию ниже.', 'info', 6000);
+      return;
+    }
+    adminMsg('Синхронизируем с сайтом…', 'info', 0);
+    pushSiteData().then(function(){
+      adminMsg(okMsg || '✅ Применено для всего сайта!', 'ok');
+    }).catch(function(err){
+      adminMsg('⚠️ Локально сохранено, но не применено глобально: ' + err.message, 'error', 6000);
+    });
+  }
 
   function monthMatrix(y,m){
     var first = new Date(y,m,1);
@@ -1429,6 +1580,8 @@ h2.split-ready .wi { transform: translateY(125%); transition: transform .85s cub
 
   // ---------- год в подвале ----------
   document.getElementById('year').textContent = String(new Date().getFullYear());
+  applyCfgToDom();
+  fetchSiteData();
 
   // ---------- скролл: шапка, параллакс, прогресс ----------
   var header=document.getElementById('header');
@@ -1911,12 +2064,12 @@ h2.split-ready .wi { transform: translateY(125%); transition: transform .85s cub
         // fallback — открываем чат
         var msg = encodeURIComponent(buildText(data));
         window.open(cfg.tgUrl+'?text='+msg, '_blank','noopener');
-        setStatus('⚠️ Не удалось доставить автоматически — открыли чат Telegram. Или звоните: 8 918 116-45-54.','error');
+        setStatus('⚠️ Не удалось доставить автоматически — открыли чат Telegram. Или звоните: '+phoneHuman(cfg.phonePrimary)+'.','error');
       }).finally(function(){ btn.disabled=false; });
     } else {
       var msg = encodeURIComponent(buildText(data));
       window.open(cfg.tgUrl+'?text='+msg, '_blank','noopener');
-      setStatus('✅ Открыли Telegram с готовой заявкой — нажмите «отправить». Если не открылось — звоните: 8 918 116-45-54.','ok');
+      setStatus('✅ Открыли Telegram с готовой заявкой — нажмите «отправить». Если не открылось — звоните: '+phoneHuman(cfg.phonePrimary)+'.','ok');
       btn.disabled=false;
     }
   });
@@ -1931,6 +2084,11 @@ h2.split-ready .wi { transform: translateY(125%); transition: transform .85s cub
       document.getElementById('cfgToken').value = cfg.botToken||'';
       document.getElementById('cfgChat').value = cfg.chatId||'';
       document.getElementById('cfgTgUrl').value = cfg.tgUrl||'';
+      document.getElementById('cfgWa').value = cfg.waNumber||'';
+      document.getElementById('cfgPhone').value = cfg.phonePrimary||'';
+      document.getElementById('cfgRepo').value = sync.repo||'';
+      document.getElementById('cfgBranch').value = sync.branch||'';
+      document.getElementById('cfgGitToken').value = sync.token||'';
     } else {
       document.getElementById('adminLogin').hidden = false;
       document.getElementById('adminPanel').hidden = true;
@@ -1952,10 +2110,7 @@ h2.split-ready .wi { transform: translateY(125%); transition: transform .85s cub
       btn.addEventListener('click',function(){
         statuses[r.id] = busy?'free':'busy';
         saveStatuses(); renderRooms(); renderRoomPicker(); renderAdminRooms();
-        var note=document.getElementById('adminNote');
-        note.textContent='✅ Статус обновлён и сохранён.';
-        note.setAttribute('data-state','ok');
-        setTimeout(function(){ note.textContent=''; note.removeAttribute('data-state'); }, 2500);
+        maybePushGlobal('✅ Статус обновлён и применён для всего сайта!');
       });
       li.appendChild(btn);
       list.appendChild(li);
@@ -1974,15 +2129,35 @@ h2.split-ready .wi { transform: translateY(125%); transition: transform .85s cub
     }
   });
 
-  document.getElementById('adminSaveCfg').addEventListener('click',function(){
+  function readCfgForm(){
     cfg.botToken = document.getElementById('cfgToken').value.trim();
     cfg.chatId = document.getElementById('cfgChat').value.trim();
     cfg.tgUrl = document.getElementById('cfgTgUrl').value.trim() || DEFAULT_CFG.tgUrl;
-    saveCfg();
-    var note=document.getElementById('adminNote');
-    note.textContent='✅ Настройки сохранены в этом браузере.';
-    note.setAttribute('data-state','ok');
-    setTimeout(function(){ note.textContent=''; note.removeAttribute('data-state'); }, 2500);
+    cfg.waNumber = document.getElementById('cfgWa').value.trim() || DEFAULT_CFG.waNumber;
+    cfg.phonePrimary = document.getElementById('cfgPhone').value.trim() || DEFAULT_CFG.phonePrimary;
+    sync.repo = document.getElementById('cfgRepo').value.trim() || DEFAULT_SYNC.repo;
+    sync.branch = document.getElementById('cfgBranch').value.trim() || DEFAULT_SYNC.branch;
+    sync.token = document.getElementById('cfgGitToken').value.trim();
+    saveCfg(); saveSync();
+    applyCfgToDom(); renderRooms();
+  }
+  document.getElementById('adminSaveCfg').addEventListener('click',function(){
+    readCfgForm();
+    maybePushGlobal('✅ Настройки применены для всего сайта!');
+  });
+
+  document.getElementById('adminSaveGlobal').addEventListener('click',function(){
+    readCfgForm();
+    if(!sync.token){
+      adminMsg('⚠️ Укажите GitHub токен — без него изменения видны только в вашем браузере.', 'error', 5000);
+      return;
+    }
+    adminMsg('Синхронизируем с сайтом…', 'info', 0);
+    pushSiteData().then(function(){
+      adminMsg('✅ Применено для всего сайта! Посетители увидят изменения при обновлении страницы.', 'ok', 5000);
+    }).catch(function(err){
+      adminMsg('⚠️ Не удалось применить: ' + err.message, 'error', 6000);
+    });
   });
 
   // ---------- ДЕКОРАТИВНЫЕ ПАДАЮЩИЕ ЛЕПЕСТКИ ----------
