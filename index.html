@@ -756,17 +756,13 @@ footer button { color: #ffd33a; font-weight: 600; border-bottom: 1px dashed #ffd
 
 /* ---------- REVEAL + SCROLL ANIMATIONS ---------- */
 .reveal { opacity: 0; transform: translateY(48px) scale(.96); transition: opacity .9s cubic-bezier(.2,.8,.2,1), transform .9s cubic-bezier(.2,.8,.2,1); }
-.reveal.visible:not(:hover) { opacity: 1; transform: none; }
-.reveal.visible { opacity: 1; }
+.reveal.visible { opacity: 1; transform: none; }
 .reveal-left  { opacity: 0; transform: translateX(-56px) rotate(-1.5deg); transition: opacity .9s cubic-bezier(.2,.8,.2,1), transform .9s cubic-bezier(.2,.8,.2,1); }
-.reveal-left.visible:not(:hover)  { opacity: 1; transform: none; }
-.reveal-left.visible { opacity: 1; }
+.reveal-left.visible  { opacity: 1; transform: none; }
 .reveal-right { opacity: 0; transform: translateX(56px) rotate(1.5deg); transition: opacity .9s cubic-bezier(.2,.8,.2,1), transform .9s cubic-bezier(.2,.8,.2,1); }
-.reveal-right.visible:not(:hover) { opacity: 1; transform: none; }
-.reveal-right.visible { opacity: 1; }
+.reveal-right.visible { opacity: 1; transform: none; }
 .reveal-scale { opacity: 0; transform: scale(.72) rotate(-3deg); transition: opacity .7s cubic-bezier(.2,.8,.2,1), transform .7s cubic-bezier(.2,.9,.3,1.45); }
-.reveal-scale.visible:not(:hover) { opacity: 1; transform: none; }
-.reveal-scale.visible { opacity: 1; }
+.reveal-scale.visible { opacity: 1; transform: none; }
 .reveal-clip { clip-path: inset(0 0 100% 0); transition: clip-path 1.1s cubic-bezier(.2,.8,.2,1); }
 .reveal-clip.visible { clip-path: inset(0 0 0 0); }
 
@@ -2201,17 +2197,7 @@ h2.split-ready .wi { transform: translateY(125%); transition: transform .85s cub
     for(var k=0;k<(isSmall?3:6);k++) setTimeout(spawnFallingPetal, k*400);
   })();
 
-  // ---------- параллакс лепестков при движении мыши ----------
-  document.addEventListener('mousemove', function(e){
-    if(reduce || !window.matchMedia || !window.matchMedia('(hover: hover) and (pointer: fine)').matches) return;
-    var cx = (e.clientX / window.innerWidth - 0.5) * 2;
-    var cy = (e.clientY / window.innerHeight - 0.5) * 2;
-    var decos = document.querySelectorAll('.deco-layer .deco');
-    decos.forEach(function(d,i){
-      var k = (i%3+1)*8;
-      d.style.translate = (cx*k)+'px '+(cy*k)+'px';
-    });
-  }, {passive:true});
+  // курсор ничего не двигает: параллакс мыши убран
 
 })();
 </script>
