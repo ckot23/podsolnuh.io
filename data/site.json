@@ -1,14 +1,14 @@
 {
   "version": 1,
-  "updatedAt": "2026-09-24T23:03:52.460Z",
+  "updatedAt": "2026-09-24T23:05:03.812Z",
   "statuses": {
-    "single-1": "free",
+    "single-1": "busy",
     "studio-4": "busy",
-    "studio-comfort": "free",
-    "family-4": "free",
-    "apart-2": "free",
-    "double-2": "free",
-    "kitchen-3": "free"
+    "studio-comfort": "busy",
+    "family-4": "busy",
+    "apart-2": "busy",
+    "double-2": "busy",
+    "kitchen-3": "busy"
   },
   "cfg": {
     "tgUrl": "https://t.me/ckot_23",
