@@ -1,0 +1,20 @@
+{
+  "version": 1,
+  "updatedAt": "",
+  "statuses": {
+    "single-1": "free",
+    "studio-4": "free",
+    "studio-comfort": "free",
+    "family-4": "free",
+    "apart-2": "free",
+    "double-2": "free",
+    "kitchen-3": "free"
+  },
+  "cfg": {
+    "tgUrl": "https://t.me/ckot_23",
+    "waNumber": "79882443223",
+    "phonePrimary": "+79181164554",
+    "botToken": "",
+    "chatId": ""
+  }
+}

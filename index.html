@@ -2,7 +2,7 @@
 <html lang="ru">
 <head>
 <meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
 <title>Подсолнух — Гостиница в Краснодаре | Уютные номера посуточно</title>
 <meta name="description" content="Гостиница Подсолнух в Краснодаре — уютные номера от 2000 ₽/сутки. Своя кухня, парковка, видеонаблюдение. Бронирование онлайн, заявки приходят в Telegram. ☎ 8 918 116-45-54" />
 <meta name="theme-color" content="#fef6e4" />
@@ -44,7 +44,7 @@
 }
 
 *, *::before, *::after { box-sizing: border-box; }
-html { scroll-behavior: smooth; -webkit-text-size-adjust: 100%; }
+html { scroll-behavior: smooth; -webkit-text-size-adjust: 100%; scroll-padding-top: 88px; overflow-x: hidden; overflow-x: clip; }
 
 body {
   margin: 0;
@@ -52,6 +52,7 @@ body {
   font: 16px/1.6 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   background: var(--bg);
   overflow-x: hidden;
+  overflow-x: clip; /* телефон: страница ровно по ширине экрана, без горизонтального скролла */
 }
 
 /* ---------- ДЕКОРАТИВНЫЕ ПОДСОЛНУХИ ФОНА ---------- */
@@ -112,15 +113,15 @@ body {
 
 /* Плавающие лепестки, падающие сверху */
 .falling-petal {
-  position: fixed; top: -40px; z-index: 1; pointer-events: none;
+  position: absolute; top: -40px; z-index: 1; pointer-events: none;
   animation: fall linear infinite;
   opacity: .75;
 }
 
-img { display: block; max-width: 100%; }
+img { display: block; max-width: 100%; height: auto; }
 a { color: var(--terra-dark); text-decoration: none; }
 button { font: inherit; cursor: pointer; border: 0; background: none; }
-h1,h2,h3 { font-family: 'Unbounded', sans-serif; text-wrap: balance; line-height: 1.15; margin: 0 0 12px; letter-spacing: -0.5px; }
+h1,h2,h3 { font-family: 'Unbounded', sans-serif; text-wrap: balance; line-height: 1.15; margin: 0 0 12px; letter-spacing: -0.5px; max-width: 100%; overflow-wrap: break-word; }
 p { text-wrap: pretty; margin: 0 0 10px; }
 
 :focus-visible { outline: 3px solid var(--sun); outline-offset: 3px; border-radius: 6px; }
@@ -169,7 +170,7 @@ nav a {
   padding: 8px 14px; border-radius: 10px; transition: background .2s, color .2s, transform .2s;
   display: inline-block;
 }
-nav a:hover { color: var(--ink); background: var(--sun-soft); transform: translateY(-1px); }
+nav a:hover { color: var(--ink); background: var(--sun-soft); }
 
 /* на мобильных прячем телефон, TG и навигацию, оставляем только кнопку Забронировать */
 .header-book-btn { white-space: nowrap; }
@@ -189,13 +190,7 @@ nav a:hover { color: var(--ink); background: var(--sun-soft); transform: transla
   transition: transform .2s cubic-bezier(.2,.9,.3,1.3), box-shadow .2s, background .2s;
   position: relative; overflow: hidden;
 }
-.btn::after {
-  content: ''; position: absolute; inset: 0;
-  background: linear-gradient(120deg, transparent, rgba(255,255,255,.45), transparent);
-  transform: translateX(-100%); transition: transform .6s;
-}
-.btn:hover { transform: translateY(-3px); }
-.btn:hover::after { transform: translateX(100%); }
+/* без движения при наведении */
 .btn.primary {
   background: linear-gradient(135deg, #ffd33a, #f29f17);
   color: #3b2804; box-shadow: 0 10px 24px rgba(242, 159, 23, .35);
@@ -252,7 +247,7 @@ h1 {
   backdrop-filter: blur(6px);
   transition: transform .25s, box-shadow .25s, border-color .25s;
 }
-.hero-points li:hover { transform: translateX(6px); border-color: var(--sun); box-shadow: 0 6px 18px rgba(249, 194, 29, .2); }
+.hero-points li:hover { border-color: var(--sun); box-shadow: 0 6px 18px rgba(249, 194, 29, .2); }
 .hero-points .check {
   flex-shrink: 0; width: 24px; height: 24px; border-radius: 50%;
   background: linear-gradient(135deg, #6aa94a, #3e6b28);
@@ -272,7 +267,6 @@ h1 {
   width: 100%; aspect-ratio: 16/10; object-fit: cover;
   transition: transform .8s ease;
 }
-.hero-photo-wrap:hover .hero-photo { transform: scale(1.025); }
 .hero-photo-wrap::after {
   content: ''; position: absolute; inset: 0;
   background: linear-gradient(135deg, transparent 60%, rgba(249,194,29,.25));
@@ -317,7 +311,7 @@ h1 {
   background: radial-gradient(circle, var(--sun-soft), transparent 70%);
   opacity: .6;
 }
-.stat:hover { transform: translateY(-6px) rotate(-1deg); box-shadow: var(--shadow); }
+.stat:hover { box-shadow: var(--shadow); }
 .stat b { display: block; font-family: 'Unbounded'; font-size: 26px; color: var(--terra-dark); }
 .stat span { font-size: 12.5px; color: var(--muted); font-weight: 500; }
 
@@ -349,27 +343,63 @@ h2 { font-size: clamp(26px, 4vw, 38px); }
   opacity: 0; transition: opacity .35s;
   pointer-events: none;
 }
-.room:hover { transform: translateY(-4px); box-shadow: var(--shadow-lg); }
+.room:hover { box-shadow: var(--shadow-lg); }
 .room:hover::after { opacity: 1; }
 
 .room-photo { position: relative; overflow: hidden; }
-.room-photo img { width: 100%; height: 260px; object-fit: cover; transition: transform .8s ease; }
-.room:hover .room-photo img { transform: scale(1.04); }
+
+/* ---------- СЛАЙДЕР ФОТО НОМЕРА ---------- */
+.photo-slider { position: relative; background: var(--bg-2); }
+.slider-track {
+  display: flex; overflow-x: auto; overflow-y: hidden;
+  scroll-snap-type: x mandatory; overscroll-behavior-x: contain;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none; -ms-overflow-style: none;
+}
+.slider-track::-webkit-scrollbar { display: none; }
+.slide { flex: 0 0 100%; width: 100%; overflow: hidden; scroll-snap-align: start; scroll-snap-stop: always; }
+.slide img { width: 100%; height: 260px; object-fit: cover; transition: transform .8s ease; }
+.slider-nav {
+  position: absolute; top: 50%; transform: translateY(-50%);
+  width: 42px; height: 42px; border-radius: 50%;
+  background: rgba(255,255,255,.92); color: var(--ink);
+  font-size: 22px; line-height: 1; display: grid; place-items: center;
+  box-shadow: 0 4px 14px rgba(0,0,0,.2); z-index: 2;
+  transition: background .2s, transform .2s, opacity .2s;
+}
+.slider-nav:hover { background: #fff; }
+.slider-nav:disabled { opacity: 0; pointer-events: none; }
+.slider-prev { left: 10px; }
+.slider-next { right: 10px; }
+.slider-ind {
+  position: absolute; right: 12px; bottom: 14px; z-index: 2;
+  display: flex; align-items: center; gap: 8px;
+  background: rgba(42,34,21,.55); color: #fff;
+  padding: 5px 10px; border-radius: 999px; backdrop-filter: blur(4px);
+}
+.slider-dots { display: flex; gap: 4px; align-items: center; }
+.slider-dot { width: 12px; height: 12px; padding: 0; display: grid; place-items: center; }
+.slider-dot::after {
+  content: ''; width: 7px; height: 7px; border-radius: 50%;
+  background: rgba(255,255,255,.6); transition: background .2s, transform .2s;
+}
+.slider-dot.active::after { background: var(--sun); transform: scale(1.35); }
+.slider-count { font-size: 11.5px; font-weight: 700; color: #fff; letter-spacing: .02em; }
 
 .room-price {
-  position: absolute; bottom: 16px; left: 16px;
+  position: absolute; z-index: 3; bottom: 16px; left: 16px;
   background: rgba(42, 34, 21, .85); color: #fff; backdrop-filter: blur(6px);
   border-radius: 14px; padding: 10px 16px; font-weight: 800; font-size: 16px;
 }
 .room-price small { font-weight: 500; opacity: .85; font-size: 12px; }
 .room-addr {
-  position: absolute; top: 16px; left: 16px;
+  position: absolute; z-index: 3; top: 16px; left: 16px;
   background: rgba(255, 255, 255, .95); border-radius: 12px; padding: 6px 14px;
   font-size: 12.5px; font-weight: 700; color: var(--ink);
   backdrop-filter: blur(4px);
 }
 .status-chip {
-  position: absolute; top: 16px; right: 16px;
+  position: absolute; z-index: 3; top: 16px; right: 16px;
   border-radius: 999px; padding: 6px 14px; font-size: 12px; font-weight: 800;
   letter-spacing: .04em;
   backdrop-filter: blur(6px);
@@ -378,7 +408,7 @@ h2 { font-size: clamp(26px, 4vw, 38px); }
 .status-chip.free { background: rgba(78,125,58,.95); color: #fff; }
 .status-chip.busy { background: rgba(180,54,43,.95); color: #fff; }
 
-.room-busy .room-photo img { filter: grayscale(.75) brightness(.8); }
+.room-busy .slide img { filter: grayscale(.75) brightness(.8); }
 .room-busy .room-price { opacity: .6; }
 .room-busy::after { display: none; }
 
@@ -392,7 +422,7 @@ h2 { font-size: clamp(26px, 4vw, 38px); }
   border-radius: 999px; padding: 5px 14px; font-size: 12.5px; font-weight: 700;
   transition: transform .2s, background .2s;
 }
-.chips li:hover { transform: translateY(-2px) rotate(-2deg); background: #ffd33a; }
+.chips li:hover { background: #ffd33a; }
 .room-cta { margin-top: 6px; display: flex; gap: 10px; flex-wrap: wrap; }
 .room-cta .btn { flex: 1; min-width: 150px; }
 .rooms-note {
@@ -415,7 +445,7 @@ h2 { font-size: clamp(26px, 4vw, 38px); }
   background: radial-gradient(circle at 0% 0%, var(--sun-soft), transparent 50%);
   opacity: 0; transition: opacity .3s;
 }
-.benefit:hover { transform: translateY(-3px); box-shadow: var(--shadow); border-color: var(--sun); }
+.benefit:hover { box-shadow: var(--shadow); border-color: var(--sun); }
 .benefit:hover::before { opacity: 1; }
 .benefit-icon {
   width: 52px; height: 52px; border-radius: 16px; flex-shrink: 0;
@@ -425,7 +455,6 @@ h2 { font-size: clamp(26px, 4vw, 38px); }
   transition: transform .3s;
   position: relative; z-index: 1;
 }
-.benefit:hover .benefit-icon { transform: rotate(-8deg) scale(1.1); }
 .benefit > div { position: relative; z-index: 1; }
 .benefit h3 { font-size: 17px; margin: 2px 0 6px; }
 .benefit p { margin: 0; color: var(--muted); font-size: 14px; }
@@ -435,8 +464,7 @@ h2 { font-size: clamp(26px, 4vw, 38px); }
   display: grid; grid-template-columns: 1fr; position: relative;
   border: none; box-shadow: var(--shadow);
 }
-.benefit-wide img { width: 100%; height: 260px; object-fit: cover; transition: transform .7s; }
-.benefit-wide:hover img { transform: scale(1.025); }
+.benefit-wide .bw-img img { width: 100%; height: 260px; object-fit: cover; transition: transform .7s; }
 .bw-text { padding: 24px 28px 28px; background: var(--surface); }
 
 /* ---------- РЯДОМ ---------- */
@@ -451,8 +479,8 @@ h2 { font-size: clamp(26px, 4vw, 38px); }
   content: '🌻'; position: absolute; right: -20px; bottom: -30px; font-size: 80px;
   opacity: .06; transition: transform .4s, opacity .3s;
 }
-.near-card:hover { transform: translateY(-3px); box-shadow: var(--shadow); border-color: var(--leaf); }
-.near-card:hover::after { transform: translateY(-8px) rotate(15deg); opacity: .18; }
+.near-card:hover { box-shadow: var(--shadow); border-color: var(--leaf); }
+.near-card:hover::after { opacity: .18; }
 .near-icon {
   width: 46px; height: 46px; border-radius: 14px; flex-shrink: 0;
   background: linear-gradient(135deg, var(--leaf-soft), #c2dfa7); color: var(--leaf-deep);
@@ -473,7 +501,7 @@ h2 { font-size: clamp(26px, 4vw, 38px); }
   padding: 26px; position: relative; overflow: hidden;
   transition: transform .3s, box-shadow .3s;
 }
-.step:hover { transform: translateY(-4px); box-shadow: var(--shadow); }
+.step:hover { box-shadow: var(--shadow); }
 .step::before {
   counter-increment: step; content: counter(step, decimal-leading-zero);
   font-family: 'Unbounded';
@@ -521,7 +549,7 @@ h2 { font-size: clamp(26px, 4vw, 38px); }
   content: '🌻'; position: absolute; right: -10px; top: -10px; font-size: 70px;
   opacity: .08; transform: rotate(-20deg);
 }
-.addr-card:hover { transform: translateY(-4px); box-shadow: var(--shadow); }
+.addr-card:hover { box-shadow: var(--shadow); }
 .addr-card h3 { font-size: 17px; margin-bottom: 8px; display: flex; gap: 10px; align-items: center; }
 .addr-card p { margin: 0 0 12px; color: var(--muted); font-size: 14.5px; }
 .mess-row { display: flex; gap: 10px; flex-wrap: wrap; }
@@ -569,7 +597,7 @@ footer button { color: #ffd33a; font-weight: 600; border-bottom: 1px dashed #ffd
 @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 .modal-backdrop.open { display: flex; }
 .modal {
-  width: min(100%, 540px); max-height: 92vh; overflow: auto;
+  width: min(100%, 540px); max-height: 92vh; max-height: 92dvh; overflow: auto;
   background: var(--surface); border-radius: 26px; padding: 30px;
   box-shadow: var(--shadow-lg); position: relative;
   animation: popIn .35s cubic-bezier(.2,.9,.3,1.4);
@@ -583,12 +611,12 @@ footer button { color: #ffd33a; font-weight: 600; border-bottom: 1px dashed #ffd
   font-size: 22px; line-height: 1; color: var(--muted);
   transition: transform .2s, background .2s, color .2s;
 }
-.modal-close:hover { color: var(--ink); background: var(--sun-soft); transform: rotate(90deg); }
+.modal-close:hover { color: var(--ink); background: var(--sun-soft); }
 .field { margin-bottom: 16px; }
 .field label { display: block; font-size: 13px; font-weight: 700; color: var(--ink-soft); margin-bottom: 6px; }
 .field input, .field select {
   width: 100%; border: 2px solid var(--line); border-radius: 14px;
-  background: var(--bg); padding: 14px 16px; font-size: 15px; color: var(--ink);
+  background: var(--bg); padding: 14px 16px; font-size: 16px; color: var(--ink); /* 16px — без автозума на iOS */
   outline: none; font-family: inherit;
   transition: border-color .2s, box-shadow .2s, background .2s;
 }
@@ -605,7 +633,7 @@ footer button { color: #ffd33a; font-weight: 600; border-bottom: 1px dashed #ffd
   padding: 0; transition: border-color .25s, transform .2s, box-shadow .25s;
   display: flex; flex-direction: column;
 }
-.room-option:hover:not(.busy) { border-color: var(--sun); transform: translateY(-2px); box-shadow: 0 8px 20px rgba(249,194,29,.2); }
+.room-option:hover:not(.busy) { border-color: var(--sun); box-shadow: 0 8px 20px rgba(249,194,29,.2); }
 .room-option.selected { border-color: var(--sun); background: #fffceb; box-shadow: 0 8px 24px rgba(249,194,29,.35); }
 .room-option.selected::after {
   content: '✓'; position: absolute; top: 8px; right: 8px;
@@ -641,7 +669,7 @@ footer button { color: #ffd33a; font-weight: 600; border-bottom: 1px dashed #ffd
   padding: 10px 4px 8px; transition: border-color .25s, transform .2s, box-shadow .25s, background .25s;
   font-family: 'Unbounded', sans-serif;
 }
-.guest-option:hover { border-color: var(--sun); transform: translateY(-2px); box-shadow: 0 6px 16px rgba(249,194,29,.2); }
+.guest-option:hover { border-color: var(--sun); box-shadow: 0 6px 16px rgba(249,194,29,.2); }
 .guest-option.selected { border-color: var(--sun); background: #fffceb; box-shadow: 0 6px 18px rgba(249,194,29,.3); }
 .guest-option .g-num { font-size: 18px; font-weight: 800; color: var(--ink); display: block; line-height: 1; }
 .guest-option .g-label { font-size: 10px; font-weight: 600; color: var(--muted); font-family: 'Inter', sans-serif; margin-top: 3px; display: block; }
@@ -681,7 +709,7 @@ footer button { color: #ffd33a; font-weight: 600; border-bottom: 1px dashed #ffd
   background: var(--surface); color: var(--ink); font-size: 18px; font-weight: 700;
   transition: background .2s, border-color .2s, transform .2s;
 }
-.cal-nav:hover { background: var(--sun); border-color: var(--sun); color: #fff; transform: scale(1.08); }
+.cal-nav:hover { background: var(--sun); border-color: var(--sun); color: #fff; }
 .cal-week { display: grid; grid-template-columns: repeat(7, 1fr); margin-bottom: 6px; gap: 2px; }
 .cal-week span { text-align: center; font-size: 11px; font-weight: 800; color: var(--muted); text-transform: uppercase; padding: 6px 0; }
 .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 3px; }
@@ -692,7 +720,7 @@ footer button { color: #ffd33a; font-weight: 600; border-bottom: 1px dashed #ffd
   font-family: inherit;
 }
 .cal-day:hover:not(:disabled):not(.empty) {
-  background: var(--sun); color: #fff; transform: scale(1.12);
+  background: var(--sun); color: #fff;
 }
 .cal-day:disabled { color: #cfc0a3; cursor: default; }
 .cal-day.empty { background: transparent; cursor: default; }
@@ -720,20 +748,50 @@ footer button { color: #ffd33a; font-weight: 600; border-bottom: 1px dashed #ffd
 .admin-note { color: var(--muted); font-size: 13.5px; padding: 12px; background: var(--sun-soft); border-radius: 12px; margin-top: 10px; }
 .admin-config { margin-top: 18px; padding: 16px; background: var(--bg); border-radius: 14px; border: 1.5px dashed var(--line); }
 .admin-config label { font-size: 12px; font-weight: 700; color: var(--muted); display: block; margin-bottom: 6px; }
-.admin-config input { width:100%; padding: 10px 12px; border: 1.5px solid var(--line); border-radius: 10px; font-size: 13px; background: var(--surface); margin-bottom: 10px; font-family: inherit; }
+.admin-config input { width:100%; padding: 10px 12px; border: 1.5px solid var(--line); border-radius: 10px; font-size: 16px; background: var(--surface); margin-bottom: 10px; font-family: inherit; }
+.admin-sync { margin-top: 14px; padding: 14px; background: var(--surface); border: 1.5px dashed var(--line); border-radius: 12px; }
 
 .policy-modal .modal { max-width: 640px; }
 .policy-modal p { font-size: 14px; color: var(--muted); line-height: 1.6; }
 
 /* ---------- REVEAL + SCROLL ANIMATIONS ---------- */
-.reveal { opacity: 0; transform: translateY(40px); transition: opacity .8s cubic-bezier(.2,.8,.2,1), transform .8s cubic-bezier(.2,.8,.2,1); }
+.reveal { opacity: 0; transform: translateY(48px) scale(.96); transition: opacity .9s cubic-bezier(.2,.8,.2,1), transform .9s cubic-bezier(.2,.8,.2,1); }
 .reveal.visible { opacity: 1; transform: none; }
-.reveal-left  { opacity: 0; transform: translateX(-40px); transition: opacity .8s, transform .8s; }
+.reveal-left  { opacity: 0; transform: translateX(-56px) rotate(-1.5deg); transition: opacity .9s cubic-bezier(.2,.8,.2,1), transform .9s cubic-bezier(.2,.8,.2,1); }
 .reveal-left.visible  { opacity: 1; transform: none; }
-.reveal-right { opacity: 0; transform: translateX(40px); transition: opacity .8s, transform .8s; }
+.reveal-right { opacity: 0; transform: translateX(56px) rotate(1.5deg); transition: opacity .9s cubic-bezier(.2,.8,.2,1), transform .9s cubic-bezier(.2,.8,.2,1); }
 .reveal-right.visible { opacity: 1; transform: none; }
-.reveal-scale { opacity: 0; transform: scale(.85); transition: opacity .8s, transform .8s; }
-.reveal-scale.visible { opacity: 1; transform: scale(1); }
+.reveal-scale { opacity: 0; transform: scale(.72) rotate(-3deg); transition: opacity .7s cubic-bezier(.2,.8,.2,1), transform .7s cubic-bezier(.2,.9,.3,1.45); }
+.reveal-scale.visible { opacity: 1; transform: none; }
+.reveal-clip { clip-path: inset(0 0 100% 0); transition: clip-path 1.1s cubic-bezier(.2,.8,.2,1); }
+.reveal-clip.visible { clip-path: inset(0 0 0 0); }
+
+/* слова заголовков выезжают по одному */
+h2 .w { display: inline-block; overflow: hidden; vertical-align: bottom; padding-bottom: .14em; margin-bottom: -.14em; }
+h2 .wi { display: inline-block; }
+h2.split-ready .wi { transform: translateY(125%); transition: transform .85s cubic-bezier(.2,.8,.2,1); }
+.visible h2 .wi { transform: none; }
+
+/* ---------- ПОДСОЛНУХ-ПРОГРЕСС СКРОЛЛА ---------- */
+.scroll-sun {
+  position: fixed; right: 18px; bottom: 24px; z-index: 115;
+  width: 56px; height: 56px; padding: 0; border-radius: 50%;
+  background: none; cursor: pointer;
+  opacity: 0; pointer-events: none; transform: scale(.7);
+  transition: opacity .35s, transform .35s cubic-bezier(.2,.9,.3,1.4);
+}
+.scroll-sun.show { opacity: 1; pointer-events: auto; transform: scale(1); }
+.scroll-sun-flower {
+  position: absolute; left: 12%; top: 12%; width: 76%; height: 76%;
+  filter: drop-shadow(0 4px 10px rgba(232,163,0,.4));
+}
+.scroll-sun-ring { position: absolute; inset: 0; width: 100%; height: 100%; transform: rotate(-90deg); }
+.scroll-sun-ring .ring-bg { fill: rgba(255,255,255,.8); stroke: #f0e2bc; stroke-width: 4; }
+.scroll-sun-ring .ring-fg {
+  fill: none; stroke: var(--sun-deep); stroke-width: 4; stroke-linecap: round;
+  stroke-dasharray: 182.2; stroke-dashoffset: 182.2;
+}
+.scroll-sun:hover .scroll-sun-flower { filter: drop-shadow(0 6px 14px rgba(232,163,0,.6)); }
 .d1 { transition-delay: .1s }
 .d2 { transition-delay: .2s }
 .d3 { transition-delay: .3s }
@@ -753,16 +811,54 @@ footer button { color: #ffd33a; font-weight: 600; border-bottom: 1px dashed #ffd
   .hero { grid-template-columns: 1.05fr .95fr; gap: 60px; padding: 60px 0 70px; }
   .rooms { grid-template-columns: 1fr 1fr; }
   .benefit-wide { grid-template-columns: 1.1fr .9fr; }
-  .benefit-wide img { height: 100%; min-height: 280px; }
+  .benefit-wide .bw-img img { height: 100%; min-height: 280px; }
   .sticky-cta { display: none !important; }
   footer { padding-bottom: 48px; }
   .foot { grid-template-columns: 1.4fr 1fr 1.2fr; }
 }
 @media (max-width: 899px) {
   .sticky-cta { display: flex; }
+  .scroll-sun { right: 12px; bottom: calc(84px + env(safe-area-inset-bottom)); }
   .badge-price { left: 8px; }
   .badge-dist { right: 8px; }
   .big-sunflower { width: 90px; height: 90px; right: -15px; top: -15px; }
+}
+
+@media (max-width: 640px) {
+  .wrap { width: min(100% - 24px, var(--max)); }
+  section { padding: 16px 0 52px; }
+  .stats { gap: 10px; margin-bottom: 44px; }
+  .stat { padding: 16px 10px; }
+  .stat b { font-size: 21px; }
+  .stat span { font-size: 11.5px; }
+  .hero { padding: 28px 0 34px; gap: 28px; }
+  .lead { font-size: 16px; margin-bottom: 18px; }
+  .hero-points li { font-size: 14.5px; padding: 9px 12px; }
+  .slide img { height: 230px; }
+  .room-body { padding: 18px 18px 22px; }
+  .room-body h3 { font-size: 19px; }
+  .room-cta .btn { min-width: 0; flex-basis: 100%; }
+  .rooms-note { padding: 14px 16px; font-size: 14px; }
+  .modal-backdrop { padding: 12px; }
+  .modal { padding: 24px 18px 26px; border-radius: 20px; }
+  .modal h3 { font-size: 20px; padding-right: 44px; }
+  .field-row { grid-template-columns: 1fr; }
+  .map-frame { height: 300px; border-radius: 18px; }
+  .kicker { font-size: 11px; padding: 6px 12px; letter-spacing: .04em; }
+  .badge-float { padding: 10px 12px; font-size: 12.5px; border-radius: 12px; }
+  .badge-float .icon-sun { width: 28px; height: 28px; }
+  .slider-nav { width: 36px; height: 36px; font-size: 18px; }
+  .scroll-sun { width: 48px; height: 48px; }
+  .faq-item { padding: 2px 16px; }
+  .faq-item summary { font-size: 14.5px; }
+  .step { padding: 20px; }
+}
+@media (max-width: 380px) {
+  .logo-flower { width: 36px; height: 36px; }
+  .logo-text strong { font-size: 15px; }
+  .header-book-btn { padding: 0 12px; font-size: 13px; min-height: 40px; }
+  h1 { font-size: 26px; }
+  .slide img { height: 200px; }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -873,7 +969,7 @@ footer button { color: #ffd33a; font-weight: 600; border-bottom: 1px dashed #ffd
     </div>
 
     <div class="hero-visual reveal-right">
-      <div class="hero-photo-wrap">
+      <div class="hero-photo-wrap reveal-clip">
         <img class="hero-photo" src="img/hero.jpg" alt="Светлый уютный номер гостиницы Подсолнух с кухонной зоной" width="1456" height="816" fetchpriority="high" decoding="async" />
       </div>
       <div class="badge-float badge-price">
@@ -891,10 +987,10 @@ footer button { color: #ffd33a; font-weight: 600; border-bottom: 1px dashed #ffd
 
   <!-- ====== ЦИФРЫ ====== -->
   <ul class="stats" aria-label="Коротко о гостинице" style="list-style:none;padding:0">
-    <li class="stat reveal-scale"><b>от 2 000 ₽</b><span>сутки проживания</span></li>
-    <li class="stat reveal-scale d1"><b>до 4 гостей</b><span>в одном номере</span></li>
-    <li class="stat reveal-scale d2"><b>2 корпуса</b><span>Цветочная 162 / Железнодорожная 180</span></li>
-    <li class="stat reveal-scale d3"><b>24/7</b><span>онлайн-бронь в Telegram</span></li>
+    <li class="stat reveal-scale"><b>от <span class="stat-num" data-count="2000">2 000</span> ₽</b><span>сутки проживания</span></li>
+    <li class="stat reveal-scale d1"><b>до <span class="stat-num" data-count="4">4</span> гостей</b><span>в одном номере</span></li>
+    <li class="stat reveal-scale d2"><b><span class="stat-num" data-count="2">2</span> корпуса</b><span>Цветочная 162 / Железнодорожная 180</span></li>
+    <li class="stat reveal-scale d3"><b><span class="stat-num" data-count="24">24</span>/<span class="stat-num" data-count="7">7</span></b><span>онлайн-бронь в Telegram</span></li>
   </ul>
 
   <!-- ====== НОМЕРА ====== -->
@@ -935,7 +1031,7 @@ footer button { color: #ffd33a; font-weight: 600; border-bottom: 1px dashed #ffd
         <div><h3>Атмосфера тепла</h3><p>Мы вложили душу в каждый номер: светлые тона, живые цветы, мягкое бельё и внимание к мелочам.</p></div>
       </div>
       <div class="benefit benefit-wide reveal">
-        <img src="img/yard-parking.jpg" alt="Тихий двор гостиницы Подсолнух с парковкой и зелёными насаждениями" width="1456" height="816" loading="lazy" decoding="async" />
+        <div class="bw-img reveal-clip"><img src="img/yard-parking.jpg" alt="Тихий двор гостиницы Подсолнух с парковкой и зелёными насаждениями" width="1456" height="816" loading="lazy" decoding="async" /></div>
         <div class="bw-text">
           <h3>Тихий двор, спокойно за машину</h3>
           <p>Цветущие клумбы с подсолнухами, закрытая территория, видеонаблюдение. Вы отдыхаете — автомобиль под присмотром.</p>
@@ -1058,6 +1154,32 @@ footer button { color: #ffd33a; font-weight: 600; border-bottom: 1px dashed #ffd
   </div>
 </footer>
 
+<!-- Подсолнух-прогресс прокрутки -->
+<button class="scroll-sun" id="scrollSun" type="button" aria-label="Наверх">
+  <svg class="scroll-sun-flower" viewBox="0 0 64 64" aria-hidden="true">
+    <g fill="#f9c21d">
+      <ellipse cx="32" cy="12.5" rx="6.5" ry="11.5"/>
+      <ellipse cx="32" cy="12.5" rx="6.5" ry="11.5" transform="rotate(45 32 32)"/>
+      <ellipse cx="32" cy="12.5" rx="6.5" ry="11.5" transform="rotate(90 32 32)"/>
+      <ellipse cx="32" cy="12.5" rx="6.5" ry="11.5" transform="rotate(135 32 32)"/>
+      <ellipse cx="32" cy="12.5" rx="6.5" ry="11.5" transform="rotate(180 32 32)"/>
+      <ellipse cx="32" cy="12.5" rx="6.5" ry="11.5" transform="rotate(225 32 32)"/>
+      <ellipse cx="32" cy="12.5" rx="6.5" ry="11.5" transform="rotate(270 32 32)"/>
+      <ellipse cx="32" cy="12.5" rx="6.5" ry="11.5" transform="rotate(315 32 32)"/>
+    </g>
+    <circle cx="32" cy="32" r="12" fill="#6b4423"/>
+    <circle cx="32" cy="32" r="8" fill="#7a4f1f"/>
+    <circle cx="29" cy="29" r="1.6" fill="#5a3a17"/>
+    <circle cx="35" cy="31" r="1.4" fill="#5a3a17"/>
+    <circle cx="31" cy="35" r="1.5" fill="#5a3a17"/>
+    <circle cx="35" cy="35" r="1.2" fill="#5a3a17"/>
+  </svg>
+  <svg class="scroll-sun-ring" viewBox="0 0 64 64" aria-hidden="true">
+    <circle class="ring-bg" cx="32" cy="32" r="29"/>
+    <circle class="ring-fg" cx="32" cy="32" r="29"/>
+  </svg>
+</button>
+
 <!-- Липкая панель для мобильных -->
 <div class="sticky-cta">
   <a class="btn ghost" href="tel:+79181164554">Звонок</a>
@@ -1145,8 +1267,20 @@ footer button { color: #ffd33a; font-weight: 600; border-bottom: 1px dashed #ffd
         <input id="cfgChat" type="text" placeholder="Напр., 7114829971 (узнать у @userinfobot)" />
         <label>🔗 Ссылка на Telegram (для ручной отправки)</label>
         <input id="cfgTgUrl" type="text" placeholder="https://t.me/ckot_23" />
+        <label>📱 Номер WhatsApp (цифры, для кнопки WhatsApp)</label>
+        <input id="cfgWa" type="text" placeholder="79882443223" />
+        <label>📞 Основной телефон (для кнопок «Звонок»)</label>
+        <input id="cfgPhone" type="text" placeholder="+79181164554" />
         <button class="btn primary" type="button" id="adminSaveCfg" style="width:100%">Сохранить настройки</button>
         <p class="admin-note">💡 Если токен не указан — при отправке заявки откроется чат Telegram с готовым текстом. С токеном — заявка уйдёт автоматически вам в личку от бота.</p>
+        <div class="admin-sync">
+          <label>🌐 Синхронизация с сайтом (GitHub)</label>
+          <input id="cfgRepo" type="text" placeholder="ckot23/podsolnuh.io" />
+          <input id="cfgBranch" type="text" placeholder="main" />
+          <input id="cfgGitToken" type="password" autocomplete="off" placeholder="GitHub токен (права Contents: read & write)" />
+          <button class="btn green" type="button" id="adminSaveGlobal" style="width:100%">🔄 Применить для всего сайта</button>
+          <p class="admin-note">⚠️ С GitHub-токеном статусы и настройки сохраняются в data/site.json и применяются ко всему сайту — их увидят все посетители, а не только вы. Токен GitHub хранится только в вашем браузере. ⚠️ Токен бота при глобальной синхронизации попадает в данные страницы (без сервера иначе никак) — заводите отдельного бота только для уведомлений.</p>
+        </div>
       </div>
       <p class="form-status" id="adminNote" role="status" aria-live="polite"></p>
     </div>
@@ -1183,6 +1317,8 @@ footer button { color: #ffd33a; font-weight: 600; border-bottom: 1px dashed #ffd
   var CONFIG_KEY = 'podsolnuh_cfg_v1';
   var STATUS_KEY = 'podsolnuh_status_v1';
   var AUTH_KEY   = 'podsolnuh_auth_v1';
+  var SYNC_KEY   = 'podsolnuh_sync_v1';
+  var SHARED_CACHE_KEY = 'podsolnuh_shared_v1';
   var ADMIN_PASSWORD = 'sunflower'; // <<< поменяйте на свой пароль
 
   var DEFAULT_CFG = {
@@ -1193,16 +1329,78 @@ footer button { color: #ffd33a; font-weight: 600; border-bottom: 1px dashed #ffd
     phonePrimary: '+79181164554',
   };
 
+  // общие данные сайта — видны всем посетителям
+  var SITE_DATA_PATH = 'data/site.json';
+  var SITE_DATA_URLS = [
+    'https://raw.githubusercontent.com/ckot23/podsolnuh.io/main/data/site.json',
+    SITE_DATA_PATH
+  ];
+  var DEFAULT_SYNC = { repo: 'ckot23/podsolnuh.io', branch: 'main', token: '' };
+
   var ROOMS = [
-    { id: 'studio-4',        name: 'Студия с кухней',           label: 'Студия с кухней · Цветочная 162',           addr: 'Цветочная 162', price: 2500, guests: 'до 4 гостей', img: 'img/room-studio-4.jpg',        desc: 'Двуспальная кровать, диван и кресло-кровать. Кухонная зона, душ и туалет.', chips: ['Кухня','Холодильник','Посуда','Душ/туалет'] },
-    { id: 'studio-comfort',  name: 'Студия комфорт',            label: 'Студия комфорт · Цветочная 162',            addr: 'Цветочная 162', price: 3000, guests: 'до 4 гостей', img: 'img/room-studio-comfort.jpg',  desc: 'Просторная студия: двуспальная кровать, диван, кресло-кровать. Полноценная кухня.', chips: ['Кухня','Холодильник','Посуда','Душ/туалет'] },
-    { id: 'apart-2',         name: 'Апартаменты',               label: 'Апартаменты · Железнодорожная 180',         addr: 'Железнодорожная 180', price: 2000, guests: 'до 2 гостей', img: 'img/room-apart-2.jpg',       desc: 'Уютный номер для двоих с кухонной зоной. Двуспальная кровать, душ и туалет.', chips: ['Кухня','Холодильник','Посуда','Душ/туалет'] },
-    { id: 'kitchen-3',       name: 'Номер с собственной кухней',label: 'Номер с кухней · Железнодорожная 180',      addr: 'Железнодорожная 180', price: 2500, guests: 'до 3 гостей', img: 'img/room-kitchen-3.jpg',    desc: 'Двуспальная и односпальная кровати, своя кухня с техникой и посудой.', chips: ['Кухня','Холодильник','Посуда','Душ/туалет'] }
+    { id: 'single-1', name: 'Одноместный номер', label: 'Одноместный номер · Цветочная 162', addr: 'Цветочная 162', price: 2000, guests: 'до 1 гостя',
+      desc: 'Уютный номер для одного: односпальная кровать, рабочий стол, кухонная зона, душ и туалет.',
+      chips: ['Кухня','Холодильник','Посуда','Душ/туалет'],
+      photos: [
+        { src: 'img/room-single-1.jpg',   alt: 'Одноместный номер: кровать и рабочий стол у окна' },
+        { src: 'img/room-single-1-2.jpg', alt: 'Кухонная зона с холодильником и столом' },
+        { src: 'img/room-single-1-3.jpg', alt: 'Душ и туалет в одноместном номере' }
+      ] },
+    { id: 'studio-4', name: 'Студия с кухней', label: 'Студия с кухней · Цветочная 162', addr: 'Цветочная 162', price: 2500, guests: 'до 4 гостей',
+      desc: 'Двуспальная кровать, диван и кресло-кровать. Кухонная зона, душ и туалет.',
+      chips: ['Кухня','Холодильник','Посуда','Душ/туалет'],
+      photos: [
+        { src: 'img/room-studio-4.jpg',   alt: 'Студия с кухней: кровать, диваны и обеденная зона' },
+        { src: 'img/room-studio-4-2.jpg', alt: 'Кухня студии: плита, посуда, обеденный стол' },
+        { src: 'img/room-studio-4-3.jpg', alt: 'Ванная комната студии с кухней' }
+      ] },
+    { id: 'studio-comfort', name: 'Студия комфорт', label: 'Студия комфорт · Цветочная 162', addr: 'Цветочная 162', price: 3000, guests: 'до 4 гостей',
+      desc: 'Просторная студия: двуспальная кровать, диван, кресло-кровать. Полноценная кухня.',
+      chips: ['Кухня','Холодильник','Посуда','Душ/туалет'],
+      photos: [
+        { src: 'img/room-studio-comfort.jpg',   alt: 'Студия комфорт: двуспальная и односпальная кровати, кухня' },
+        { src: 'img/room-studio-comfort-3.jpg', alt: 'Кухня студии комфорт с техникой и посудой' },
+        { src: 'img/room-studio-comfort-2.jpg', alt: 'Ванная комната студии комфорт' }
+      ] },
+    { id: 'family-4', name: 'Семейный номер', label: 'Семейный номер · Цветочная 162', addr: 'Цветочная 162', price: 3500, guests: 'до 4 гостей',
+      desc: 'Просторный номер для семьи: двуспальная и односпальная кровати, диван, своя кухня, душ и туалет.',
+      chips: ['Кухня','Холодильник','Посуда','Душ/туалет'],
+      photos: [
+        { src: 'img/room-family-4.jpg',   alt: 'Семейный номер: двуспальная и односпальная кровати, диван' },
+        { src: 'img/room-family-4-2.jpg', alt: 'Кухня и обеденная зона семейного номера' },
+        { src: 'img/room-family-4-3.jpg', alt: 'Ванная комната семейного номера' }
+      ] },
+    { id: 'apart-2', name: 'Апартаменты', label: 'Апартаменты · Железнодорожная 180', addr: 'Железнодорожная 180', price: 2000, guests: 'до 2 гостей',
+      desc: 'Уютный номер для двоих с кухонной зоной. Двуспальная кровать, душ и туалет.',
+      chips: ['Кухня','Холодильник','Посуда','Душ/туалет'],
+      photos: [
+        { src: 'img/room-apart-2.jpg',   alt: 'Апартаменты: кровать, диван и кухонная зона' },
+        { src: 'img/room-apart-2-3.jpg', alt: 'Уголок для отдыха: диван, столик, вечерний вид из окна' },
+        { src: 'img/room-apart-2-2.jpg', alt: 'Душ и туалет в апартаментах' }
+      ] },
+    { id: 'double-2', name: 'Двухместный номер', label: 'Двухместный номер · Железнодорожная 180', addr: 'Железнодорожная 180', price: 2300, guests: 'до 2 гостей',
+      desc: 'Светлый номер для двоих: двуспальная кровать, кресло у окна, кухонная зона, душ и туалет.',
+      chips: ['Кухня','Холодильник','Посуда','Душ/туалет'],
+      photos: [
+        { src: 'img/room-double-2.jpg',   alt: 'Двухместный номер: двуспальная кровать с зелёным пледом' },
+        { src: 'img/room-double-2-2.jpg', alt: 'Кресло и столик у окна в двухместном номере' },
+        { src: 'img/room-double-2-3.jpg', alt: 'Душ и туалет в двухместном номере' }
+      ] },
+    { id: 'kitchen-3', name: 'Номер с собственной кухней', label: 'Номер с кухней · Железнодорожная 180', addr: 'Железнодорожная 180', price: 2500, guests: 'до 3 гостей',
+      desc: 'Двуспальная и односпальная кровати, своя кухня с техникой и посудой.',
+      chips: ['Кухня','Холодильник','Посуда','Душ/туалет'],
+      photos: [
+        { src: 'img/room-kitchen-3.jpg',   alt: 'Номер с кухней: кровать, холодильник и кухонный уголок' },
+        { src: 'img/room-kitchen-3-3.jpg', alt: 'Входная зона: шкаф, вешалка и зеркало' },
+        { src: 'img/room-kitchen-3-2.jpg', alt: 'Душ и туалет в номере с кухней' }
+      ] }
   ];
 
   var cfg = loadCfg();
   var statuses = loadStatuses();
+  var sync = loadSync();
   var adminAuthed = !!localStorage.getItem(AUTH_KEY);
+  applySharedData(loadSharedCache(), false);
 
   var MONTHS = ['Январь','Февраль','Март','Апрель','Май','Июнь','Июль','Август','Сентябрь','Октябрь','Ноябрь','Декабрь'];
 
@@ -1221,6 +1419,142 @@ footer button { color: #ffd33a; font-weight: 600; border-bottom: 1px dashed #ffd
     } catch(e){ var m={}; ROOMS.forEach(function(r){ m[r.id]='free'; }); return m; }
   }
   function saveStatuses(){ localStorage.setItem(STATUS_KEY, JSON.stringify(statuses)); }
+
+  // ---------- синхронизация: изменения для ВСЕГО сайта ----------
+  function loadSync(){
+    try { return Object.assign({}, DEFAULT_SYNC, JSON.parse(localStorage.getItem(SYNC_KEY) || '{}')); }
+    catch(e){ return Object.assign({}, DEFAULT_SYNC); }
+  }
+  function saveSync(){ localStorage.setItem(SYNC_KEY, JSON.stringify(sync)); }
+  function loadSharedCache(){
+    try { return JSON.parse(localStorage.getItem(SHARED_CACHE_KEY) || 'null'); }
+    catch(e){ return null; }
+  }
+  function phoneHuman(p){
+    var d = String(p || '').replace(/\D/g, '');
+    if(d.length === 11 && (d[0] === '7' || d[0] === '8')){
+      return '8 ' + d.slice(1,4) + ' ' + d.slice(4,7) + '-' + d.slice(7,9) + '-' + d.slice(9,11);
+    }
+    return String(p || '');
+  }
+  // применяем настройки ко всем ссылкам сайта, а не только к панели
+  function applyCfgToDom(){
+    if(cfg.tgUrl){
+      document.querySelectorAll('a[href*="t.me/"]').forEach(function(a){ a.href = cfg.tgUrl; });
+    }
+    if(cfg.waNumber){
+      var wa = 'https://wa.me/' + String(cfg.waNumber).replace(/\D/g, '');
+      document.querySelectorAll('a[href*="wa.me/"]').forEach(function(a){ a.href = wa; });
+    }
+    if(cfg.phonePrimary){
+      var defDigits = DEFAULT_CFG.phonePrimary.replace(/\D/g, '');
+      document.querySelectorAll('a[href^="tel:"]').forEach(function(a){
+        var h = a.getAttribute('href') || '';
+        if(h.replace(/\D/g, '') === defDigits){ a.href = 'tel:' + cfg.phonePrimary; }
+      });
+    }
+  }
+  function applySharedData(data, rerender){
+    if(!data || typeof data !== 'object') return false;
+    var cfgChanged = false, stChanged = false;
+    if(data.cfg && typeof data.cfg === 'object'){
+      ['tgUrl','waNumber','phonePrimary','botToken','chatId'].forEach(function(k){
+        if(data.cfg[k] && data.cfg[k] !== cfg[k]){ cfg[k] = data.cfg[k]; cfgChanged = true; }
+      });
+      if(cfgChanged) saveCfg();
+    }
+    if(data.statuses && typeof data.statuses === 'object'){
+      ROOMS.forEach(function(r){
+        var v = data.statuses[r.id];
+        if((v === 'busy' || v === 'free') && statuses[r.id] !== v){ statuses[r.id] = v; stChanged = true; }
+      });
+      if(stChanged) saveStatuses();
+    }
+    if((cfgChanged || stChanged) && rerender){
+      applyCfgToDom();
+      renderRooms();
+    }
+    return cfgChanged || stChanged;
+  }
+  function buildSiteData(){
+    return {
+      version: 1,
+      updatedAt: new Date().toISOString(),
+      statuses: statuses,
+      cfg: {
+        tgUrl: cfg.tgUrl,
+        waNumber: cfg.waNumber,
+        phonePrimary: cfg.phonePrimary,
+        botToken: cfg.botToken,
+        chatId: cfg.chatId
+      }
+    };
+  }
+  function pushSiteData(){
+    if(!sync.token || !sync.repo || !sync.branch){
+      return Promise.reject(new Error('не настроена GitHub-синхронизация'));
+    }
+    var content = JSON.stringify(buildSiteData(), null, 2);
+    var b64 = btoa(unescape(encodeURIComponent(content)));
+    var headers = { 'Authorization': 'Bearer ' + sync.token, 'Accept': 'application/vnd.github+json' };
+    return fetch('https://api.github.com/repos/' + sync.repo + '/contents/' + SITE_DATA_PATH + '?ref=' + encodeURIComponent(sync.branch), { headers: headers })
+      .then(function(r){
+        if(r.status === 404) return null;
+        if(!r.ok) throw new Error('чтение файла: HTTP ' + r.status);
+        return r.json();
+      })
+      .then(function(cur){
+        var body = { message: 'Update data/site.json from admin panel', content: b64, branch: sync.branch };
+        if(cur && cur.sha) body.sha = cur.sha;
+        return fetch('https://api.github.com/repos/' + sync.repo + '/contents/' + SITE_DATA_PATH, {
+          method: 'PUT',
+          headers: { 'Authorization': 'Bearer ' + sync.token, 'Content-Type': 'application/json' },
+          body: JSON.stringify(body)
+        });
+      })
+      .then(function(r){
+        return r.json().then(function(j){
+          if(!r.ok) throw new Error((j && j.message) || ('запись файла: HTTP ' + r.status));
+          return j;
+        });
+      });
+  }
+  function fetchSiteData(){
+    var bust = '?t=' + Date.now();
+    var i = 0;
+    (function tryNext(){
+      if(i >= SITE_DATA_URLS.length) return;
+      var url = SITE_DATA_URLS[i++] + bust;
+      fetch(url, { cache: 'no-store' }).then(function(r){
+        if(!r.ok) throw new Error('HTTP ' + r.status);
+        return r.json();
+      }).then(function(d){
+        if(!d || typeof d !== 'object') throw new Error('bad json');
+        try { localStorage.setItem(SHARED_CACHE_KEY, JSON.stringify(d)); } catch(e){}
+        applySharedData(d, true);
+      }).catch(function(){ tryNext(); });
+    })();
+  }
+  function adminMsg(text, state, ms){
+    var note = document.getElementById('adminNote');
+    if(!note) return;
+    note.textContent = text;
+    if(state) note.setAttribute('data-state', state); else note.removeAttribute('data-state');
+    clearTimeout(adminMsg._t);
+    if(ms !== 0) adminMsg._t = setTimeout(function(){ note.textContent = ''; note.removeAttribute('data-state'); }, ms || 3000);
+  }
+  function maybePushGlobal(okMsg){
+    if(!sync.token){
+      adminMsg('💾 Сохранено в этом браузере. Чтобы увидели все посетители — заполните GitHub-синхронизацию ниже.', 'info', 6000);
+      return;
+    }
+    adminMsg('Синхронизируем с сайтом…', 'info', 0);
+    pushSiteData().then(function(){
+      adminMsg(okMsg || '✅ Применено для всего сайта!', 'ok');
+    }).catch(function(err){
+      adminMsg('⚠️ Локально сохранено, но не применено глобально: ' + err.message, 'error', 6000);
+    });
+  }
 
   function monthMatrix(y,m){
     var first = new Date(y,m,1);
@@ -1242,14 +1576,64 @@ footer button { color: #ffd33a; font-weight: 600; border-bottom: 1px dashed #ffd
 
   // ---------- год в подвале ----------
   document.getElementById('year').textContent = String(new Date().getFullYear());
+  applyCfgToDom();
+  fetchSiteData();
 
-  // ---------- тень шапки ----------
+  // ---------- скролл: шапка, параллакс, прогресс ----------
   var header=document.getElementById('header');
-  function onScroll(){ header.classList.toggle('scrolled', window.scrollY>8); }
-  window.addEventListener('scroll', onScroll, {passive:true}); onScroll();
+  var scrollSun=document.getElementById('scrollSun');
+  var scrollSunFlower=scrollSun ? scrollSun.querySelector('.scroll-sun-flower') : null;
+  var scrollRing=scrollSun ? scrollSun.querySelector('.ring-fg') : null;
+  var heroWrap=document.querySelector('.hero-photo-wrap');
+  var badgePrice=document.querySelector('.badge-price');
+  var badgeDist=document.querySelector('.badge-dist');
+  var bigFlower=document.querySelector('.big-sunflower');
+  var heroVisual=document.querySelector('.hero-visual');
+  var scrollRaf=0;
+
+  function updateScroll(){
+    var y = window.scrollY || 0;
+    header.classList.toggle('scrolled', y > 8);
+
+    // прогресс страницы — подсолнух крутится, дуга заполняется
+    if(scrollSun){
+      scrollSun.classList.toggle('show', y > 380);
+      var max = (document.documentElement.scrollHeight - window.innerHeight) || 1;
+      var pr = Math.min(1, Math.max(0, y / max));
+      if(scrollSunFlower) scrollSunFlower.style.rotate = (pr * 540).toFixed(1) + 'deg';
+      if(scrollRing) scrollRing.style.strokeDashoffset = (182.2 * (1 - pr)).toFixed(1);
+    }
+
+    if(reduce) return;
+
+    // большой подсолнух в hero докручивается вместе со скроллом
+    if(bigFlower) bigFlower.style.rotate = (y * 0.12).toFixed(2) + 'deg';
+
+    // параллакс hero: фото и бейджи движутся с разной скоростью
+    if(heroVisual){
+      var r = heroVisual.getBoundingClientRect();
+      if(r.bottom > -140 && r.top < window.innerHeight + 140){
+        var mid = r.top + r.height / 2 - window.innerHeight / 2;
+        if(heroWrap) heroWrap.style.translate = '0 ' + (mid * -0.07).toFixed(1) + 'px';
+        if(badgePrice) badgePrice.style.translate = '0 ' + (mid * 0.05).toFixed(1) + 'px';
+        if(badgeDist) badgeDist.style.translate = '0 ' + (mid * -0.06).toFixed(1) + 'px';
+      }
+    }
+  }
+  function onScroll(){
+    if(scrollRaf) return;
+    scrollRaf = requestAnimationFrame(function(){ scrollRaf = 0; updateScroll(); });
+  }
+  window.addEventListener('scroll', onScroll, {passive:true});
+  window.addEventListener('resize', onScroll, {passive:true});
+  updateScroll();
+
+  if(scrollSun) scrollSun.addEventListener('click', function(){
+    window.scrollTo({ top: 0, behavior: reduce ? 'auto' : 'smooth' });
+  });
 
   // ---------- reveal на скролле ----------
-  var revealEls = document.querySelectorAll('.reveal, .reveal-left, .reveal-right, .reveal-scale');
+  var revealEls = document.querySelectorAll('.reveal, .reveal-left, .reveal-right, .reveal-scale, .reveal-clip');
   var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   if (reduce || typeof IntersectionObserver==='undefined') {
     revealEls.forEach(function(el){ el.classList.add('visible'); });
@@ -1258,6 +1642,142 @@ footer button { color: #ffd33a; font-weight: 600; border-bottom: 1px dashed #ffd
       entries.forEach(function(e){ if(e.isIntersecting){ e.target.classList.add('visible'); io.unobserve(e.target); } });
     },{threshold:0.1, rootMargin:'0px 0px -50px 0px'});
     revealEls.forEach(function(el){ io.observe(el); });
+  }
+
+  // ---------- слова заголовков выезжают по одному ----------
+  function splitWords(el){
+    if(el.dataset.split) return;
+    el.dataset.split = '1';
+    var wi = 0;
+    var frag = document.createDocumentFragment();
+    Array.prototype.slice.call(el.childNodes).forEach(function(node){
+      if(node.nodeType === 3){
+        node.textContent.split(/( +)/).forEach(function(part){
+          if(!part) return;
+          if(/^ +$/.test(part)){ frag.appendChild(document.createTextNode(' ')); return; }
+          var wrap = document.createElement('span'); wrap.className = 'w';
+          var inner = document.createElement('span'); inner.className = 'wi';
+          inner.textContent = part;
+          inner.style.transitionDelay = (wi * 55) + 'ms';
+          wi++;
+          wrap.appendChild(inner);
+          frag.appendChild(wrap);
+        });
+      } else {
+        frag.appendChild(node);
+      }
+    });
+    el.innerHTML = '';
+    el.classList.add('split-ready');
+    el.appendChild(frag);
+  }
+  if(!reduce){
+    document.querySelectorAll('h2').forEach(function(h){ splitWords(h); });
+  }
+
+  // ---------- цифры о гостинице набегают при появлении ----------
+  function countUp(el){
+    var to = parseInt(el.getAttribute('data-count'), 10) || 0;
+    var dur = 1200, t0 = 0;
+    el.textContent = '0';
+    requestAnimationFrame(function step(ts){
+      if(!t0) t0 = ts;
+      var p = Math.min(1, (ts - t0) / dur);
+      var e = 1 - Math.pow(1 - p, 3);
+      el.textContent = Math.round(to * e).toLocaleString('ru-RU');
+      if(p < 1) requestAnimationFrame(step);
+      else el.textContent = to.toLocaleString('ru-RU');
+    });
+  }
+  if(!reduce && typeof IntersectionObserver !== 'undefined'){
+    var nio = new IntersectionObserver(function(entries){
+      entries.forEach(function(en){
+        if(!en.isIntersecting) return;
+        en.target.querySelectorAll('.stat-num').forEach(function(el){ countUp(el); });
+        nio.unobserve(en.target);
+      });
+    }, {threshold: 0.4});
+    document.querySelectorAll('.stat').forEach(function(st){ nio.observe(st); });
+  }
+
+  // ---------- слайдер фотографий номера ----------
+  function buildSlider(room){
+    var photos = room.photos || [];
+    if(!photos.length) return '';
+    var many = photos.length > 1;
+    var slides = photos.map(function(p){
+      return '<div class="slide"><img src="'+p.src+'" alt="'+p.alt+'" width="1456" height="816" loading="lazy" decoding="async" /></div>';
+    }).join('');
+    var html = '<div class="photo-slider" data-slider>' +
+      '<div class="slider-track" tabindex="0" role="group" aria-label="Фотографии: '+room.name+'">'+slides+'</div>';
+    if(many){
+      var dots = photos.map(function(_, i){
+        return '<button type="button" class="slider-dot'+(i===0?' active':'')+'" data-idx="'+i+'" aria-label="Фото '+(i+1)+' из '+photos.length+'"></button>';
+      }).join('');
+      html += '<button type="button" class="slider-nav slider-prev" aria-label="Предыдущее фото">‹</button>' +
+        '<button type="button" class="slider-nav slider-next" aria-label="Следующее фото">›</button>' +
+        '<div class="slider-ind"><span class="slider-dots">'+dots+'</span><span class="slider-count">1/'+photos.length+'</span></div>';
+    }
+    return html + '</div>';
+  }
+
+  function initSliders(root){
+    (root || document).querySelectorAll('[data-slider]').forEach(function(sl){
+      if(sl.dataset.sliderReady) return;
+      sl.dataset.sliderReady = '1';
+      var track = sl.querySelector('.slider-track');
+      var total = track ? track.children.length : 0;
+      if(!total) return;
+      // дозагружаем фото, когда карточка появилась в зоне видимости — свайп без подтормаживаний
+      if(typeof IntersectionObserver !== 'undefined'){
+        var pio = new IntersectionObserver(function(entries){
+          entries.forEach(function(en){
+            if(!en.isIntersecting) return;
+            track.querySelectorAll('img').forEach(function(im){ im.loading = 'eager'; });
+            pio.disconnect();
+          });
+        }, {rootMargin: '200px 0px'});
+        pio.observe(sl);
+      }
+      if(total < 2) return;
+      var dots = sl.querySelectorAll('.slider-dot');
+      var count = sl.querySelector('.slider-count');
+      var prev = sl.querySelector('.slider-prev');
+      var next = sl.querySelector('.slider-next');
+      var cur = 0, rafId = 0;
+      function idx(){
+        return Math.max(0, Math.min(total-1, Math.round(track.scrollLeft / Math.max(1, track.clientWidth))));
+      }
+      function sync(i){
+        dots.forEach(function(d, di){ d.classList.toggle('active', di === i); });
+        if(count) count.textContent = (i+1)+'/'+total;
+        if(prev) prev.disabled = (i === 0);
+        if(next) next.disabled = (i === total-1);
+      }
+      function paint(i){ if(i !== cur){ cur = i; sync(i); } }
+      function goTo(i){
+        i = Math.max(0, Math.min(total-1, i));
+        cur = i; sync(i);
+        track.scrollTo({ left: i * track.clientWidth, behavior: reduce ? 'auto' : 'smooth' });
+      }
+      track.addEventListener('scroll', function(){
+        if(rafId) return;
+        rafId = requestAnimationFrame(function(){ rafId = 0; paint(idx()); });
+      }, {passive: true});
+      track.addEventListener('keydown', function(e){
+        if(e.key === 'ArrowLeft'){ e.preventDefault(); goTo(idx()-1); }
+        if(e.key === 'ArrowRight'){ e.preventDefault(); goTo(idx()+1); }
+      });
+      if(prev) prev.addEventListener('click', function(){ goTo(idx()-1); });
+      if(next) next.addEventListener('click', function(){ goTo(idx()+1); });
+      dots.forEach(function(d){
+        d.addEventListener('click', function(){ goTo(parseInt(d.dataset.idx, 10) || 0); });
+      });
+      window.addEventListener('resize', function(){
+        track.scrollLeft = cur * track.clientWidth;
+      }, {passive: true});
+      if(prev) prev.disabled = true;
+    });
   }
 
   // ---------- рендер карточек номеров ----------
@@ -1271,7 +1791,7 @@ footer button { color: #ffd33a; font-weight: 600; border-bottom: 1px dashed #ffd
       art.dataset.room = r.id;
       art.innerHTML =
         '<div class="room-photo">' +
-          '<img src="'+r.img+'" alt="'+r.name+' в гостинице Подсолнух" width="1456" height="816" loading="lazy" decoding="async" />' +
+          buildSlider(r) +
           '<span class="room-addr">'+r.addr+'</span>' +
           '<span class="status-chip '+(busy?'busy':'free')+'">'+(busy?'🚫 Занят':'🌻 Свободен')+'</span>' +
           '<span class="room-price">от '+r.price.toLocaleString('ru-RU')+' ₽ <small>/ сутки</small></span>' +
@@ -1288,6 +1808,7 @@ footer button { color: #ffd33a; font-weight: 600; border-bottom: 1px dashed #ffd
         '</div>';
       list.appendChild(art);
     });
+    initSliders(list);
     if (io) list.querySelectorAll('.reveal').forEach(function(el){ io.observe(el); });
     renderRoomPicker();
   }
@@ -1338,7 +1859,7 @@ footer button { color: #ffd33a; font-weight: 600; border-bottom: 1px dashed #ffd
       btn.dataset.room = r.id;
       if(busy) btn.disabled = true;
       btn.innerHTML =
-        '<img class="opt-photo" src="'+r.img+'" alt="'+r.name+'" loading="lazy" />' +
+        '<img class="opt-photo" src="'+r.photos[0].src+'" alt="'+r.name+'" loading="lazy" />' +
         '<div class="opt-body">' +
           '<span class="opt-name">'+r.name+'</span>' +
           '<div class="opt-price">'+r.price.toLocaleString('ru-RU')+' ₽ <small>/ сутки</small></div>' +
@@ -1539,12 +2060,12 @@ footer button { color: #ffd33a; font-weight: 600; border-bottom: 1px dashed #ffd
         // fallback — открываем чат
         var msg = encodeURIComponent(buildText(data));
         window.open(cfg.tgUrl+'?text='+msg, '_blank','noopener');
-        setStatus('⚠️ Не удалось доставить автоматически — открыли чат Telegram. Или звоните: 8 918 116-45-54.','error');
+        setStatus('⚠️ Не удалось доставить автоматически — открыли чат Telegram. Или звоните: '+phoneHuman(cfg.phonePrimary)+'.','error');
       }).finally(function(){ btn.disabled=false; });
     } else {
       var msg = encodeURIComponent(buildText(data));
       window.open(cfg.tgUrl+'?text='+msg, '_blank','noopener');
-      setStatus('✅ Открыли Telegram с готовой заявкой — нажмите «отправить». Если не открылось — звоните: 8 918 116-45-54.','ok');
+      setStatus('✅ Открыли Telegram с готовой заявкой — нажмите «отправить». Если не открылось — звоните: '+phoneHuman(cfg.phonePrimary)+'.','ok');
       btn.disabled=false;
     }
   });
@@ -1559,6 +2080,11 @@ footer button { color: #ffd33a; font-weight: 600; border-bottom: 1px dashed #ffd
       document.getElementById('cfgToken').value = cfg.botToken||'';
       document.getElementById('cfgChat').value = cfg.chatId||'';
       document.getElementById('cfgTgUrl').value = cfg.tgUrl||'';
+      document.getElementById('cfgWa').value = cfg.waNumber||'';
+      document.getElementById('cfgPhone').value = cfg.phonePrimary||'';
+      document.getElementById('cfgRepo').value = sync.repo||'';
+      document.getElementById('cfgBranch').value = sync.branch||'';
+      document.getElementById('cfgGitToken').value = sync.token||'';
     } else {
       document.getElementById('adminLogin').hidden = false;
       document.getElementById('adminPanel').hidden = true;
@@ -1580,10 +2106,7 @@ footer button { color: #ffd33a; font-weight: 600; border-bottom: 1px dashed #ffd
       btn.addEventListener('click',function(){
         statuses[r.id] = busy?'free':'busy';
         saveStatuses(); renderRooms(); renderRoomPicker(); renderAdminRooms();
-        var note=document.getElementById('adminNote');
-        note.textContent='✅ Статус обновлён и сохранён.';
-        note.setAttribute('data-state','ok');
-        setTimeout(function(){ note.textContent=''; note.removeAttribute('data-state'); }, 2500);
+        maybePushGlobal('✅ Статус обновлён и применён для всего сайта!');
       });
       li.appendChild(btn);
       list.appendChild(li);
@@ -1602,23 +2125,44 @@ footer button { color: #ffd33a; font-weight: 600; border-bottom: 1px dashed #ffd
     }
   });
 
-  document.getElementById('adminSaveCfg').addEventListener('click',function(){
+  function readCfgForm(){
     cfg.botToken = document.getElementById('cfgToken').value.trim();
     cfg.chatId = document.getElementById('cfgChat').value.trim();
     cfg.tgUrl = document.getElementById('cfgTgUrl').value.trim() || DEFAULT_CFG.tgUrl;
-    saveCfg();
-    var note=document.getElementById('adminNote');
-    note.textContent='✅ Настройки сохранены в этом браузере.';
-    note.setAttribute('data-state','ok');
-    setTimeout(function(){ note.textContent=''; note.removeAttribute('data-state'); }, 2500);
+    cfg.waNumber = document.getElementById('cfgWa').value.trim() || DEFAULT_CFG.waNumber;
+    cfg.phonePrimary = document.getElementById('cfgPhone').value.trim() || DEFAULT_CFG.phonePrimary;
+    sync.repo = document.getElementById('cfgRepo').value.trim() || DEFAULT_SYNC.repo;
+    sync.branch = document.getElementById('cfgBranch').value.trim() || DEFAULT_SYNC.branch;
+    sync.token = document.getElementById('cfgGitToken').value.trim();
+    saveCfg(); saveSync();
+    applyCfgToDom(); renderRooms();
+  }
+  document.getElementById('adminSaveCfg').addEventListener('click',function(){
+    readCfgForm();
+    maybePushGlobal('✅ Настройки применены для всего сайта!');
+  });
+
+  document.getElementById('adminSaveGlobal').addEventListener('click',function(){
+    readCfgForm();
+    if(!sync.token){
+      adminMsg('⚠️ Укажите GitHub токен — без него изменения видны только в вашем браузере.', 'error', 5000);
+      return;
+    }
+    adminMsg('Синхронизируем с сайтом…', 'info', 0);
+    pushSiteData().then(function(){
+      adminMsg('✅ Применено для всего сайта! Посетители увидят изменения при обновлении страницы.', 'ok', 5000);
+    }).catch(function(err){
+      adminMsg('⚠️ Не удалось применить: ' + err.message, 'error', 6000);
+    });
   });
 
   // ---------- ДЕКОРАТИВНЫЕ ПАДАЮЩИЕ ЛЕПЕСТКИ ----------
   (function petals(){
     if(reduce) return;
     var layer = document.getElementById('decoLayer');
+    var isSmall = window.innerWidth < 700;
     // статические элементы
-    for(var i=0;i<10;i++){
+    for(var i=0;i<(isSmall?5:10);i++){
       var d = document.createElement('div');
       var isLeaf = Math.random()>0.6;
       d.className = 'deco '+(isLeaf?'leaf':'petal');
@@ -1638,7 +2182,7 @@ footer button { color: #ffd33a; font-weight: 600; border-bottom: 1px dashed #ffd
       var size = 14+Math.random()*14;
       p.style.width = size+'px';
       p.style.height = (size*0.65)+'px';
-      p.style.left = (Math.random()*100)+'vw';
+      p.style.left = (Math.random()*100)+'%';
       p.style.background = 'radial-gradient(ellipse at 30% 40%, #ffe082, #f7a93c 70%)';
       p.style.borderRadius = '60% 40% 60% 40% / 70% 60% 40% 30%';
       p.style.filter='drop-shadow(0 2px 6px rgba(200,120,20,.2))';
@@ -1646,24 +2190,14 @@ footer button { color: #ffd33a; font-weight: 600; border-bottom: 1px dashed #ffd
       var dur = 8+Math.random()*10;
       p.style.animationDuration = dur+'s';
       p.style.animationDelay = (-Math.random()*dur)+'s';
-      document.body.appendChild(p);
+      layer.appendChild(p);
       setTimeout(function(){ p.remove(); }, dur*1000+100);
     }
-    setInterval(spawnFallingPetal, 2200);
-    for(var k=0;k<6;k++) setTimeout(spawnFallingPetal, k*400);
+    setInterval(spawnFallingPetal, isSmall?3600:2200);
+    for(var k=0;k<(isSmall?3:6);k++) setTimeout(spawnFallingPetal, k*400);
   })();
 
-  // ---------- параллакс лепестков при движении мыши ----------
-  document.addEventListener('mousemove', function(e){
-    if(reduce) return;
-    var cx = (e.clientX / window.innerWidth - 0.5) * 2;
-    var cy = (e.clientY / window.innerHeight - 0.5) * 2;
-    var decos = document.querySelectorAll('.deco-layer .deco');
-    decos.forEach(function(d,i){
-      var k = (i%3+1)*8;
-      d.style.translate = (cx*k)+'px '+(cy*k)+'px';
-    });
-  }, {passive:true});
+  // курсор ничего не двигает: параллакс мыши убран
 
 })();
 </script>
