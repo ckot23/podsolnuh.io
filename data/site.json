@@ -1,10 +1,10 @@
 {
   "version": 1,
-  "updatedAt": "2026-09-24T22:33:01.640Z",
+  "updatedAt": "2026-09-24T22:34:08.286Z",
   "statuses": {
-    "single-1": "busy",
-    "studio-4": "busy",
-    "studio-comfort": "busy",
+    "single-1": "free",
+    "studio-4": "free",
+    "studio-comfort": "free",
     "family-4": "free",
     "apart-2": "free",
     "double-2": "free",
