@@ -1,13 +1,13 @@
 {
   "version": 1,
-  "updatedAt": "2026-09-28T21:01:23.405Z",
+  "updatedAt": "2026-09-28T21:02:25.632Z",
   "statuses": {
     "single-1": "free",
-    "studio-4": "busy",
-    "studio-comfort": "busy",
-    "family-4": "busy",
-    "apart-2": "busy",
-    "double-2": "busy",
+    "studio-4": "free",
+    "studio-comfort": "free",
+    "family-4": "free",
+    "apart-2": "free",
+    "double-2": "free",
     "kitchen-3": "free"
   },
   "cfg": {
