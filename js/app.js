@@ -424,6 +424,8 @@ import { ROOMS } from './rooms.js';
   // ---------- рендер карточек номеров ----------
   function renderRooms(){
     var list = document.getElementById('roomsList');
+    // Каталог показывается только на отдельной странице rooms.html.
+    if(!list) return;
     list.innerHTML = '';
     ROOMS.forEach(function(r, i){
       var busy = statuses[r.id]==='busy';
@@ -433,24 +435,25 @@ import { ROOMS } from './rooms.js';
       art.innerHTML =
         '<div class="room-photo">' +
           buildSlider(r) +
-          '<span class="room-addr">'+r.addr+'</span>' +
-          '<span class="status-chip '+(busy?'busy':'free')+'">'+(busy?'🚫 Занят':'🌻 Свободен')+'</span>' +
+          '<span class="status-chip '+(busy?'busy':'free')+'">'+(busy?'🚫 Занят':'Свободен')+'</span>' +
           '<span class="room-price">от '+r.price.toLocaleString('ru-RU')+' ₽ <small>/ сутки</small></span>' +
         '</div>' +
         '<div class="room-body">' +
           '<h3>'+r.name+'</h3>' +
-          '<span class="room-guests"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>'+r.guests+'</span>' +
-          '<p class="room-desc">'+r.desc+'</p>' +
-          '<ul class="chips">'+r.chips.map(function(c){return '<li>'+c+'</li>';}).join('')+'</ul>' +
+          '<p class="room-desc">Актуальную стоимость и наличие уточняйте по телефону.</p>' +
           '<div class="room-cta">' +
             '<button class="btn primary" type="button" data-book="'+r.id+'" '+(busy?'disabled':'')+'>'+(busy?'Сейчас занят':'Забронировать')+'</button>' +
-            '<a class="btn ghost" href="tel:'+cfg.phonePrimary+'">Уточнить цену</a>' +
+            '<a class="btn ghost" href="tel:'+cfg.phonePrimary+'">Позвонить</a>' +
           '</div>' +
         '</div>';
       list.appendChild(art);
     });
     initSliders(list);
-    if (io) list.querySelectorAll('.reveal').forEach(function(el){ io.observe(el); });
+    if (io) {
+      list.querySelectorAll('.reveal').forEach(function(el){ io.observe(el); });
+    } else {
+      list.querySelectorAll('.reveal').forEach(function(el){ el.classList.add('visible'); });
+    }
     renderRoomPicker();
   }
 
@@ -500,11 +503,11 @@ import { ROOMS } from './rooms.js';
       btn.dataset.room = r.id;
       if(busy) btn.disabled = true;
       btn.innerHTML =
-        pictureMarkup({src:r.photos[0].src, alt:r.name}, 'opt-photo', 'lazy') +
+        pictureMarkup({src:r.photos[0].src, alt:r.photos[0].alt}, 'opt-photo', 'lazy') +
         '<div class="opt-body">' +
           '<span class="opt-name">'+r.name+'</span>' +
-          '<div class="opt-price">'+r.price.toLocaleString('ru-RU')+' ₽ <small>/ сутки</small></div>' +
-          '<div class="opt-guests">'+r.guests+' · '+r.addr+'</div>' +
+          '<div class="opt-price">от '+r.price.toLocaleString('ru-RU')+' ₽ <small>/ сутки</small></div>' +
+          '<div class="opt-note">Уточняйте по телефону</div>' +
         '</div>' +
         (busy?'<span class="opt-busy-badge">Занят</span>':'');
       btn.addEventListener('click', function(){
@@ -631,13 +634,6 @@ import { ROOMS } from './rooms.js';
   }
 
   // ---------- форма брони ----------
-  function buildText(d){
-    var lines=['🌻 Новая заявка — Гостиница Подсолнух','','Имя: '+d.name,'Телефон: '+d.phone];
-    if(d.dates) lines.push('Даты: '+d.dates);
-    lines.push('Гостей: '+d.guests);
-    if(d.roomLabel) lines.push('Номер: '+d.roomLabel);
-    return lines.join('\n');
-  }
   function setStatus(text,state){
     var el=document.getElementById('formStatus');
     el.textContent=text||''; el.setAttribute('data-state', state||'');
@@ -650,7 +646,7 @@ import { ROOMS } from './rooms.js';
     var roomName = ROOMS.find(function(r){return r.id===data.room;});
     var payload = {
       name: data.name, phone: data.phone, dates: data.dates, guests: data.guests, roomId: data.room,
-      roomLabel: roomName? roomName.label : (data.room||'не выбран')
+      roomLabel: roomName? roomName.name : (data.room||'не выбран')
     };
     var lines=[
       '🌻 <b>Новая заявка — Подсолнух</b>',
@@ -667,11 +663,15 @@ import { ROOMS } from './rooms.js';
     body.set('chat_id', cfg.chatId);
     body.set('text', text);
     body.set('parse_mode','HTML');
-    return fetch(url, { method:'POST', body: body, signal: AbortSignal.timeout(10000) }).then(function(r){ return r.json(); });
+    var options = { method:'POST', body:body };
+    if(typeof AbortSignal !== 'undefined' && typeof AbortSignal.timeout === 'function'){
+      options.signal = AbortSignal.timeout(10000);
+    }
+    return fetch(url, options).then(function(r){ return r.json(); });
   }
 
   var form = document.getElementById('bookForm');
-  form.addEventListener('submit', function(e){
+  if(form) form.addEventListener('submit', function(e){
     e.preventDefault();
     showErr('errName',false); showErr('errPhone',false);
     var name = document.getElementById('fName').value.trim();
@@ -680,7 +680,7 @@ import { ROOMS } from './rooms.js';
     var guests = document.getElementById('fGuests').value;
     var room = document.getElementById('fRoom').value;
     var roomObj = ROOMS.find(function(r){return r.id===room;});
-    var roomLabel = roomObj ? roomObj.label : '';
+    var roomLabel = roomObj ? roomObj.name : '';
     var honeypot = document.getElementById('website').value.trim();
     if(honeypot) return;
 
@@ -697,34 +697,25 @@ import { ROOMS } from './rooms.js';
 
     var data={name:name, phone:phone, dates:dates, guests:guests, room:room, roomLabel:roomLabel};
     var btn=document.getElementById('submitBtn');
-    btn.disabled=true;
-    setStatus('Отправляем в Telegram…','info');
-
-    // Если настроен бот — шлём через API, иначе открываем t.me с готовым текстом
-    if(cfg.botToken && cfg.chatId){
-      sendViaBotApi(data).then(function(res){
-        if(res && res.ok){
-          form.reset();
-          selStart=null; selEnd=null; renderCalendar();
-          selectedGuests='2'; renderGuestsPicker();
-          var ff=ROOMS.find(function(x){return statuses[x.id]!=='busy';});
-          selectedRoom=ff?ff.id:''; renderRoomPicker();
-          setStatus('✅ Заявка отправлена! Сообщение уже доставлено в Telegram. Перезвоним в ближайшее время.','ok');
-        } else {
-          throw new Error((res&&res.description)||'api');
-        }
-      }).catch(function(err){
-        // fallback — открываем чат
-        var msg = encodeURIComponent(buildText(data));
-        window.open(cfg.tgUrl+'?text='+msg, '_blank','noopener');
-        setStatus('⚠️ Не удалось доставить автоматически — открыли чат Telegram. Или звоните: '+phoneHuman(cfg.phonePrimary)+'.','error');
-      }).finally(function(){ btn.disabled=false; });
-    } else {
-      var msg = encodeURIComponent(buildText(data));
-      window.open(cfg.tgUrl+'?text='+msg, '_blank','noopener');
-      setStatus('✅ Открыли Telegram с готовой заявкой — нажмите «отправить». Если не открылось — звоните: '+phoneHuman(cfg.phonePrimary)+'.','ok');
-      btn.disabled=false;
+    if(!cfg.botToken || !cfg.chatId){
+      setStatus('Онлайн-отправка временно недоступна. Позвоните: '+phoneHuman(cfg.phonePrimary)+'.','error');
+      return;
     }
+
+    btn.disabled=true;
+    setStatus('Отправляем заявку…','info');
+    sendViaBotApi(data).then(function(res){
+      if(!res || !res.ok) throw new Error((res&&res.description)||'Не удалось отправить заявку');
+      form.reset();
+      selStart=null; selEnd=null; renderCalendar();
+      selectedGuests='2'; renderGuestsPicker();
+      var ff=ROOMS.find(function(x){return statuses[x.id]!=='busy';});
+      selectedRoom=ff?ff.id:''; renderRoomPicker();
+      setStatus('✅ Заявка отправлена! Мы скоро свяжемся с вами.','ok');
+    }).catch(function(err){
+      console.error('Не удалось отправить заявку через Telegram-бота:', err);
+      setStatus('Не удалось отправить заявку. Попробуйте ещё раз или позвоните: '+phoneHuman(cfg.phonePrimary)+'.','error');
+    }).finally(function(){ btn.disabled=false; });
   });
 
   // ---------- АДМИНКА ----------
@@ -755,7 +746,7 @@ import { ROOMS } from './rooms.js';
       var busy = statuses[r.id]==='busy';
       var li=document.createElement('li'); li.className='admin-room';
       li.innerHTML =
-        '<span class="admin-name">'+r.label+'</span>' +
+        '<span class="admin-name">'+r.name+'</span>' +
         '<b class="admin-chip '+(busy?'busy':'free')+'">'+(busy?'Занят':'Свободен')+'</b>';
       var btn=document.createElement('button');
       btn.type='button'; btn.className='btn ghost admin-toggle';
