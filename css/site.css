@@ -1,16 +1,16 @@
 /* =========================================================================
    ПОДСОЛНУХ — сайт гостиницы
-   Тёплая солнечная палитра: кремовый, ярко-жёлтый, терракота, глубокая зелень.
+   Тёплая шоколадная палитра: какао, ярко-жёлтый, терракота, глубокая зелень.
    ========================================================================= */
 
 :root {
-  --bg: #fff9ec;
-  --bg-2: #fef3d5;
+  --bg: #ad805c;
+  --bg-2: #916743;
   --surface: #ffffff;
   --ink: #2a2215;
   --ink-soft: #4a3f2e;
-  --muted: #7c705c;
-  --line: #ecdfc2;
+  --muted: #2a2215;
+  --line: #c39770;
   --sun: #f9c21d;          /* яркий подсолнух */
   --sun-deep: #e8a300;
   --sun-soft: #fde9a8;
@@ -122,7 +122,7 @@ p { text-wrap: pretty; margin: 0 0 10px; }
 /* ---------- ШАПКА ---------- */
 header {
   position: sticky; top: 0; z-index: 100;
-  background: rgba(255, 249, 236, 0.78);
+  background: rgba(173, 128, 92, 0.95);
   backdrop-filter: blur(14px) saturate(1.2);
   -webkit-backdrop-filter: blur(14px) saturate(1.2);
   border-bottom: 1px solid transparent;
@@ -211,7 +211,7 @@ nav a:hover { color: var(--ink); background: var(--sun-soft); }
 
 h1 {
   font-size: clamp(32px, 5.8vw, 58px);
-  background: linear-gradient(120deg, #2a2215 30%, #b46a1c 60%, #e8a300 80%, #2a2215 100%);
+  background: linear-gradient(120deg, #21170f 22%, #21170f 38%, #fff0bd 68%, #fff9e6 82%, #21170f 100%);
   background-size: 200% 100%;
   -webkit-background-clip: text; background-clip: text; color: transparent;
   animation: shine 6s ease-in-out infinite;
@@ -275,9 +275,9 @@ h1 {
 
 /* большой подсолнух в углу hero */
 .big-sunflower {
-  position: absolute; right: -30px; top: -30px; width: 130px; height: 130px;
+  position: absolute; right: -30px; top: -30px; width: 130px; height: 130px; object-fit: contain; border-radius: 50%;
   animation: spin-slow 40s linear infinite;
-  opacity: .75; pointer-events: none;
+  opacity: .85; pointer-events: none;
   filter: drop-shadow(0 10px 20px rgba(232, 163, 0, .35));
   z-index: 3;
 }
@@ -310,6 +310,30 @@ section { padding: 20px 0 64px; position: relative; }
 }
 h2 { font-size: clamp(26px, 4vw, 38px); }
 .sec-sub { color: var(--muted); margin: 0; max-width: 64ch; font-size: 16px; }
+
+/* ---------- СТРАНИЦА НОМЕРОВ ---------- */
+.page-back {
+  display: inline-flex; align-items: center; gap: 8px;
+  margin: 22px 0 4px; color: var(--muted); font-size: 14px; font-weight: 700;
+}
+.page-back:hover { color: var(--terra-dark); }
+.rooms-page-intro { padding: 34px 0 22px; text-align: center; }
+.rooms-page-intro h1 { margin: 0 auto 14px; font-size: clamp(32px, 5vw, 52px); }
+.rooms-page-intro .lead { margin: 0 auto 24px; }
+.rooms-price-note {
+  display: flex; align-items: center; gap: 16px; max-width: 800px; margin: 0 auto;
+  padding: 18px 22px; text-align: left; border: 1.5px solid #f3d479; border-radius: 20px;
+  background: linear-gradient(135deg, #fff8df, #ffedb0); box-shadow: var(--shadow);
+}
+.price-note-icon {
+  width: 48px; height: 48px; flex: 0 0 48px; display: grid; place-items: center;
+  border-radius: 16px; background: #fff; font-size: 25px; box-shadow: 0 5px 14px rgba(80,56,20,.08);
+}
+.price-note-copy { flex: 1; }
+.price-note-copy strong { display: block; color: var(--terra-dark); font-family: 'Unbounded', sans-serif; font-size: 15px; }
+.price-note-copy p { margin: 4px 0 0; color: var(--muted); font-size: 13.5px; }
+.room-catalog { padding-top: 22px; }
+.room-catalog .sec-head { margin-bottom: 24px; }
 
 /* ---------- НОМЕРА ---------- */
 .rooms { display: grid; gap: 24px; }
@@ -384,12 +408,17 @@ h2 { font-size: clamp(26px, 4vw, 38px); }
 }
 .status-chip {
   position: absolute; z-index: 3; top: 16px; right: 16px;
+  display: inline-flex; align-items: center; gap: 6px;
   border-radius: 999px; padding: 6px 14px; font-size: 12px; font-weight: 800;
   letter-spacing: .04em;
   backdrop-filter: blur(6px);
   box-shadow: 0 6px 18px rgba(0,0,0,.15);
 }
 .status-chip.free { background: rgba(78,125,58,.95); color: #fff; }
+.status-chip.free::before {
+  content: ''; width: 16px; height: 16px; flex: 0 0 16px;
+  background: url('../img/sunflower.webp') center / contain no-repeat;
+}
 .status-chip.busy { background: rgba(180,54,43,.95); color: #fff; }
 
 .room-busy .slide img { filter: grayscale(.75) brightness(.8); }
@@ -460,7 +489,8 @@ h2 { font-size: clamp(26px, 4vw, 38px); }
   position: relative; overflow: hidden;
 }
 .near-card::after {
-  content: '🌻'; position: absolute; right: -20px; bottom: -30px; font-size: 80px;
+  content: ''; position: absolute; right: -20px; bottom: -30px; width: 104px; height: 104px;
+  background: url('../img/sunflower.webp') center / contain no-repeat;
   opacity: .06; transition: transform .4s, opacity .3s;
 }
 .near-card:hover { box-shadow: var(--shadow); border-color: var(--leaf); }
@@ -530,7 +560,8 @@ h2 { font-size: clamp(26px, 4vw, 38px); }
   transition: transform .3s, box-shadow .3s;
 }
 .addr-card::before {
-  content: '🌻'; position: absolute; right: -10px; top: -10px; font-size: 70px;
+  content: ''; position: absolute; right: -10px; top: -10px; width: 88px; height: 88px;
+  background: url('../img/sunflower.webp') center / contain no-repeat;
   opacity: .08; transform: rotate(-20deg);
 }
 .addr-card:hover { box-shadow: var(--shadow); }
@@ -565,7 +596,7 @@ footer button { color: #ffd33a; font-weight: 600; border-bottom: 1px dashed #ffd
 .sticky-cta {
   position: fixed; left: 0; right: 0; bottom: 0; z-index: 120;
   display: none; gap: 8px; padding: 10px 12px calc(10px + env(safe-area-inset-bottom));
-  background: rgba(255,249,236,.97); backdrop-filter: blur(14px);
+  background: rgba(173,128,92,.97); backdrop-filter: blur(14px);
   border-top: 1px solid var(--line); box-shadow: 0 -12px 32px rgba(80, 56, 20, .12);
 }
 .sticky-cta .btn { flex: 1; min-height: 50px; font-size: 14px; padding: 0 14px; }
@@ -634,6 +665,7 @@ footer button { color: #ffd33a; font-weight: 600; border-bottom: 1px dashed #ffd
 .room-option .opt-price { font-family: 'Unbounded'; font-size: 15px; font-weight: 800; color: var(--terra-dark); }
 .room-option .opt-price small { font-size: 10px; font-weight: 600; color: var(--muted); }
 .room-option .opt-guests { font-size: 11px; color: var(--muted); font-weight: 600; margin-top: 2px; }
+.room-option .opt-note { font-size: 11px; color: var(--muted); font-weight: 600; margin-top: 3px; }
 .room-option.busy { opacity: .55; cursor: not-allowed; filter: grayscale(.7); }
 .room-option.busy .opt-busy-badge {
   position: absolute; top: 8px; right: 8px;
@@ -766,7 +798,7 @@ h2.split-ready .wi { transform: translateY(125%); transition: transform .85s cub
 }
 .scroll-sun.show { opacity: 1; pointer-events: auto; transform: scale(1); }
 .scroll-sun-flower {
-  position: absolute; left: 12%; top: 12%; width: 76%; height: 76%;
+  position: absolute; left: 12%; top: 12%; width: 76%; height: 76%; object-fit: contain; border-radius: 50%;
   filter: drop-shadow(0 4px 10px rgba(232,163,0,.4));
 }
 .scroll-sun-ring { position: absolute; inset: 0; width: 100%; height: 100%; transform: rotate(-90deg); }
@@ -823,6 +855,11 @@ h2.split-ready .wi { transform: translateY(125%); transition: transform .85s cub
   .room-body h3 { font-size: 19px; }
   .room-cta .btn { min-width: 0; flex-basis: 100%; }
   .rooms-note { padding: 14px 16px; font-size: 14px; }
+  .rooms-page-intro { padding: 22px 0 12px; }
+  .rooms-price-note { flex-direction: column; align-items: stretch; gap: 10px; padding: 18px; text-align: center; }
+  .price-note-icon { align-self: center; }
+  .price-note-copy strong { font-size: 14px; }
+  .rooms-price-note .btn { width: 100%; }
   .modal-backdrop { padding: 12px; }
   .modal { padding: 24px 18px 26px; border-radius: 20px; }
   .modal h3 { font-size: 20px; padding-right: 44px; }
@@ -865,7 +902,11 @@ picture { display: block; width: 100%; }
 .noscript-notice a { color: var(--sun-soft); font-weight: 800; text-decoration: underline; }
 .full-width { width: 100%; }
 .full-span { grid-column: 1 / -1; }
-.badge-sun { font-size: 20px; line-height: 1; }
+.badge-sun { width: 28px; height: 28px; flex: 0 0 28px; object-fit: contain; border-radius: 50%; }
+.sunflower-inline { display: inline-block; width: 19px; height: 19px; flex: 0 0 auto; object-fit: contain; vertical-align: -0.22em; }
+.title-flower { width: 27px; height: 27px; vertical-align: -0.26em; }
+.foot .footer-brand { display: flex; align-items: center; gap: 8px; }
+.foot .footer-brand .sunflower-inline { width: 25px; height: 25px; vertical-align: middle; }
 .privacy-button {
   padding: 0;
   color: #ffd33a;
@@ -881,8 +922,8 @@ picture { display: block; width: 100%; }
 /* Мягкая глубина фона без тяжёлых изображений и дополнительных запросов. */
 body {
   background:
-    radial-gradient(circle at 92% 3%, rgba(249, 194, 29, .13), transparent 24rem),
-    radial-gradient(circle at 4% 54%, rgba(78, 125, 58, .06), transparent 26rem),
+    radial-gradient(circle at 92% 3%, rgba(249, 194, 29, .14), transparent 24rem),
+    radial-gradient(circle at 4% 54%, rgba(155, 111, 70, .08), transparent 26rem),
     var(--bg);
 }
 .hero-photo-wrap > picture,
