@@ -98,7 +98,7 @@ const server = http.createServer((req, res) => {
       statuses: LIVE ? (realSiteData.statuses || {}) : {},
       cfg: LIVE
         ? Object.assign({}, realSiteData.cfg)
-        : { tgUrl: 'https://t.me/ckot_23', waNumber: '79882443223', phonePrimary: '+79181164554', botToken: '', chatId: '', bookingApi: '/macros/exec' }
+        : { tgUrl: 'https://t.me/ckot_23', waNumber: '79882443223', phonePrimary: '+79181164554', bookingApi: '/macros/exec' }
     });
   }
 
