@@ -1,4 +1,4 @@
-import { ROOMS } from './rooms.js';
+import { ROOMS } from './rooms.js?v=20261012-2';
 
 /* =========================================================
    Гостиница «Подсолнух» — основной скрипт
@@ -510,10 +510,9 @@ import { ROOMS } from './rooms.js';
         '<div class="room-photo">' +
           buildSlider(r) +
           '<span class="status-chip '+(busy?'busy':'free')+'">'+(busy?'🚫 Занят':'Свободен')+'</span>' +
-                  '</div>' +
+        '</div>' +
         '<div class="room-body">' +
           '<h3>'+r.name+'</h3>' +
-          '<p class="room-desc">Цена зависит от даты и количества гостей. Уточняйте по телефону.</p>' +
           '<div class="room-cta">' +
             '<button class="btn primary" type="button" data-book="'+r.id+'" '+(busy?'disabled':'')+'>'+(busy?'Сейчас занят':'Забронировать')+'</button>' +
             '<a class="btn ghost" href="tel:'+cfg.phonePrimary+'">Позвонить</a>' +
@@ -530,13 +529,13 @@ import { ROOMS } from './rooms.js';
     renderRoomPicker();
   }
 
-  // ---------- красивый выбор гостей ----------
+  // ---------- красивый выбор количества человек ----------
   var GUEST_OPTIONS = [
-    { v:'1',  num:'1', label:'гость' },
-    { v:'2',  num:'2', label:'гостя' },
-    { v:'3',  num:'3', label:'гостя' },
-    { v:'4',  num:'4', label:'гостя' },
-    { v:'5+', num:'5+',label:'гостей' }
+    { v:'1',  num:'1', label:'чел.' },
+    { v:'2',  num:'2', label:'чел.' },
+    { v:'3',  num:'3', label:'чел.' },
+    { v:'4',  num:'4', label:'чел.' },
+    { v:'5+', num:'5+',label:'чел.' }
   ];
   var selectedGuests = '2';
   function renderGuestsPicker(){
@@ -554,6 +553,7 @@ import { ROOMS } from './rooms.js';
         selectedGuests = g.v;
         document.getElementById('fGuests').value = g.v;
         renderGuestsPicker();
+        updateSummary();
       });
       picker.appendChild(btn);
     });
@@ -579,7 +579,6 @@ import { ROOMS } from './rooms.js';
         pictureMarkup({src:r.photos[0].src, alt:r.photos[0].alt}, 'opt-photo', 'lazy') +
         '<div class="opt-body">' +
           '<span class="opt-name">'+r.name+'</span>' +
-          '<div class="opt-note">Цена зависит от даты и количества гостей</div>' +
         '</div>' +
         (busy?'<span class="opt-busy-badge">Занят</span>':'');
       btn.addEventListener('click', function(){
@@ -702,16 +701,25 @@ import { ROOMS } from './rooms.js';
     var roomId = (document.getElementById('fRoom')||{}).value || selectedRoom;
     var room = ROOMS.find(function(r){ return r.id === roomId; });
     var nights = (selStart && selEnd) ? nightsBetween(selStart, selEnd) : 0;
+    var nameVal = ((document.getElementById('fName')||{}).value || '').trim();
+    var phoneVal = ((document.getElementById('fPhone')||{}).value || '').trim();
     var rows = [];
-    rows.push(['Номер', room ? room.name : '—']);
-    rows.push(['Даты', selStart ? (selEnd ? dateHuman(selStart)+' – '+dateHuman(selEnd) : dateHuman(selStart)+' (выезд не выбран)') : '—']);
-    rows.push(['Ночей', nights ? nights : '—']);
-    rows.push(['Гостей', selectedGuests]);
-    rows.push(['Документы', (document.getElementById('fDocs') || {}).checked ? 'нужны' : 'не нужны']);
+    if(nameVal) rows.push(['Имя', nameVal]);
+    if(phoneVal) rows.push(['Контакты', phoneVal]);
+    rows.push(['Заезд/выезд', selStart ? (selEnd ? dateHuman(selStart)+' – '+dateHuman(selEnd)+(nights ? ' ('+nights+' сут.)' : '') : dateHuman(selStart)+' (выезд не выбран)') : '—']);
+    rows.push(['Количество человек', selectedGuests]);
+    rows.push(['Отч. доки', (document.getElementById('fDocs') || {}).checked ? 'Да' : 'Нет']);
+    rows.push(['Номер комнаты', room ? room.name : '—']);
     box.innerHTML = rows.map(function(r){
       return '<div class="sum-row"><span>'+r[0]+'</span><b>'+r[1]+'</b></div>';
-    }).join('') + '<p class="sum-note">Цена зависит от даты и количества гостей. Точную стоимость подтвердит модератор.</p>';
+    }).join('');
   }
+  ['fName','fPhone'].forEach(function(id){
+    var el = document.getElementById(id);
+    if(el) el.addEventListener('input', updateSummary);
+  });
+  var docsEl = document.getElementById('fDocs');
+  if(docsEl) docsEl.addEventListener('change', updateSummary);
   if(calGrid){
     calGrid.addEventListener('click',function(e){
       var btn=e.target.closest('.cal-day');
@@ -820,9 +828,10 @@ import { ROOMS } from './rooms.js';
   function submitToSheet(data){
     var payload = {
       action: 'book',
-      name: data.name, phone: data.phone, dates: data.dates,
+      name: data.name, phone: data.phone, contacts: data.phone, dates: data.dates,
       dateFrom: data.dateFrom, dateTo: data.dateTo, nights: data.nights,
-      guests: data.guests, docs: data.docs, room: data.room, roomLabel: data.roomLabel,
+      guests: data.guests, people: data.guests, docs: data.docs,
+      room: data.room, roomLabel: data.roomLabel, roomNumber: data.roomLabel,
       comment: data.comment,
       website: data.website, ref: bookRef(), page: location.pathname
     };

@@ -52,7 +52,7 @@ function parseMultipart(body, boundary) {
 function demoSheetHtml() {
   const sheet = env.sheet();
   if (!sheet) return '<p>Лист ещё не создан — отправьте заявку с сайта.</p>';
-  const rows = sheet.getRange(1, 1, Math.max(1, sheet.getLastRow()), 14).getValues();
+  const rows = sheet.getRange(1, 1, Math.max(1, sheet.getLastRow()), 8).getValues();
   return '<table><thead><tr>' + rows[0].map(h => '<th>' + h + '</th>').join('') + '</tr></thead><tbody>' +
     rows.slice(1).map(r => '<tr>' + r.map((c, i) => '<td>' +
       (c instanceof Date ? c.toLocaleString('ru-RU') : String(c === '' ? '—' : c)) + '</td>').join('') + '</tr>').join('') +
@@ -215,9 +215,9 @@ document.getElementById('book').onclick = function(){
   var fd = new FormData();
   var tomorrow = new Date(Date.now() + 86400000);
   var day = function(d){ return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0'); };
-  [[ 'action','book'], ['name','Проверка сайта (тест)'], ['phone','+7 918 116-45-54'],
+  [[ 'action','book'], ['name','Проверка сайта (тест)'], ['phone','+7 918 116-45-54'], ['contacts','+7 918 116-45-54'],
    ['dateFrom', day(tomorrow)], ['dateTo', day(new Date(tomorrow.getTime() + 2*86400000))], ['nights','2'],
-   ['guests','2'], ['room','single-1'], ['roomLabel','Номер 1'], ['price','2500'], ['total','5000'],
+   ['guests','2'], ['people','2'], ['docs','нет'], ['room','single-1'], ['roomLabel','Номер 1'],
    ['comment','Тестовая заявка из браузера, строку можно удалить'], ['ref', ref], ['page','/selftest']]
     .forEach(function(p){ fd.append(p[0], p[1]); });
   busy(b, true, 'Отправляем…');
@@ -228,7 +228,7 @@ document.getElementById('book').onclick = function(){
     if(j.ok && j.duplicate) show('<p class="warn">Такая заявка уже есть — №' + j.id + ' (защита от дублей работает).</p>', j);
     else if(j.ok) show('<p>' + badge(true, 'Заявка №' + j.id + ' принята', '') + '<br>Записана в таблицу: ' + badge(true, 'да', '?') + '<br>' +
       'Сообщение модератору в Telegram: ' + badge(j.notified, 'отправлено', 'НЕ отправлено — проверьте токен бота и chat_id') + '<br>' +
-      'Ночей: <b>' + (j.nights || '—') + '</b>, сумма: <b>' + (j.total ? j.total + ' ₽' : '—') + '</b></p>' +
+      'Ночей: <b>' + (j.nights || '—') + '</b></p>' +
       '<p>Проверьте Telegram и таблицу. Строку с тестом и сообщение можно удалить.</p>', j);
     else show('<p class="bad">Ошибка: ' + (j.error || 'неизвестно') + '</p>', j);
   }).catch(function(e){
