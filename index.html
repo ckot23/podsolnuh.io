@@ -315,7 +315,11 @@
     <div id="adminPanel" hidden>
       <ul id="adminRooms" class="admin-rooms"></ul>
       <div class="admin-config">
-        <label>⚙️ Telegram Bot Token (опционально, для авт. отправки заявок)</label>
+        <label>📊 Google-таблица броней (URL веб-приложения Apps Script)</label>
+        <input id="cfgSheet" type="text" placeholder="https://script.google.com/macros/s/AKfy.../exec" />
+        <button class="btn ghost full-width" type="button" id="adminTestSheet">🔍 Проверить связь с таблицей и Telegram</button>
+        <p class="admin-note">🌻 Заявки с сайта уходят в Google-таблицу и дублируются модератору в Telegram (с кнопками «Подтвердить/Отклонить»). Как получить ссылку — см. <b>docs/booking-google-sheets.md</b>.</p>
+        <label>⚙️ Telegram Bot Token (нужен только если таблица не настроена)</label>
         <input id="cfgToken" type="text" placeholder="123456789:AA... (получить у @BotFather)" />
         <label>🆔 Ваш Chat ID в Telegram</label>
         <input id="cfgChat" type="text" placeholder="Напр., 7114829971 (узнать у @userinfobot)" />
