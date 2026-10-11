@@ -512,11 +512,10 @@ import { ROOMS } from './rooms.js';
         '<div class="room-photo">' +
           buildSlider(r) +
           '<span class="status-chip '+(busy?'busy':'free')+'">'+(busy?'🚫 Занят':'Свободен')+'</span>' +
-          '<span class="room-price">от '+r.price.toLocaleString('ru-RU')+' ₽ <small>/ сутки</small></span>' +
-        '</div>' +
+                  '</div>' +
         '<div class="room-body">' +
           '<h3>'+r.name+'</h3>' +
-          '<p class="room-desc">Актуальную стоимость и наличие уточняйте по телефону.</p>' +
+          '<p class="room-desc">Цена зависит от даты и количества гостей. Уточняйте по телефону.</p>' +
           '<div class="room-cta">' +
             '<button class="btn primary" type="button" data-book="'+r.id+'" '+(busy?'disabled':'')+'>'+(busy?'Сейчас занят':'Забронировать')+'</button>' +
             '<a class="btn ghost" href="tel:'+cfg.phonePrimary+'">Позвонить</a>' +
@@ -582,8 +581,7 @@ import { ROOMS } from './rooms.js';
         pictureMarkup({src:r.photos[0].src, alt:r.photos[0].alt}, 'opt-photo', 'lazy') +
         '<div class="opt-body">' +
           '<span class="opt-name">'+r.name+'</span>' +
-          '<div class="opt-price">от '+r.price.toLocaleString('ru-RU')+' ₽ <small>/ сутки</small></div>' +
-          '<div class="opt-note">Уточняйте по телефону</div>' +
+          '<div class="opt-note">Цена зависит от даты и количества гостей</div>' +
         '</div>' +
         (busy?'<span class="opt-busy-badge">Занят</span>':'');
       btn.addEventListener('click', function(){
@@ -711,11 +709,9 @@ import { ROOMS } from './rooms.js';
     rows.push(['Даты', selStart ? (selEnd ? dateHuman(selStart)+' – '+dateHuman(selEnd) : dateHuman(selStart)+' (выезд не выбран)') : '—']);
     rows.push(['Ночей', nights ? nights : '—']);
     rows.push(['Гостей', selectedGuests]);
-    rows.push(['Цена', room ? 'от '+room.price.toLocaleString('ru-RU')+' ₽ / сутки' : '—']);
-    if(room && nights) rows.push(['Предварительно', (room.price*nights).toLocaleString('ru-RU')+' ₽']);
     box.innerHTML = rows.map(function(r){
       return '<div class="sum-row"><span>'+r[0]+'</span><b>'+r[1]+'</b></div>';
-    }).join('') + '<p class="sum-note">Расчёт предварительный: точную стоимость подтвердит модератор.</p>';
+    }).join('') + '<p class="sum-note">Цена зависит от даты и количества гостей. Точную стоимость подтвердит модератор.</p>';
   }
   if(calGrid){
     calGrid.addEventListener('click',function(e){
