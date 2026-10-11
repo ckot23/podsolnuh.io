@@ -41,7 +41,13 @@ function createEnv(options) {
       setNumberFormat() { return api; }, setFontWeight() { return api; }, setFontColor() { return api; },
       setBackground() { return api; }, setVerticalAlignment() { return api; },
       setHorizontalAlignment() { return api; }, setFontSize() { return api; },
-      setDataValidation(v) { sheet.validations.push(v); return api; }, setWrap() { return api; }
+      setDataValidation(v) { sheet.validations.push(v); return api; }, setWrap() { return api; },
+      clearContent() {
+        for (let i = 0; i < numRows; i++) for (let j = 0; j < numCols; j++) {
+          if (sheet.data[row - 1 + i]) sheet.data[row - 1 + i][col - 1 + j] = '';
+        }
+        return api;
+      }
     };
     return api;
   }
@@ -50,6 +56,10 @@ function createEnv(options) {
       name, data: [], validations: [], gid: 100 + sheets.length,
       getName: () => name, getSheetId: () => sheet.gid, getLastRow: () => sheet.data.length,
       setFrozenRows() {}, setRowHeight() {}, setColumnWidth() {}, setTabColor() {},
+      hiddenCols: [],
+      getLastColumn: () => Math.max(0, ...sheet.data.map(r => (r ? r.length : 0))),
+      hideColumns(start, n) { for (let i = 0; i < n; i++) if (!sheet.hiddenCols.includes(start + i)) sheet.hiddenCols.push(start + i); sheet.hiddenCols.sort((x, y) => x - y); },
+      showColumns(start, n) { sheet.hiddenCols = sheet.hiddenCols.filter(c => c < start || c >= start + n); },
       getRange: (r, c, nr, nc) => makeRange(sheet, r, c, nr === undefined ? 1 : nr, nc === undefined ? 1 : nc)
     };
     return sheet;

@@ -48,24 +48,33 @@ var DEDUPE_MINUTES = 15;
 
 /* =========================== КОНЕЦ НАСТРОЕК ============================== */
 
+/* Порядок колонок на листе: первые 6 видны, остальные служебные (скрыты). */
 var HEADERS = [
-  '№',                // 1
-  'Дата заявки',      // 2
-  'Статус',           // 3
-  'Имя',              // 4
-  'Телефон',          // 5
-  'Заезд',            // 6
-  'Выезд',            // 7
-  'Ночей',            // 8
-  'Гостей',           // 9
-  'Номер',            // 10
-  'Цена/сутки',       // 11
-  'Сумма',            // 12
-  'Комментарий',      // 13
-  'Источник',         // 14
-  'Ref',              // 15 (технический: подтверждение доставки)
-  'RoomId'            // 16 (технический: id номера для статусов на сайте)
+  'Дата заявки',      // 1  видимая
+  'Имя',              // 2  видимая
+  'Телефон',          // 3  видимая (контакт)
+  'Заезд',            // 4  видимая
+  'Выезд',            // 5  видимая
+  'Гостей',           // 6  видимая
+  '№',                // 7  служебная (скрыта)
+  'Статус',           // 8  служебная (скрыта)
+  'Ночей',            // 9  служебная (скрыта)
+  'Номер',            // 10 служебная (скрыта)
+  'Цена/сутки',       // 11 служебная (скрыта)
+  'Сумма',            // 12 служебная (скрыта)
+  'Комментарий',      // 13 служебная (скрыта)
+  'Источник',         // 14 служебная (скрыта)
+  'Ref',              // 15 технический: подтверждение доставки
+  'RoomId'            // 16 технический: id номера для статусов на сайте
 ];
+
+/* Индексы колонок (с нуля) — используйте их вместо чисел. */
+var COL = {
+  created: 0, name: 1, phone: 2, from: 3, to: 4, guests: 5,
+  id: 6, status: 7, nights: 8, room: 9, price: 10, total: 11,
+  comment: 12, source: 13, ref: 14, roomId: 15
+};
+var VISIBLE_COUNT = 6;
 
 var STATUS_NEW = 'Новая';
 var STATUS_OK = 'Подтверждена';
@@ -88,6 +97,7 @@ function setup() {
   var sheet = getSheet_(ss);
 
   // аккуратные ширины и оформление
+  migrateLayout_(sheet);
   sheet.setFrozenRows(1);
   sheet.getRange(1, 1, 1, HEADERS.length)
     .setFontWeight('bold')
@@ -96,7 +106,7 @@ function setup() {
     .setVerticalAlignment('middle');
   sheet.setRowHeight(1, 34);
 
-  var widths = [55, 130, 130, 150, 140, 100, 100, 70, 80, 130, 100, 110, 240, 120, 90, 90];
+  var widths = [130, 150, 140, 100, 100, 80, 55, 130, 70, 130, 100, 110, 240, 120, 90, 90];
   widths.forEach(function (w, i) { sheet.setColumnWidth(i + 1, w); });
 
   // выпадающий список статусов
@@ -104,13 +114,19 @@ function setup() {
     .requireValueInList(STATUS_LIST, true)
     .setAllowInvalid(false)
     .build();
-  sheet.getRange(2, 3, 1000, 1).setDataValidation(rule);
+  sheet.getRange(2, COL.status + 1, 1000, 1).setDataValidation(rule);
 
-  // перенос длинных текстов и формат дат/денег
-  sheet.getRange('F2:G1000').setNumberFormat('dd.MM.yyyy');
-  sheet.getRange('K2:L1000').setNumberFormat('# ##0 ₽');
-  sheet.getRange('F2:G1000').setHorizontalAlignment('center');
-  sheet.getRange('N2:P1000').setFontColor('#9a9a9a').setFontSize(9);
+  // формат дат/денег и выравнивание
+  sheet.getRange(2, COL.created + 1, 1000, 1).setNumberFormat('dd.MM.yyyy HH:mm');
+  sheet.getRange(2, COL.from + 1, 1000, 2).setNumberFormat('dd.MM.yyyy');
+  sheet.getRange(2, COL.price + 1, 1000, 2).setNumberFormat('# ##0 ₽');
+  sheet.getRange(2, COL.from + 1, 1000, 2).setHorizontalAlignment('center');
+  sheet.getRange(2, COL.guests + 1, 1000, 1).setHorizontalAlignment('center');
+  sheet.getRange(2, COL.source + 1, 1000, 3).setFontColor('#9a9a9a').setFontSize(9);
+
+  // служебные колонки скрыты (их можно открыть через меню «Показать столбцы»)
+  sheet.showColumns(1, HEADERS.length);
+  sheet.hideColumns(VISIBLE_COUNT + 1, HEADERS.length - VISIBLE_COUNT);
 
   PROP.setProperty('SHEET_ID', SHEET_ID);
   PROP.setProperty('SHEET_NAME', SHEET_NAME);
@@ -253,29 +269,30 @@ function handleBooking_(data) {
     var row = sheet.getLastRow() + 1;
     var num = row - 1;
 
-    sheet.getRange(row, 1, 1, HEADERS.length).setValues([[
-      num,
-      new Date(),
-      STATUS_NEW,
-      name,
-      phone,
-      range.from || '',
-      range.to || '',
-      nights || '',
-      guests,
-      roomLabel,
-      price || '',
-      total || '',
-      comment,
-      source,
-      ref,
-      roomId
-    ]]);
-    sheet.getRange(row, 2).setNumberFormat('dd.MM.yyyy HH:mm');
-    sheet.getRange(row, 6, 1, 2).setNumberFormat('dd.MM.yyyy');
-    sheet.getRange(row, 6, 1, 4).setHorizontalAlignment('center');
-    sheet.getRange(row, 11, 1, 2).setNumberFormat('# ##0 ₽');
-    sheet.getRange(row, 15, 1, 2).setFontColor('#9a9a9a').setFontSize(9);
+    var values = [];
+    values[COL.created] = new Date();
+    values[COL.name] = name;
+    values[COL.phone] = phone;
+    values[COL.from] = range.from || '';
+    values[COL.to] = range.to || '';
+    values[COL.guests] = guests;
+    values[COL.id] = num;
+    values[COL.status] = STATUS_NEW;
+    values[COL.nights] = nights || '';
+    values[COL.room] = roomLabel;
+    values[COL.price] = price || '';
+    values[COL.total] = total || '';
+    values[COL.comment] = comment;
+    values[COL.source] = source;
+    values[COL.ref] = ref;
+    values[COL.roomId] = roomId;
+    sheet.getRange(row, 1, 1, HEADERS.length).setValues([values]);
+    sheet.getRange(row, COL.created + 1).setNumberFormat('dd.MM.yyyy HH:mm');
+    sheet.getRange(row, COL.from + 1, 1, 2).setNumberFormat('dd.MM.yyyy');
+    sheet.getRange(row, COL.from + 1, 1, 2).setHorizontalAlignment('center');
+    sheet.getRange(row, COL.guests + 1).setHorizontalAlignment('center');
+    sheet.getRange(row, COL.price + 1, 1, 2).setNumberFormat('# ##0 ₽');
+    sheet.getRange(row, COL.source + 1, 1, 3).setFontColor('#9a9a9a').setFontSize(9);
 
     var booking = {
       id: num,
@@ -446,9 +463,9 @@ function todayReport_() {
   var stamp = Utilities.formatDate(new Date(), TIMEZONE, 'dd.MM.yyyy');
   var out = [];
   rows.forEach(function (r) {
-    var created = r[1] ? Utilities.formatDate(new Date(r[1]), TIMEZONE, 'dd.MM.yyyy') : '';
+    var created = r[COL.created] ? Utilities.formatDate(new Date(r[COL.created]), TIMEZONE, 'dd.MM.yyyy') : '';
     if (created !== stamp) return;
-    out.push('• №' + r[0] + ' — ' + r[3] + ', ' + r[4] + ', ' + r[9] + ', ' + String(r[2]).toLowerCase());
+    out.push('• №' + r[COL.id] + ' — ' + r[COL.name] + ', ' + r[COL.phone] + ', ' + r[COL.room] + ', ' + String(r[COL.status]).toLowerCase());
   });
   return out.length ? ('📋 Заявки за сегодня (' + stamp + '):\n' + out.join('\n')) : 'Сегодня новых заявок не было.';
 }
@@ -468,13 +485,13 @@ function computeStatuses_() {
     var rows = sheet.getRange(2, 1, last - 1, HEADERS.length).getValues();
     var today = startOfDay_(new Date());
     rows.forEach(function (r) {
-      var status = normStatus_(r[2]);
-      var roomId = String(r[15] || '').trim();
+      var status = normStatus_(r[COL.status]);
+      var roomId = String(r[COL.roomId] || '').trim();
       if (!roomId) return;
       if (status !== STATUS_OK && status !== STATUS_IN) return;
-      var from = toDate_(r[5]);
+      var from = toDate_(r[COL.from]);
       if (!from) return;
-      var to = toDate_(r[6]) || new Date(from.getTime() + 86400000);
+      var to = toDate_(r[COL.to]) || new Date(from.getTime() + 86400000);
       if (today.getTime() >= startOfDay_(from).getTime() && today.getTime() < startOfDay_(to).getTime()) {
         out[roomId] = 'busy';
       }
@@ -490,10 +507,10 @@ function setStatusById_(id, status) {
   var sheet = getSheet_(getSpreadsheet_());
   var last = sheet.getLastRow();
   if (last < 2) return false;
-  var ids = sheet.getRange(2, 1, last - 1, 1).getValues();
+  var ids = sheet.getRange(2, COL.id + 1, last - 1, 1).getValues();
   for (var i = 0; i < ids.length; i++) {
     if (parseInt(ids[i][0], 10) === id) {
-      sheet.getRange(i + 2, 3).setValue(status);
+      sheet.getRange(i + 2, COL.status + 1).setValue(status);
       return true;
     }
   }
@@ -519,13 +536,32 @@ function getSheet_(ss) {
   } else if (sheet.getLastRow() === 0) {
     sheet.getRange(1, 1, 1, HEADERS.length).setValues([HEADERS]);
   } else {
-    // дописываем отсутствующие технические колонки в старой шапке
-    var head = sheet.getRange(1, 1, 1, HEADERS.length).getValues()[0];
-    var missing = false;
-    HEADERS.forEach(function (h, i) { if (!head[i]) { head[i] = h; missing = true; } });
-    if (missing) sheet.getRange(1, 1, 1, HEADERS.length).setValues([head]);
+    migrateLayout_(sheet);
   }
   return sheet;
+}
+
+/**
+ * Приводит лист к актуальному порядку колонок HEADERS.
+ * Данные переносятся по названиям колонок, поэтому старые брони не теряются.
+ */
+function migrateLayout_(sheet) {
+  var lastCol = Math.max(sheet.getLastColumn(), 1);
+  var lastRow = sheet.getLastRow();
+  var oldHead = sheet.getRange(1, 1, 1, lastCol).getValues()[0].map(function (h) { return String(h).trim(); });
+  if (oldHead.slice(0, HEADERS.length).join('|') === HEADERS.join('|') && lastCol <= HEADERS.length) return;
+
+  var idx = HEADERS.map(function (h) { return oldHead.indexOf(h); });
+  var data = lastRow > 1 ? sheet.getRange(2, 1, lastRow - 1, lastCol).getValues() : [];
+  var rows = data.map(function (r) {
+    return HEADERS.map(function (h, i) { return idx[i] >= 0 ? r[idx[i]] : ''; });
+  });
+
+  sheet.showColumns(1, Math.max(lastCol, HEADERS.length));
+  sheet.getRange(1, 1, Math.max(lastRow, 1), Math.max(lastCol, HEADERS.length)).clearContent();
+  sheet.getRange(1, 1, 1, HEADERS.length).setValues([HEADERS]);
+  if (rows.length) sheet.getRange(2, 1, rows.length, HEADERS.length).setValues(rows);
+  sheet.hideColumns(VISIBLE_COUNT + 1, HEADERS.length - VISIBLE_COUNT);
 }
 
 function sheetUrl_(ss, sheet) {
@@ -534,22 +570,22 @@ function sheetUrl_(ss, sheet) {
 
 function findRef_(ref) {
   if (!ref) return 0;
-  return findRow_(function (r) { return String(r[14] || '').trim() === ref; });
+  return findRow_(function (r) { return String(r[COL.ref] || '').trim() === ref; });
 }
 
 function findRecent_(phone, fromIso, roomId) {
   var d = digits_(phone);
   return findRow_(function (r) {
-    if (digits_(r[4]) !== d) return false;
-    if (normStatus_(r[2]) !== STATUS_NEW) return false;
-    var created = r[1] ? new Date(r[1]).getTime() : 0;
+    if (digits_(r[COL.phone]) !== d) return false;
+    if (normStatus_(r[COL.status]) !== STATUS_NEW) return false;
+    var created = r[COL.created] ? new Date(r[COL.created]).getTime() : 0;
     if (!created || (Date.now() - created) > DEDUPE_MINUTES * 60000) return false;
     if (fromIso) {
-      var f = toDate_(r[5]);
+      var f = toDate_(r[COL.from]);
       var iso = f ? Utilities.formatDate(f, TIMEZONE, 'yyyy-MM-dd') : '';
       if (iso && iso !== fromIso) return false;
     }
-    if (roomId && String(r[15] || '').trim() !== roomId) return false;
+    if (roomId && String(r[COL.roomId] || '').trim() !== roomId) return false;
     return true;
   });
 }
@@ -560,7 +596,7 @@ function findRow_(predicate) {
   if (last < 2) return 0;
   var rows = sheet.getRange(2, 1, last - 1, HEADERS.length).getValues();
   for (var i = rows.length - 1; i >= 0; i--) {
-    if (predicate(rows[i])) return parseInt(rows[i][0], 10) || (i + 1);
+    if (predicate(rows[i])) return parseInt(rows[i][COL.id], 10) || (i + 1);
   }
   return 0;
 }

@@ -24,9 +24,12 @@ console.log('\n1) setup() — создание листа');
 api.setup();
 sheet = env.sheet();
 check('лист «Брони» создан', !!sheet);
-check('шапка из 16 колонок', sheet.getRange(1, 1, 1, 16).getValues()[0].join('|') ===
-  '№|Дата заявки|Статус|Имя|Телефон|Заезд|Выезд|Ночей|Гостей|Номер|Цена/сутки|Сумма|Комментарий|Источник|Ref|RoomId',
-  sheet.getRange(1, 1, 1, 16).getValues()[0].join('|'));
+check('шапка: видимые колонки в нужном порядке', sheet.getRange(1, 1, 1, 6).getValues()[0].join('|') ===
+  'Дата заявки|Имя|Телефон|Заезд|Выезд|Гостей',
+  sheet.getRange(1, 1, 1, 6).getValues()[0].join('|'));
+check('служебные колонки есть и скрыты', sheet.getRange(1, 7, 1, 10).getValues()[0].join('|') ===
+  '№|Статус|Ночей|Номер|Цена/сутки|Сумма|Комментарий|Источник|Ref|RoomId' && sheet.hiddenCols.join(',') === '7,8,9,10,11,12,13,14,15,16',
+  sheet.getRange(1, 7, 1, 10).getValues()[0].join('|') + ' hidden=' + sheet.hiddenCols);
 check('выпадающий список статусов задан', sheet.validations.length > 0);
 
 console.log('\n2) заявка с сайта (multipart: поля приходят в e.parameter)');
@@ -50,10 +53,12 @@ check('уведомление модератору отправлено', res1.n
 check('посчитано 2 ночи и сумма 5000', res1.nights === 2 && res1.total === 5000, JSON.stringify(res1));
 
 const row = sheet.getRange(2, 1, 1, 16).getValues()[0];
-check('имя в таблице', row[3] === 'Анна Петрова', String(row[3]));
-check('телефон в таблице', row[4] === '+7 918 116-45-54', String(row[4]));
-check('дата заезда записана как дата', row[5] instanceof Date, String(row[5]));
-check('статус «Новая»', row[2] === 'Новая', String(row[2]));
+check('дата заявки записана', row[0] instanceof Date, String(row[0]));
+check('имя в таблице', row[1] === 'Анна Петрова', String(row[1]));
+check('телефон в таблице', row[2] === '+7 918 116-45-54', String(row[2]));
+check('дата заезда записана как дата', row[3] instanceof Date, String(row[3]));
+check('гостей в таблице', String(row[5]) === '2', String(row[5]));
+check('статус «Новая»', row[7] === 'Новая', String(row[7]));
 check('номер + цена + сумма', row[9] === 'Номер 1' && row[10] === 2500 && row[11] === 5000, [row[9], row[10], row[11]].join(' / '));
 check('комментарий попал в таблицу', row[12] === 'Заезд после 20:00', String(row[12]));
 check('roomId сохранён для статусов сайта', row[15] === 'single-1', String(row[15]));
@@ -74,11 +79,11 @@ console.log('\n4) кнопки модератора в Telegram');
 check('апдейт обработан', post({
   callback_query: { id: 'cb1', from: { id: 7114829971 }, data: 'ok:1', message: { message_id: 101, chat: { id: 7114829971 }, text: 'заявка №1' } }
 }, true).ok === true);
-check('статус в таблице стал «Подтверждена»', sheet.getRange(2, 3).getValues()[0][0] === 'Подтверждена', String(sheet.getRange(2, 3).getValues()[0][0]));
+check('статус в таблице стал «Подтверждена»', sheet.getRange(2, 8).getValues()[0][0] === 'Подтверждена', String(sheet.getRange(2, 8).getValues()[0][0]));
 check('нажатие подтверждено в чате', env.fetchLog.some(f => /answerCallbackQuery/.test(f.url)));
 check('сообщение переписано («Подтверждено»)', env.fetchLog.some(f => /editMessageText/.test(f.url)));
 post({ callback_query: { id: 'cb2', from: { id: 999 }, data: 'no:1', message: { message_id: 101, chat: { id: 999 }, text: 'x' } } }, false);
-check('без секрета в вебхуке апдейт игнорируется', sheet.getRange(2, 3).getValues()[0][0] === 'Подтверждена');
+check('без секрета в вебхуке апдейт игнорируется', sheet.getRange(2, 8).getValues()[0][0] === 'Подтверждена');
 
 console.log('\n5) статусы номеров для сайта (GET ?action=status)');
 const st = get({ action: 'status' });
