@@ -270,7 +270,6 @@ h1 {
   display: grid; place-items: center; color: #fff;
   animation: spin-slow 14s linear infinite;
 }
-.badge-price { top: 20px; left: -16px; color: var(--terra-dark); }
 .badge-dist { bottom: 20px; right: -12px; color: var(--leaf-deep); animation-delay: -2s; }
 
 /* большой подсолнух в углу hero */
@@ -394,12 +393,6 @@ h2 { font-size: clamp(26px, 4vw, 38px); }
 .slider-dot.active::after { background: var(--sun); transform: scale(1.35); }
 .slider-count { font-size: 11.5px; font-weight: 700; color: #fff; letter-spacing: .02em; }
 
-.room-price {
-  position: absolute; z-index: 3; bottom: 16px; left: 16px;
-  background: rgba(42, 34, 21, .85); color: #fff; backdrop-filter: blur(6px);
-  border-radius: 14px; padding: 10px 16px; font-weight: 800; font-size: 16px;
-}
-.room-price small { font-weight: 500; opacity: .85; font-size: 12px; }
 .room-addr {
   position: absolute; z-index: 3; top: 16px; left: 16px;
   background: rgba(255, 255, 255, .95); border-radius: 12px; padding: 6px 14px;
@@ -422,8 +415,7 @@ h2 { font-size: clamp(26px, 4vw, 38px); }
 .status-chip.busy { background: rgba(180,54,43,.95); color: #fff; }
 
 .room-busy .slide img { filter: grayscale(.75) brightness(.8); }
-.room-busy .room-price { opacity: .6; }
-.room-busy::after { display: none; }
+.room-busy .room-busy::after { display: none; }
 
 .room-body { padding: 24px 26px 26px; display: grid; gap: 12px; align-content: start; }
 .room-body h3 { margin: 0; font-size: 22px; }
@@ -664,8 +656,6 @@ footer button { color: #ffd33a; font-weight: 600; border-bottom: 1px dashed #ffd
 .room-option .opt-photo { width: 100%; height: 90px; object-fit: cover; display: block; }
 .room-option .opt-body { padding: 10px 12px 12px; }
 .room-option .opt-name { font-size: 12.5px; font-weight: 700; color: var(--ink); line-height: 1.25; margin-bottom: 4px; display: block; }
-.room-option .opt-price { font-family: 'Unbounded'; font-size: 15px; font-weight: 800; color: var(--terra-dark); }
-.room-option .opt-price small { font-size: 10px; font-weight: 600; color: var(--muted); }
 .room-option .opt-guests { font-size: 11px; color: var(--muted); font-weight: 600; margin-top: 2px; }
 .room-option .opt-note { font-size: 11px; color: var(--muted); font-weight: 600; margin-top: 3px; }
 .room-option.busy { opacity: .55; cursor: not-allowed; filter: grayscale(.7); }
@@ -849,8 +839,7 @@ h2.split-ready .wi { transform: translateY(125%); transition: transform .85s cub
 @media (max-width: 899px) {
   .sticky-cta { display: flex; }
   .scroll-sun { right: 12px; bottom: calc(84px + env(safe-area-inset-bottom)); }
-  .badge-price { left: 8px; }
-  .badge-dist { right: 8px; }
+    .badge-dist { right: 8px; }
   .big-sunflower { width: 90px; height: 90px; right: -15px; top: -15px; }
 }
 

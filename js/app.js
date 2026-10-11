@@ -304,7 +304,6 @@ import { ROOMS } from './rooms.js';
   var scrollSunFlower=scrollSun ? scrollSun.querySelector('.scroll-sun-flower') : null;
   var scrollRing=scrollSun ? scrollSun.querySelector('.ring-fg') : null;
   var heroWrap=document.querySelector('.hero-photo-wrap');
-  var badgePrice=document.querySelector('.badge-price');
   var badgeDist=document.querySelector('.badge-dist');
   var bigFlower=document.querySelector('.big-sunflower');
   var heroVisual=document.querySelector('.hero-visual');
@@ -334,7 +333,6 @@ import { ROOMS } from './rooms.js';
       if(r.bottom > -140 && r.top < window.innerHeight + 140){
         var mid = r.top + r.height / 2 - window.innerHeight / 2;
         if(heroWrap) heroWrap.style.translate = '0 ' + (mid * -0.07).toFixed(1) + 'px';
-        if(badgePrice) badgePrice.style.translate = '0 ' + (mid * 0.05).toFixed(1) + 'px';
         if(badgeDist) badgeDist.style.translate = '0 ' + (mid * -0.06).toFixed(1) + 'px';
       }
     }
@@ -771,8 +769,8 @@ import { ROOMS } from './rooms.js';
     var data = {
       name: name, phone: phone, dates: dates,
       dateFrom: isoDay(selStart), dateTo: isoDay(selEnd), nights: nights,
-      guests: guests, room: room, roomLabel: roomLabel, price: roomObj.price,
-      total: roomObj.price * nights, comment: comment, website: honeypot
+      guests: guests, room: room, roomLabel: roomLabel,
+      comment: comment, website: honeypot
     };
     var btn=document.getElementById('submitBtn');
 
@@ -822,7 +820,7 @@ import { ROOMS } from './rooms.js';
       name: data.name, phone: data.phone, dates: data.dates,
       dateFrom: data.dateFrom, dateTo: data.dateTo, nights: data.nights,
       guests: data.guests, room: data.room, roomLabel: data.roomLabel,
-      price: data.price, total: data.total, comment: data.comment,
+      comment: data.comment,
       website: data.website, ref: bookRef(), page: location.pathname
     };
     return sendToSheet(payload).then(function(res){
