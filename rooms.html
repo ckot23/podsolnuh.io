@@ -151,7 +151,7 @@
   <div class="modal">
     <button class="modal-close" type="button" aria-label="Закрыть">×</button>
     <h3 id="bookTitle"><img class="sunflower-inline title-flower" src="img/sunflower.webp" alt="" aria-hidden="true" /> Заявка на бронь</h3>
-    <p class="modal-sub">Оставьте заявку на сайте — она автоматически поступит нам в Telegram. Открывать Telegram не нужно, мы свяжемся с вами.</p>
+    <p class="modal-sub">Заполните заявку — она попадёт в нашу Google-таблицу броней, а модератор сразу получит уведомление в Telegram. Открывать мессенджер не нужно: мы свяжемся с вами.</p>
     <form id="bookForm" novalidate>
       <div class="vh" aria-hidden="true">
         <label for="website">Не заполняйте</label>
@@ -180,6 +180,8 @@
         </div>
         <p class="hint" id="calLabel">Выберите дату заезда</p>
         <input type="hidden" id="fDates" name="dates" />
+        <input type="hidden" id="fDateFrom" name="dateFrom" />
+        <input type="hidden" id="fDateTo" name="dateTo" />
       </div>
       <div class="field">
         <label>Количество гостей</label>
@@ -191,11 +193,17 @@
         <div class="room-picker" id="roomPicker" role="radiogroup" aria-label="Выбор номера"></div>
         <input type="hidden" id="fRoom" name="room" />
       </div>
+      <div class="field">
+        <label for="fComment">Комментарий <span class="label-opt">(необязательно)</span></label>
+        <textarea id="fComment" name="comment" rows="2" maxlength="500" placeholder="Время заезда, детская кроватка, пожелания…"></textarea>
+      </div>
+      <div class="book-summary" id="bookSummary" aria-live="polite"></div>
       <label class="consent">
         <input type="checkbox" id="fConsent" checked />
         <span>Согласие на обработку персональных данных.</span>
       </label>
-      <button class="btn primary full-width" type="submit" id="submitBtn">Отправить заявку</button>
+      <button class="btn primary full-width" type="submit" id="submitBtn">Забронировать</button>
+      <p class="form-hint-under">Заявка появится в таблице броней и у модератора в Telegram. Оплата на сайте не нужна.</p>
       <p class="form-status" id="formStatus" role="status" aria-live="polite"></p>
     </form>
     <p class="modal-alt">Или сразу: <a href="tel:+79181164554"><b>8 918 116-45-54</b></a> · <a href="https://wa.me/79882443223" target="_blank" rel="noopener noreferrer">WhatsApp</a></p>
@@ -220,7 +228,11 @@
     <div id="adminPanel" hidden>
       <ul id="adminRooms" class="admin-rooms"></ul>
       <div class="admin-config">
-        <label>⚙️ Telegram Bot Token (опционально, для авт. отправки заявок)</label>
+        <label>📊 Google-таблица броней (URL веб-приложения Apps Script)</label>
+        <input id="cfgSheet" type="text" placeholder="https://script.google.com/macros/s/AKfy.../exec" />
+        <button class="btn ghost full-width" type="button" id="adminTestSheet">🔍 Проверить связь с таблицей и Telegram</button>
+        <p class="admin-note">🌻 Заявки с сайта уходят в Google-таблицу и дублируются модератору в Telegram (с кнопками «Подтвердить/Отклонить»). Как получить ссылку — см. <b>docs/booking-google-sheets.md</b>.</p>
+        <label>⚙️ Telegram Bot Token (нужен только если таблица не настроена)</label>
         <input id="cfgToken" type="text" placeholder="123456789:AA... (получить у @BotFather)" />
         <label>🆔 Ваш Chat ID в Telegram</label>
         <input id="cfgChat" type="text" placeholder="Напр., 7114829971 (узнать у @userinfobot)" />
