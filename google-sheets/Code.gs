@@ -48,34 +48,30 @@ var DEDUPE_MINUTES = 15;
 
 /* =========================== КОНЕЦ НАСТРОЕК ============================== */
 
-/* Порядок колонок на листе: первые 6 видны, остальные служебные (скрыты). */
+/* Порядок колонок на листе: первые 8 видны, остальные служебные (скрыты). */
 var HEADERS = [
-  'Дата заявки',      // 1  видимая
-  'Имя',              // 2  видимая
-  'Телефон',          // 3  видимая (контакт)
-  'Заезд',            // 4  видимая
-  'Выезд',            // 5  видимая
-  'Гостей',           // 6  видимая
-  'Документы',        // 7  видимая: Да / Нет (нужны ли отчётные документы)
-  '№',                // 8  служебная (скрыта)
-  'Статус',           // 9  служебная (скрыта)
-  'Ночей',            // 10 служебная (скрыта)
-  'Номер',            // 11 служебная (скрыта)
-  'Цена/сутки',       // 12 служебная (скрыта)
-  'Сумма',            // 13 служебная (скрыта)
-  'Комментарий',      // 14 служебная (скрыта)
-  'Источник',         // 15 служебная (скрыта)
-  'Ref',              // 16 технический: подтверждение доставки
-  'RoomId'            // 17 технический: id номера для статусов на сайте
+  '№заявки',            // 1  видимая
+  'Дата заявки',        // 2  видимая
+  'Имя',                // 3  видимая
+  'Контакты',           // 4  видимая
+  'Заезд/выезд',        // 5  видимая
+  'Количество человек', // 6  видимая
+  'Отч.доки',           // 7  видимая: Да / Нет (нужны ли отчётные документы)
+  'Номер комнаты',      // 8  видимая
+  'Статус',             // 9  служебная (скрыта)
+  'Ночей',              // 10 служебная (скрыта)
+  'Комментарий',        // 11 служебная (скрыта)
+  'Источник',           // 12 служебная (скрыта)
+  'Ref',                // 13 технический: подтверждение доставки
+  'RoomId'              // 14 технический: id номера для статусов на сайте
 ];
 
 /* Индексы колонок (с нуля) — используйте их вместо чисел. */
 var COL = {
-  created: 0, name: 1, phone: 2, from: 3, to: 4, guests: 5, docs: 6,
-  id: 7, status: 8, nights: 9, room: 10, price: 11, total: 12,
-  comment: 13, source: 14, ref: 15, roomId: 16
+  id: 0, created: 1, name: 2, contacts: 3, dates: 4, guests: 5, docs: 6, room: 7,
+  status: 8, nights: 9, comment: 10, source: 11, ref: 12, roomId: 13
 };
-var VISIBLE_COUNT = 7;
+var VISIBLE_COUNT = 8;
 
 var STATUS_NEW = 'Новая';
 var STATUS_OK = 'Подтверждена';
@@ -107,7 +103,7 @@ function setup() {
     .setVerticalAlignment('middle');
   sheet.setRowHeight(1, 34);
 
-  var widths = [130, 150, 140, 100, 100, 80, 100, 55, 130, 70, 130, 100, 110, 240, 120, 90, 90];
+  var widths = [85, 135, 150, 145, 175, 145, 95, 130, 130, 70, 240, 120, 90, 90];
   widths.forEach(function (w, i) { sheet.setColumnWidth(i + 1, w); });
 
   // выпадающий список статусов
@@ -117,12 +113,10 @@ function setup() {
     .build();
   sheet.getRange(2, COL.status + 1, 1000, 1).setDataValidation(rule);
 
-  // формат дат/денег и выравнивание
+  // формат дат и выравнивание
+  sheet.getRange(2, COL.id + 1, 1000, 1).setHorizontalAlignment('center');
   sheet.getRange(2, COL.created + 1, 1000, 1).setNumberFormat('dd.MM.yyyy HH:mm');
-  sheet.getRange(2, COL.from + 1, 1000, 2).setNumberFormat('dd.MM.yyyy');
-  sheet.getRange(2, COL.price + 1, 1000, 2).setNumberFormat('# ##0 ₽');
-  sheet.getRange(2, COL.from + 1, 1000, 2).setHorizontalAlignment('center');
-  sheet.getRange(2, COL.guests + 1, 1000, 2).setHorizontalAlignment('center');
+  sheet.getRange(2, COL.dates + 1, 1000, 3).setHorizontalAlignment('center');
   sheet.getRange(2, COL.source + 1, 1000, 3).setFontColor('#9a9a9a').setFontSize(9);
 
   // служебные колонки скрыты (их можно открыть через меню «Показать столбцы»)
@@ -241,9 +235,9 @@ function handleBooking_(data) {
     if (String(data.website || '').trim()) return { ok: true, ignored: true };
 
     var name = String(data.name || '').trim();
-    var phone = String(data.phone || '').trim();
+    var contacts = String(data.contacts || data.phone || '').trim();
     if (name.length < 2) return { ok: false, error: 'Укажите имя.' };
-    if (digits_(phone).length < 10) return { ok: false, error: 'Укажите телефон.' };
+    if (digits_(contacts).length < 10) return { ok: false, error: 'Укажите телефон.' };
 
     var ref = String(data.ref || '').trim();
     if (ref) {
@@ -252,64 +246,58 @@ function handleBooking_(data) {
     }
 
     var range = parseDates_(data);
-    var guests = String(data.guests || '').trim() || '—';
-    var roomLabel = String(data.roomLabel || data.room || '').trim() || 'не выбран';
-    var roomId = String(data.room || '').trim();
-    var price = toNumber_(data.price);
+    var guests = String(data.people || data.guests || '').trim() || '—';
+    var roomLabel = String(data.roomNumber || data.roomLabel || data.room || '').trim() || 'не выбран';
+    var roomId = String(data.roomId || data.room || '').trim();
     var nights = range.nights || toNumber_(data.nights);
-    var total = (price && nights) ? price * nights : toNumber_(data.total);
-    var docs = /^(да|yes|1|true|on)$/i.test(String(data.docs || '').trim()) ? 'Да' : 'Нет';
+    var docs = /^(да|нужны|yes|1|true|on)$/i.test(String(data.docs || '').trim()) ? 'Да' : 'Нет';
     var comment = String(data.comment || '').trim();
     var source = String(data.page || data.source || '').trim();
 
     // защита от повторной отправки той же заявки в течение DEDUPE_MINUTES
-    var recent = findRecent_(phone, range.fromIso, roomId);
+    var recent = findRecent_(contacts, range.fromIso, roomId);
     if (recent) return { ok: true, id: recent, duplicate: true, message: 'Заявка №' + recent + ' уже принята.' };
 
     var ss = getSpreadsheet_();
     var sheet = getSheet_(ss);
     var row = sheet.getLastRow() + 1;
     var num = row - 1;
+    var createdAt = new Date();
+    var datesCell = range.pair || range.human || '';
 
     var values = [];
-    values[COL.created] = new Date();
+    values[COL.id] = num;
+    values[COL.created] = createdAt;
     values[COL.name] = name;
-    values[COL.phone] = phone;
-    values[COL.from] = range.from || '';
-    values[COL.to] = range.to || '';
+    values[COL.contacts] = contacts;
+    values[COL.dates] = datesCell;
     values[COL.guests] = guests;
     values[COL.docs] = docs;
-    values[COL.id] = num;
+    values[COL.room] = roomLabel;
     values[COL.status] = STATUS_NEW;
     values[COL.nights] = nights || '';
-    values[COL.room] = roomLabel;
-    values[COL.price] = price || '';
-    values[COL.total] = total || '';
     values[COL.comment] = comment;
     values[COL.source] = source;
     values[COL.ref] = ref;
     values[COL.roomId] = roomId;
     sheet.getRange(row, 1, 1, HEADERS.length).setValues([values]);
+    sheet.getRange(row, COL.id + 1).setHorizontalAlignment('center');
     sheet.getRange(row, COL.created + 1).setNumberFormat('dd.MM.yyyy HH:mm');
-    sheet.getRange(row, COL.from + 1, 1, 2).setNumberFormat('dd.MM.yyyy');
-    sheet.getRange(row, COL.from + 1, 1, 2).setHorizontalAlignment('center');
-    sheet.getRange(row, COL.guests + 1).setHorizontalAlignment('center');
-    sheet.getRange(row, COL.price + 1, 1, 2).setNumberFormat('# ##0 ₽');
+    sheet.getRange(row, COL.dates + 1, 1, 3).setHorizontalAlignment('center');
     sheet.getRange(row, COL.source + 1, 1, 3).setFontColor('#9a9a9a').setFontSize(9);
 
     var booking = {
       id: num,
+      created: createdAt,
       name: name,
-      phone: phone,
-      datesHuman: range.human || String(data.dates || '').trim(),
+      contacts: contacts,
+      datesHuman: range.human || datesCell,
       from: range.fromIso,
       to: range.toIso,
       nights: nights,
       guests: guests,
       docs: docs,
       room: roomLabel,
-      price: price,
-      total: total,
       comment: comment,
       source: source,
       sheetUrl: sheetUrl_(ss, sheet)
@@ -322,8 +310,7 @@ function handleBooking_(data) {
       message: 'Заявка №' + num + ' принята.',
       row: row,
       notified: notified,
-      nights: nights,
-      total: total
+      nights: nights
     };
   } finally {
     try { lock.releaseLock(); } catch (err) {}
@@ -339,15 +326,14 @@ function notifyModerator_(b) {
   var lines = [
     '🌻 <b>Новая заявка №' + b.id + '</b>',
     '',
+    '🕒 <b>Дата заявки:</b> ' + Utilities.formatDate(b.created || new Date(), TIMEZONE, 'dd.MM.yyyy HH:mm'),
     '👤 <b>Имя:</b> ' + esc_(b.name),
-    '📞 <b>Телефон:</b> <code>' + esc_(b.phone) + '</code>',
-    '📅 <b>Даты:</b> ' + esc_(datesLine_(b)),
-    '👥 <b>Гостей:</b> ' + esc_(b.guests),
-    '📄 <b>Отчётные документы:</b> ' + (b.docs === 'Да' ? 'нужны' : 'не нужны'),
-    '🛏 <b>Номер:</b> ' + esc_(b.room),
-    b.total ? '💰 <b>Сумма:</b> ' + money_(b.total) + (b.price ? ' (' + money_(b.price) + '/сутки)' : '') : '',
-    b.comment ? '💬 <b>Комментарий:</b> ' + esc_(b.comment) : '',
-    '🕒 ' + Utilities.formatDate(new Date(), TIMEZONE, 'dd.MM.yyyy HH:mm')
+    '📞 <b>Контакты:</b> <code>' + esc_(b.contacts) + '</code>',
+    '📅 <b>Заезд/выезд:</b> ' + esc_(datesLine_(b)),
+    '👥 <b>Количество человек:</b> ' + esc_(b.guests),
+    '📄 <b>Отч. доки:</b> ' + (b.docs === 'Да' ? 'Да (нужны)' : 'Нет'),
+    '🛏 <b>Номер комнаты:</b> ' + esc_(b.room),
+    b.comment ? '💬 <b>Комментарий:</b> ' + esc_(b.comment) : ''
   ].filter(String);
 
   if (b.source) lines.push('🌐 Источник: ' + esc_(b.source));
@@ -470,7 +456,7 @@ function todayReport_() {
   rows.forEach(function (r) {
     var created = r[COL.created] ? Utilities.formatDate(new Date(r[COL.created]), TIMEZONE, 'dd.MM.yyyy') : '';
     if (created !== stamp) return;
-    out.push('• №' + r[COL.id] + ' — ' + r[COL.name] + ', ' + r[COL.phone] + ', ' + r[COL.room] + ', ' + String(r[COL.status]).toLowerCase());
+    out.push('• №' + r[COL.id] + ' — ' + r[COL.name] + ', ' + r[COL.contacts] + ', ' + r[COL.room] + ', ' + String(r[COL.status]).toLowerCase());
   });
   return out.length ? ('📋 Заявки за сегодня (' + stamp + '):\n' + out.join('\n')) : 'Сегодня новых заявок не было.';
 }
@@ -494,9 +480,10 @@ function computeStatuses_() {
       var roomId = String(r[COL.roomId] || '').trim();
       if (!roomId) return;
       if (status !== STATUS_OK && status !== STATUS_IN) return;
-      var from = toDate_(r[COL.from]);
+      var range = parseDates_({ dates: r[COL.dates] });
+      var from = range.from || toDate_(r[COL.dates]);
       if (!from) return;
-      var to = toDate_(r[COL.to]) || new Date(from.getTime() + 86400000);
+      var to = range.to || new Date(from.getTime() + 86400000);
       if (today.getTime() >= startOfDay_(from).getTime() && today.getTime() < startOfDay_(to).getTime()) {
         out[roomId] = 'busy';
       }
@@ -548,18 +535,65 @@ function getSheet_(ss) {
 
 /**
  * Приводит лист к актуальному порядку колонок HEADERS.
- * Данные переносятся по названиям колонок, поэтому старые брони не теряются.
+ * Данные переносятся по названиям колонок (с учётом синонимов и склейки Заезд + Выезд),
+ * поэтому старые брони не теряются.
  */
+var HEADER_ALIASES = [
+  ['№заявки', '№ заявки', '№', 'номер заявки', 'id'],
+  ['дата заявки', 'дата заяки', 'дата'],
+  ['имя', 'фио', 'гость'],
+  ['контакты', 'телефон', 'контакт', 'номер телефона'],
+  ['заезд/выезд', 'заезд / выезд', 'заезд-выезд', 'даты', 'даты проживания'],
+  ['количество человек', 'кол-во человек', 'гостей', 'количество гостей', 'человек'],
+  ['отч.доки', 'отч. доки', 'отчетные документы', 'документы', 'отч доки'],
+  ['номер комнаты', 'номер', 'комната'],
+  ['статус'],
+  ['ночей', 'суток'],
+  ['комментарий', 'пожелания'],
+  ['источник'],
+  ['ref'],
+  ['roomid']
+];
+
+function normHead_(s) {
+  return String(s || '').trim().toLowerCase().replace(/ё/g, 'е').replace(/\s+/g, ' ');
+}
+
+function findAliasIdx_(oldNorm, aliases) {
+  for (var i = 0; i < aliases.length; i++) {
+    var k = oldNorm.indexOf(aliases[i]);
+    if (k >= 0) return k;
+  }
+  return -1;
+}
+
+function formatCellDate_(v) {
+  var d = toDate_(v);
+  if (d) return Utilities.formatDate(d, TIMEZONE, 'dd.MM.yyyy');
+  return String(v || '').trim();
+}
+
 function migrateLayout_(sheet) {
   var lastCol = Math.max(sheet.getLastColumn(), 1);
   var lastRow = sheet.getLastRow();
   var oldHead = sheet.getRange(1, 1, 1, lastCol).getValues()[0].map(function (h) { return String(h).trim(); });
   if (oldHead.slice(0, HEADERS.length).join('|') === HEADERS.join('|') && lastCol <= HEADERS.length) return;
 
-  var idx = HEADERS.map(function (h) { return oldHead.indexOf(h); });
+  var oldNorm = oldHead.map(normHead_);
+  var idx = HEADER_ALIASES.map(function (aliases) { return findAliasIdx_(oldNorm, aliases); });
+  var oldFromIdx = oldNorm.indexOf('заезд');
+  var oldToIdx = oldNorm.indexOf('выезд');
+
   var data = lastRow > 1 ? sheet.getRange(2, 1, lastRow - 1, lastCol).getValues() : [];
-  var rows = data.map(function (r) {
-    return HEADERS.map(function (h, i) { return idx[i] >= 0 ? r[idx[i]] : ''; });
+  var rows = data.map(function (r, rowIdx) {
+    var outRow = HEADERS.map(function (h, i) { return idx[i] >= 0 ? r[idx[i]] : ''; });
+    if (!outRow[COL.id]) outRow[COL.id] = rowIdx + 1;
+    if (!outRow[COL.dates] && (oldFromIdx >= 0 || oldToIdx >= 0)) {
+      var fStr = oldFromIdx >= 0 ? formatCellDate_(r[oldFromIdx]) : '';
+      var tStr = oldToIdx >= 0 ? formatCellDate_(r[oldToIdx]) : '';
+      outRow[COL.dates] = (fStr && tStr) ? (fStr + ' – ' + tStr) : (fStr || tStr);
+    }
+    return outRow;
   });
 
   sheet.showColumns(1, Math.max(lastCol, HEADERS.length));
@@ -581,14 +615,13 @@ function findRef_(ref) {
 function findRecent_(phone, fromIso, roomId) {
   var d = digits_(phone);
   return findRow_(function (r) {
-    if (digits_(r[COL.phone]) !== d) return false;
+    if (digits_(r[COL.contacts]) !== d) return false;
     if (normStatus_(r[COL.status]) !== STATUS_NEW) return false;
     var created = r[COL.created] ? new Date(r[COL.created]).getTime() : 0;
     if (!created || (Date.now() - created) > DEDUPE_MINUTES * 60000) return false;
     if (fromIso) {
-      var f = toDate_(r[COL.from]);
-      var iso = f ? Utilities.formatDate(f, TIMEZONE, 'yyyy-MM-dd') : '';
-      if (iso && iso !== fromIso) return false;
+      var range = parseDates_({ dates: r[COL.dates] });
+      if (range.fromIso && range.fromIso !== fromIso) return false;
     }
     if (roomId && String(r[COL.roomId] || '').trim() !== roomId) return false;
     return true;
@@ -611,13 +644,13 @@ function findRow_(predicate) {
  * затем разбираем человеческую строку вида «12.10.2026–15.10.2026 (3 сут.)».
  */
 function parseDates_(data) {
-  var out = { from: null, to: null, fromIso: '', toIso: '', nights: 0, human: '' };
+  var out = { from: null, to: null, fromIso: '', toIso: '', nights: 0, pair: '', human: '' };
   var from = parseIso_(data.dateFrom);
   var to = parseIso_(data.dateTo);
 
   if (!from || !to) {
     var raw = String(data.dates || '').replace(/\(.*?\)/g, ' ');
-    var m = raw.match(/(\d{1,2})\.(\d{1,2})(?:\.(\d{2,4}))?\s*[–—\-]\s*(\d{1,2})\.(\d{1,2})(?:\.(\d{2,4}))?/);
+    var m = raw.match(/(\d{1,2})\.(\d{1,2})(?:\.(\d{2,4}))?\s*(?:[–—\-\/]|по)\s*(\d{1,2})\.(\d{1,2})(?:\.(\d{2,4}))?/i);
     if (m) {
       var year = Number(m[6] || m[3] || new Date().getFullYear());
       if (year < 100) year += 2000;
@@ -632,11 +665,9 @@ function parseDates_(data) {
   if (from && to) {
     var n = Math.round((startOfDay_(to) - startOfDay_(from)) / 86400000);
     out.nights = n > 0 ? n : 0;
+    out.pair = Utilities.formatDate(from, TIMEZONE, 'dd.MM.yyyy') + ' – ' + Utilities.formatDate(to, TIMEZONE, 'dd.MM.yyyy');
   }
-  out.human = String(data.dates || '').trim();
-  if (!out.human && from && to) {
-    out.human = Utilities.formatDate(from, TIMEZONE, 'dd.MM.yyyy') + '–' + Utilities.formatDate(to, TIMEZONE, 'dd.MM.yyyy');
-  }
+  out.human = String(data.dates || '').trim() || out.pair;
   return out;
 }
 

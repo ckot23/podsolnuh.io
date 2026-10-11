@@ -14,7 +14,7 @@
 <meta property="og:image" content="https://podsolnuh.io/img/hero.jpg" />
 <link rel="canonical" href="https://podsolnuh.io/rooms.html" />
 <link rel="icon" href="img/favicon.png" type="image/png" sizes="128x128" />
-<link rel="stylesheet" href="css/site.css?v=20260928-5" />
+<link rel="stylesheet" href="css/site.css?v=20261012-2" />
 
 
 <!-- Preconnect for fonts -->
@@ -158,17 +158,17 @@
         <input id="website" name="website" type="text" tabindex="-1" autocomplete="off" />
       </div>
       <div class="field">
-        <label for="fName">Ваше имя</label>
+        <label for="fName">Имя</label>
         <input id="fName" name="name" type="text" autocomplete="name" placeholder="Как к вам обращаться" required />
         <p class="err" id="errName">Представьтесь, пожалуйста.</p>
       </div>
       <div class="field">
-        <label for="fPhone">Телефон</label>
+        <label for="fPhone">Контакты (телефон)</label>
         <input id="fPhone" name="phone" type="tel" autocomplete="tel" placeholder="+7 ___ ___-__-__" required />
-        <p class="err" id="errPhone">Нужен телефон, чтобы перезвонить.</p>
+        <p class="err" id="errPhone">Нужен телефон для связи.</p>
       </div>
       <div class="field">
-        <label id="calLabelText">Даты заезда и выезда</label>
+        <label id="calLabelText">Заезд и выезд</label>
         <div class="cal" role="group" aria-labelledby="calLabelText">
           <div class="cal-head">
             <button class="cal-nav" type="button" id="calPrev" aria-label="Предыдущий месяц">‹</button>
@@ -184,24 +184,24 @@
         <input type="hidden" id="fDateTo" name="dateTo" />
       </div>
       <div class="field">
-        <label>Количество гостей</label>
-        <div class="guests-picker" id="guestsPicker" role="radiogroup" aria-label="Количество гостей"></div>
+        <label>Количество человек</label>
+        <div class="guests-picker" id="guestsPicker" role="radiogroup" aria-label="Количество человек"></div>
         <input type="hidden" id="fGuests" name="guests" value="2" />
       </div>
       <div class="field">
-        <label>Выберите номер</label>
-        <div class="room-picker" id="roomPicker" role="radiogroup" aria-label="Выбор номера"></div>
+        <label>Номер комнаты</label>
+        <div class="room-picker" id="roomPicker" role="radiogroup" aria-label="Номер комнаты"></div>
         <input type="hidden" id="fRoom" name="room" />
       </div>
       <div class="field">
         <label for="fComment">Комментарий <span class="label-opt">(необязательно)</span></label>
         <textarea id="fComment" name="comment" rows="2" maxlength="500" placeholder="Время заезда, детская кроватка, пожелания…"></textarea>
       </div>
-      <div class="book-summary" id="bookSummary" aria-live="polite"></div>
       <label class="consent docs-toggle">
         <input type="checkbox" id="fDocs" name="docs" />
         <span>Нужны отчётные документы (счёт, чек)</span>
       </label>
+      <div class="book-summary" id="bookSummary" aria-live="polite"></div>
       <label class="consent">
         <input type="checkbox" id="fConsent" checked />
         <span>Согласие на обработку персональных данных.</span>
@@ -271,6 +271,6 @@
   </div>
 </div>
 
-<script type="module" src="js/app.js?v=20261011-1"></script>
+<script type="module" src="js/app.js?v=20261012-2"></script>
 </body>
 </html>
