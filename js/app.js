@@ -304,7 +304,6 @@ import { ROOMS } from './rooms.js';
   var scrollSunFlower=scrollSun ? scrollSun.querySelector('.scroll-sun-flower') : null;
   var scrollRing=scrollSun ? scrollSun.querySelector('.ring-fg') : null;
   var heroWrap=document.querySelector('.hero-photo-wrap');
-  var badgePrice=document.querySelector('.badge-price');
   var badgeDist=document.querySelector('.badge-dist');
   var bigFlower=document.querySelector('.big-sunflower');
   var heroVisual=document.querySelector('.hero-visual');
@@ -334,7 +333,6 @@ import { ROOMS } from './rooms.js';
       if(r.bottom > -140 && r.top < window.innerHeight + 140){
         var mid = r.top + r.height / 2 - window.innerHeight / 2;
         if(heroWrap) heroWrap.style.translate = '0 ' + (mid * -0.07).toFixed(1) + 'px';
-        if(badgePrice) badgePrice.style.translate = '0 ' + (mid * 0.05).toFixed(1) + 'px';
         if(badgeDist) badgeDist.style.translate = '0 ' + (mid * -0.06).toFixed(1) + 'px';
       }
     }
@@ -512,11 +510,10 @@ import { ROOMS } from './rooms.js';
         '<div class="room-photo">' +
           buildSlider(r) +
           '<span class="status-chip '+(busy?'busy':'free')+'">'+(busy?'🚫 Занят':'Свободен')+'</span>' +
-          '<span class="room-price">от '+r.price.toLocaleString('ru-RU')+' ₽ <small>/ сутки</small></span>' +
-        '</div>' +
+                  '</div>' +
         '<div class="room-body">' +
           '<h3>'+r.name+'</h3>' +
-          '<p class="room-desc">Актуальную стоимость и наличие уточняйте по телефону.</p>' +
+          '<p class="room-desc">Цена зависит от даты и количества гостей. Уточняйте по телефону.</p>' +
           '<div class="room-cta">' +
             '<button class="btn primary" type="button" data-book="'+r.id+'" '+(busy?'disabled':'')+'>'+(busy?'Сейчас занят':'Забронировать')+'</button>' +
             '<a class="btn ghost" href="tel:'+cfg.phonePrimary+'">Позвонить</a>' +
@@ -582,8 +579,7 @@ import { ROOMS } from './rooms.js';
         pictureMarkup({src:r.photos[0].src, alt:r.photos[0].alt}, 'opt-photo', 'lazy') +
         '<div class="opt-body">' +
           '<span class="opt-name">'+r.name+'</span>' +
-          '<div class="opt-price">от '+r.price.toLocaleString('ru-RU')+' ₽ <small>/ сутки</small></div>' +
-          '<div class="opt-note">Уточняйте по телефону</div>' +
+          '<div class="opt-note">Цена зависит от даты и количества гостей</div>' +
         '</div>' +
         (busy?'<span class="opt-busy-badge">Занят</span>':'');
       btn.addEventListener('click', function(){
@@ -711,11 +707,10 @@ import { ROOMS } from './rooms.js';
     rows.push(['Даты', selStart ? (selEnd ? dateHuman(selStart)+' – '+dateHuman(selEnd) : dateHuman(selStart)+' (выезд не выбран)') : '—']);
     rows.push(['Ночей', nights ? nights : '—']);
     rows.push(['Гостей', selectedGuests]);
-    rows.push(['Цена', room ? 'от '+room.price.toLocaleString('ru-RU')+' ₽ / сутки' : '—']);
-    if(room && nights) rows.push(['Предварительно', (room.price*nights).toLocaleString('ru-RU')+' ₽']);
+    rows.push(['Документы', (document.getElementById('fDocs') || {}).checked ? 'нужны' : 'не нужны']);
     box.innerHTML = rows.map(function(r){
       return '<div class="sum-row"><span>'+r[0]+'</span><b>'+r[1]+'</b></div>';
-    }).join('') + '<p class="sum-note">Расчёт предварительный: точную стоимость подтвердит модератор.</p>';
+    }).join('') + '<p class="sum-note">Цена зависит от даты и количества гостей. Точную стоимость подтвердит модератор.</p>';
   }
   if(calGrid){
     calGrid.addEventListener('click',function(e){
@@ -756,6 +751,8 @@ import { ROOMS } from './rooms.js';
     comment = String(comment).trim();
     var honeypot = document.getElementById('website').value.trim();
     if(honeypot) return;
+    var docsNeeded = !!(document.getElementById('fDocs') || {}).checked;
+    var docs = docsNeeded ? 'да' : 'нет';
 
     var ok=true;
     if(name.length<2){ showErr('errName',true); ok=false; }
@@ -775,8 +772,8 @@ import { ROOMS } from './rooms.js';
     var data = {
       name: name, phone: phone, dates: dates,
       dateFrom: isoDay(selStart), dateTo: isoDay(selEnd), nights: nights,
-      guests: guests, room: room, roomLabel: roomLabel, price: roomObj.price,
-      total: roomObj.price * nights, comment: comment, website: honeypot
+      guests: guests, room: room, roomLabel: roomLabel,
+      docs: docs, comment: comment, website: honeypot
     };
     var btn=document.getElementById('submitBtn');
 
@@ -825,8 +822,8 @@ import { ROOMS } from './rooms.js';
       action: 'book',
       name: data.name, phone: data.phone, dates: data.dates,
       dateFrom: data.dateFrom, dateTo: data.dateTo, nights: data.nights,
-      guests: data.guests, room: data.room, roomLabel: data.roomLabel,
-      price: data.price, total: data.total, comment: data.comment,
+      guests: data.guests, docs: data.docs, room: data.room, roomLabel: data.roomLabel,
+      comment: data.comment,
       website: data.website, ref: bookRef(), page: location.pathname
     };
     return sendToSheet(payload).then(function(res){

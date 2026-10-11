@@ -24,9 +24,12 @@ console.log('\n1) setup() — создание листа');
 api.setup();
 sheet = env.sheet();
 check('лист «Брони» создан', !!sheet);
-check('шапка из 16 колонок', sheet.getRange(1, 1, 1, 16).getValues()[0].join('|') ===
-  '№|Дата заявки|Статус|Имя|Телефон|Заезд|Выезд|Ночей|Гостей|Номер|Цена/сутки|Сумма|Комментарий|Источник|Ref|RoomId',
-  sheet.getRange(1, 1, 1, 16).getValues()[0].join('|'));
+check('шапка: видимые колонки в нужном порядке', sheet.getRange(1, 1, 1, 7).getValues()[0].join('|') ===
+  'Дата заявки|Имя|Телефон|Заезд|Выезд|Гостей|Документы',
+  sheet.getRange(1, 1, 1, 7).getValues()[0].join('|'));
+check('служебные колонки есть и скрыты', sheet.getRange(1, 8, 1, 10).getValues()[0].join('|') ===
+  '№|Статус|Ночей|Номер|Цена/сутки|Сумма|Комментарий|Источник|Ref|RoomId' && sheet.hiddenCols.join(',') === '8,9,10,11,12,13,14,15,16,17',
+  sheet.getRange(1, 8, 1, 10).getValues()[0].join('|') + ' hidden=' + sheet.hiddenCols);
 check('выпадающий список статусов задан', sheet.validations.length > 0);
 
 console.log('\n2) заявка с сайта (multipart: поля приходят в e.parameter)');
@@ -36,7 +39,7 @@ const from = iso(t), to = iso(new Date(t.getTime() + 2 * 86400000));
 const bookingParams = {
   action: 'book', name: 'Анна Петрова', phone: '+7 918 116-45-54',
   dates: '12.10.2026 – 14.10.2026 (2 сут.)', dateFrom: from, dateTo: to,
-  nights: '2', guests: '2', room: 'single-1', roomLabel: 'Номер 1',
+  nights: '2', guests: '2', docs: 'да', room: 'single-1', roomLabel: 'Номер 1',
   price: '2500', total: '5000', comment: 'Заезд после 20:00',
   ref: 'p-test-0001', page: '/rooms.html'
 };
@@ -49,14 +52,17 @@ check('номер заявки = 1', res1.id === 1, JSON.stringify(res1));
 check('уведомление модератору отправлено', res1.notified === true);
 check('посчитано 2 ночи и сумма 5000', res1.nights === 2 && res1.total === 5000, JSON.stringify(res1));
 
-const row = sheet.getRange(2, 1, 1, 16).getValues()[0];
-check('имя в таблице', row[3] === 'Анна Петрова', String(row[3]));
-check('телефон в таблице', row[4] === '+7 918 116-45-54', String(row[4]));
-check('дата заезда записана как дата', row[5] instanceof Date, String(row[5]));
-check('статус «Новая»', row[2] === 'Новая', String(row[2]));
-check('номер + цена + сумма', row[9] === 'Номер 1' && row[10] === 2500 && row[11] === 5000, [row[9], row[10], row[11]].join(' / '));
-check('комментарий попал в таблицу', row[12] === 'Заезд после 20:00', String(row[12]));
-check('roomId сохранён для статусов сайта', row[15] === 'single-1', String(row[15]));
+const row = sheet.getRange(2, 1, 1, 17).getValues()[0];
+check('дата заявки записана', row[0] instanceof Date, String(row[0]));
+check('имя в таблице', row[1] === 'Анна Петрова', String(row[1]));
+check('телефон в таблице', row[2] === '+7 918 116-45-54', String(row[2]));
+check('дата заезда записана как дата', row[3] instanceof Date, String(row[3]));
+check('гостей в таблице', String(row[5]) === '2', String(row[5]));
+check('галочка документов записана как «Да»', row[6] === 'Да', String(row[6]));
+check('статус «Новая»', row[8] === 'Новая', String(row[8]));
+check('номер + цена + сумма', row[10] === 'Номер 1' && row[11] === 2500 && row[12] === 5000, [row[10], row[11], row[12]].join(' / '));
+check('комментарий попал в таблицу', row[13] === 'Заезд после 20:00', String(row[13]));
+check('roomId сохранён для статусов сайта', row[16] === 'single-1', String(row[16]));
 
 const tgMsg = env.fetchLog.filter(f => /sendMessage/.test(f.url)).pop();
 check('в Telegram ушло сообщение с кнопками', !!tgMsg && /ok:1/.test(tgMsg.payload.reply_markup) && /no:1/.test(tgMsg.payload.reply_markup));
@@ -74,11 +80,11 @@ console.log('\n4) кнопки модератора в Telegram');
 check('апдейт обработан', post({
   callback_query: { id: 'cb1', from: { id: 7114829971 }, data: 'ok:1', message: { message_id: 101, chat: { id: 7114829971 }, text: 'заявка №1' } }
 }, true).ok === true);
-check('статус в таблице стал «Подтверждена»', sheet.getRange(2, 3).getValues()[0][0] === 'Подтверждена', String(sheet.getRange(2, 3).getValues()[0][0]));
+check('статус в таблице стал «Подтверждена»', sheet.getRange(2, 9).getValues()[0][0] === 'Подтверждена', String(sheet.getRange(2, 9).getValues()[0][0]));
 check('нажатие подтверждено в чате', env.fetchLog.some(f => /answerCallbackQuery/.test(f.url)));
 check('сообщение переписано («Подтверждено»)', env.fetchLog.some(f => /editMessageText/.test(f.url)));
 post({ callback_query: { id: 'cb2', from: { id: 999 }, data: 'no:1', message: { message_id: 101, chat: { id: 999 }, text: 'x' } } }, false);
-check('без секрета в вебхуке апдейт игнорируется', sheet.getRange(2, 3).getValues()[0][0] === 'Подтверждена');
+check('без секрета в вебхуке апдейт игнорируется', sheet.getRange(2, 9).getValues()[0][0] === 'Подтверждена');
 
 console.log('\n5) статусы номеров для сайта (GET ?action=status)');
 const st = get({ action: 'status' });
@@ -105,8 +111,9 @@ const p3 = api.parseDates_({ dates: '01.03.2026 – 04.03.2026 (3 сут.)', dat
 check('ISO-поля имеют приоритет', p3.nights === 3 && p3.fromIso === '2026-03-01', JSON.stringify(p3));
 
 console.log('\n9) вторая заявка (другой номер и телефон)');
-const res2 = post({ action: 'book', name: 'Пётр', phone: '+79189451223', dateFrom: from, dateTo: to, dates: 'x', room: 'studio-4', roomLabel: 'Номер 2', price: 2500, ref: 'p-test-0003' });
+const res2 = post({ action: 'book', name: 'Пётр', phone: '+79189451223', dateFrom: from, dateTo: to, dates: 'x', room: 'studio-4', roomLabel: 'Номер 2', price: 2500, docs: 'нет', ref: 'p-test-0003' });
 check('принята с номером 2', res2.ok === true && res2.id === 2, JSON.stringify(res2));
+check('без галочки документов записано «Нет»', sheet.getRange(3, 7).getValues()[0][0] === 'Нет', String(sheet.getRange(3, 7).getValues()[0][0]));
 check('в таблице две строки', sheet.getLastRow() === 3, String(sheet.getLastRow()));
 
 console.log('\nИтого: ' + pass + ' успешно, ' + fail + ' провалено\n');
