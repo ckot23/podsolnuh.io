@@ -56,25 +56,26 @@ var HEADERS = [
   'Заезд',            // 4  видимая
   'Выезд',            // 5  видимая
   'Гостей',           // 6  видимая
-  '№',                // 7  служебная (скрыта)
-  'Статус',           // 8  служебная (скрыта)
-  'Ночей',            // 9  служебная (скрыта)
-  'Номер',            // 10 служебная (скрыта)
-  'Цена/сутки',       // 11 служебная (скрыта)
-  'Сумма',            // 12 служебная (скрыта)
-  'Комментарий',      // 13 служебная (скрыта)
-  'Источник',         // 14 служебная (скрыта)
-  'Ref',              // 15 технический: подтверждение доставки
-  'RoomId'            // 16 технический: id номера для статусов на сайте
+  'Документы',        // 7  видимая: Да / Нет (нужны ли отчётные документы)
+  '№',                // 8  служебная (скрыта)
+  'Статус',           // 9  служебная (скрыта)
+  'Ночей',            // 10 служебная (скрыта)
+  'Номер',            // 11 служебная (скрыта)
+  'Цена/сутки',       // 12 служебная (скрыта)
+  'Сумма',            // 13 служебная (скрыта)
+  'Комментарий',      // 14 служебная (скрыта)
+  'Источник',         // 15 служебная (скрыта)
+  'Ref',              // 16 технический: подтверждение доставки
+  'RoomId'            // 17 технический: id номера для статусов на сайте
 ];
 
 /* Индексы колонок (с нуля) — используйте их вместо чисел. */
 var COL = {
-  created: 0, name: 1, phone: 2, from: 3, to: 4, guests: 5,
-  id: 6, status: 7, nights: 8, room: 9, price: 10, total: 11,
-  comment: 12, source: 13, ref: 14, roomId: 15
+  created: 0, name: 1, phone: 2, from: 3, to: 4, guests: 5, docs: 6,
+  id: 7, status: 8, nights: 9, room: 10, price: 11, total: 12,
+  comment: 13, source: 14, ref: 15, roomId: 16
 };
-var VISIBLE_COUNT = 6;
+var VISIBLE_COUNT = 7;
 
 var STATUS_NEW = 'Новая';
 var STATUS_OK = 'Подтверждена';
@@ -106,7 +107,7 @@ function setup() {
     .setVerticalAlignment('middle');
   sheet.setRowHeight(1, 34);
 
-  var widths = [130, 150, 140, 100, 100, 80, 55, 130, 70, 130, 100, 110, 240, 120, 90, 90];
+  var widths = [130, 150, 140, 100, 100, 80, 100, 55, 130, 70, 130, 100, 110, 240, 120, 90, 90];
   widths.forEach(function (w, i) { sheet.setColumnWidth(i + 1, w); });
 
   // выпадающий список статусов
@@ -121,7 +122,7 @@ function setup() {
   sheet.getRange(2, COL.from + 1, 1000, 2).setNumberFormat('dd.MM.yyyy');
   sheet.getRange(2, COL.price + 1, 1000, 2).setNumberFormat('# ##0 ₽');
   sheet.getRange(2, COL.from + 1, 1000, 2).setHorizontalAlignment('center');
-  sheet.getRange(2, COL.guests + 1, 1000, 1).setHorizontalAlignment('center');
+  sheet.getRange(2, COL.guests + 1, 1000, 2).setHorizontalAlignment('center');
   sheet.getRange(2, COL.source + 1, 1000, 3).setFontColor('#9a9a9a').setFontSize(9);
 
   // служебные колонки скрыты (их можно открыть через меню «Показать столбцы»)
@@ -257,6 +258,7 @@ function handleBooking_(data) {
     var price = toNumber_(data.price);
     var nights = range.nights || toNumber_(data.nights);
     var total = (price && nights) ? price * nights : toNumber_(data.total);
+    var docs = /^(да|yes|1|true|on)$/i.test(String(data.docs || '').trim()) ? 'Да' : 'Нет';
     var comment = String(data.comment || '').trim();
     var source = String(data.page || data.source || '').trim();
 
@@ -276,6 +278,7 @@ function handleBooking_(data) {
     values[COL.from] = range.from || '';
     values[COL.to] = range.to || '';
     values[COL.guests] = guests;
+    values[COL.docs] = docs;
     values[COL.id] = num;
     values[COL.status] = STATUS_NEW;
     values[COL.nights] = nights || '';
@@ -303,6 +306,7 @@ function handleBooking_(data) {
       to: range.toIso,
       nights: nights,
       guests: guests,
+      docs: docs,
       room: roomLabel,
       price: price,
       total: total,
@@ -339,6 +343,7 @@ function notifyModerator_(b) {
     '📞 <b>Телефон:</b> <code>' + esc_(b.phone) + '</code>',
     '📅 <b>Даты:</b> ' + esc_(datesLine_(b)),
     '👥 <b>Гостей:</b> ' + esc_(b.guests),
+    '📄 <b>Отчётные документы:</b> ' + (b.docs === 'Да' ? 'нужны' : 'не нужны'),
     '🛏 <b>Номер:</b> ' + esc_(b.room),
     b.total ? '💰 <b>Сумма:</b> ' + money_(b.total) + (b.price ? ' (' + money_(b.price) + '/сутки)' : '') : '',
     b.comment ? '💬 <b>Комментарий:</b> ' + esc_(b.comment) : '',

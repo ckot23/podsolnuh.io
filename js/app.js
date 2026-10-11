@@ -707,6 +707,7 @@ import { ROOMS } from './rooms.js';
     rows.push(['Даты', selStart ? (selEnd ? dateHuman(selStart)+' – '+dateHuman(selEnd) : dateHuman(selStart)+' (выезд не выбран)') : '—']);
     rows.push(['Ночей', nights ? nights : '—']);
     rows.push(['Гостей', selectedGuests]);
+    rows.push(['Документы', (document.getElementById('fDocs') || {}).checked ? 'нужны' : 'не нужны']);
     box.innerHTML = rows.map(function(r){
       return '<div class="sum-row"><span>'+r[0]+'</span><b>'+r[1]+'</b></div>';
     }).join('') + '<p class="sum-note">Цена зависит от даты и количества гостей. Точную стоимость подтвердит модератор.</p>';
@@ -750,6 +751,8 @@ import { ROOMS } from './rooms.js';
     comment = String(comment).trim();
     var honeypot = document.getElementById('website').value.trim();
     if(honeypot) return;
+    var docsNeeded = !!(document.getElementById('fDocs') || {}).checked;
+    var docs = docsNeeded ? 'да' : 'нет';
 
     var ok=true;
     if(name.length<2){ showErr('errName',true); ok=false; }
@@ -770,7 +773,7 @@ import { ROOMS } from './rooms.js';
       name: name, phone: phone, dates: dates,
       dateFrom: isoDay(selStart), dateTo: isoDay(selEnd), nights: nights,
       guests: guests, room: room, roomLabel: roomLabel,
-      comment: comment, website: honeypot
+      docs: docs, comment: comment, website: honeypot
     };
     var btn=document.getElementById('submitBtn');
 
@@ -819,7 +822,7 @@ import { ROOMS } from './rooms.js';
       action: 'book',
       name: data.name, phone: data.phone, dates: data.dates,
       dateFrom: data.dateFrom, dateTo: data.dateTo, nights: data.nights,
-      guests: data.guests, room: data.room, roomLabel: data.roomLabel,
+      guests: data.guests, docs: data.docs, room: data.room, roomLabel: data.roomLabel,
       comment: data.comment,
       website: data.website, ref: bookRef(), page: location.pathname
     };
