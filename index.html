@@ -302,7 +302,7 @@
   <div class="modal">
     <button class="modal-close" type="button" aria-label="Закрыть">×</button>
     <h3 id="adminTitle"><img class="sunflower-inline title-flower" src="img/sunflower.webp" alt="" aria-hidden="true" /> Панель управления</h3>
-    <p class="modal-sub">Меняйте статусы «свободен / занят» — они сразу видны на сайте. Также здесь можно настроить отправку заявок в Telegram-бота.</p>
+    <p class="modal-sub">Меняйте статусы «свободен / занят» — они сразу видны на сайте. Для онлайн-заявок здесь настраивается подключение Google-таблицы.</p>
     <div id="adminLogin">
       <div class="field">
         <label for="adminPass">Пароль администратора</label>
@@ -318,11 +318,7 @@
         <label>📊 Google-таблица броней (URL веб-приложения Apps Script)</label>
         <input id="cfgSheet" type="text" placeholder="https://script.google.com/macros/s/AKfy.../exec" />
         <button class="btn ghost full-width" type="button" id="adminTestSheet">🔍 Проверить связь с таблицей и Telegram</button>
-        <p class="admin-note">🌻 Заявки с сайта уходят в Google-таблицу и дублируются модератору в Telegram (с кнопками «Подтвердить/Отклонить»). Как получить ссылку — см. <b>docs/booking-google-sheets.md</b>.</p>
-        <label>⚙️ Telegram Bot Token (нужен только если таблица не настроена)</label>
-        <input id="cfgToken" type="text" placeholder="123456789:AA... (получить у @BotFather)" />
-        <label>🆔 Ваш Chat ID в Telegram</label>
-        <input id="cfgChat" type="text" placeholder="Напр., 7114829971 (узнать у @userinfobot)" />
+        <p class="admin-note">🌻 Заявка считается отправленной только после записи в Google-таблицу; уведомление с кнопками модератору отправляет Apps Script. Как подключить — см. <b>docs/booking-google-sheets.md</b>.</p>
         <label>🔗 Ссылка на Telegram (для ручной отправки)</label>
         <input id="cfgTgUrl" type="text" placeholder="https://t.me/ckot_23" />
         <label>📱 Номер WhatsApp (цифры, для кнопки WhatsApp)</label>
@@ -330,14 +326,14 @@
         <label>📞 Основной телефон (для кнопок «Звонок»)</label>
         <input id="cfgPhone" type="text" placeholder="+79181164554" />
         <button class="btn primary full-width" type="button" id="adminSaveCfg">Сохранить настройки</button>
-        <p class="admin-note">💡 При настроенных токене бота и Chat ID заявка с сайта автоматически отправляется вам в Telegram. Посетителю не нужно открывать мессенджер. В текущей статической версии токен доступен в браузере; для его защиты потребуется серверный API.</p>
+        <p class="admin-note">Если таблица недоступна, форма покажет ошибку и не сообщит гостю, что заявка принята. Telegram-токен хранится только в Apps Script и не публикуется в настройках сайта.</p>
         <div class="admin-sync">
           <label>🌐 Синхронизация с сайтом (GitHub)</label>
           <input id="cfgRepo" type="text" placeholder="ckot23/podsolnuh.io" />
           <input id="cfgBranch" type="text" placeholder="main" />
           <input id="cfgGitToken" type="password" autocomplete="off" placeholder="GitHub токен (права Contents: read & write)" />
           <button class="btn green full-width" type="button" id="adminSaveGlobal">🔄 Применить для всего сайта</button>
-          <p class="admin-note">⚠️ С GitHub-токеном статусы и настройки сохраняются в data/site.json и применяются ко всему сайту — их увидят все посетители, а не только вы. Токен GitHub хранится только в вашем браузере. ⚠️ Токен бота при глобальной синхронизации попадает в данные страницы (без сервера иначе никак) — заводите отдельного бота только для уведомлений.</p>
+          <p class="admin-note">С GitHub-токеном статусы и публичные настройки сохраняются в data/site.json и применяются ко всему сайту. GitHub-токен хранится только в вашем браузере.</p>
         </div>
       </div>
       <p class="form-status" id="adminNote" role="status" aria-live="polite"></p>
@@ -358,6 +354,6 @@
   </div>
 </div>
 
-<script type="module" src="js/app.js"></script>
+<script type="module" src="js/app.js?v=20261011-1"></script>
 </body>
 </html>

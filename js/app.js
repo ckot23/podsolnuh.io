@@ -4,9 +4,8 @@ import { ROOMS } from './rooms.js';
    Гостиница «Подсолнух» — основной скрипт
    - календарь выбора диапазона
    - модалки, валидация
-   - бронирование: заявка уходит в Google Таблицу (Google Apps Script
-     web app), а оттуда — модератору в Telegram;
-     если таблица не настроена, работает старая схема с bot API
+   - бронирование: заявка принимается только после записи в Google Таблицу
+     (Google Apps Script), откуда модератору уходит уведомление в Telegram;
    - админ-панель со статусами номеров (сохраняются в localStorage)
    - декоративные падающие лепестки
    ========================================================= */
@@ -22,8 +21,6 @@ import { ROOMS } from './rooms.js';
   var ADMIN_PASSWORD = 'sunflower'; // <<< поменяйте на свой пароль
 
   var DEFAULT_CFG = {
-    botToken: '',
-    chatId: '',
     bookingApi: '', // URL веб-приложения Google Apps Script (таблица броней)
     tgUrl: 'https://t.me/ckot_23',
     waNumber: '79882443223',
@@ -39,6 +36,9 @@ import { ROOMS } from './rooms.js';
   var DEFAULT_SYNC = { repo: 'ckot23/podsolnuh.io', branch: 'main', token: '' };
 
   var cfg = loadCfg();
+  // Публичные настройки могут загрузиться чуть позже кода страницы. Отправку
+  // заявки откладываем до завершения загрузки, чтобы не уйти в Telegram-only путь.
+  var siteDataReady = Promise.resolve(false);
   var statuses = loadStatuses();
   // статусы из Google Таблицы (подтверждённые брони на сегодня) — отдельно от ручных
   var sheetStatuses = {};
@@ -51,7 +51,17 @@ import { ROOMS } from './rooms.js';
   // ---------- утилиты ----------
   function pad(n){ return n<10 ? '0'+n : ''+n; }
   function loadCfg(){
-    try { var c = JSON.parse(localStorage.getItem(CONFIG_KEY) || '{}'); return Object.assign({}, DEFAULT_CFG, c); }
+    try {
+      var c = JSON.parse(localStorage.getItem(CONFIG_KEY) || '{}');
+      if(!c || typeof c !== 'object') c = {};
+      // Удаляем сохранённые секреты старого прямого Telegram API.
+      var hadLegacySecrets = Object.prototype.hasOwnProperty.call(c, 'botToken') || Object.prototype.hasOwnProperty.call(c, 'chatId');
+      delete c.botToken;
+      delete c.chatId;
+      var clean = Object.assign({}, DEFAULT_CFG, c);
+      if(hadLegacySecrets) localStorage.setItem(CONFIG_KEY, JSON.stringify(clean));
+      return clean;
+    }
     catch(e){ return Object.assign({}, DEFAULT_CFG); }
   }
   function saveCfg(){ localStorage.setItem(CONFIG_KEY, JSON.stringify(cfg)); }
@@ -102,7 +112,7 @@ import { ROOMS } from './rooms.js';
     if(!data || typeof data !== 'object') return false;
     var cfgChanged = false, stChanged = false;
     if(data.cfg && typeof data.cfg === 'object'){
-      ['tgUrl','waNumber','phonePrimary','botToken','chatId','bookingApi'].forEach(function(k){
+      ['tgUrl','waNumber','phonePrimary','bookingApi'].forEach(function(k){
         if(Object.prototype.hasOwnProperty.call(data.cfg, k) && data.cfg[k] !== cfg[k]){
           cfg[k] = data.cfg[k] || '';
           cfgChanged = true;
@@ -134,8 +144,6 @@ import { ROOMS } from './rooms.js';
         tgUrl: cfg.tgUrl,
         waNumber: cfg.waNumber,
         phonePrimary: cfg.phonePrimary,
-        botToken: cfg.botToken,
-        chatId: cfg.chatId,
         bookingApi: cfg.bookingApi
       }
     };
@@ -172,18 +180,21 @@ import { ROOMS } from './rooms.js';
   function fetchSiteData(){
     var bust = '?t=' + Date.now();
     var i = 0;
-    (function tryNext(){
-      if(i >= SITE_DATA_URLS.length) return;
-      var url = SITE_DATA_URLS[i++] + bust;
-      fetch(url, { cache: 'no-store' }).then(function(r){
-        if(!r.ok) throw new Error('HTTP ' + r.status);
-        return r.json();
-      }).then(function(d){
-        if(!d || typeof d !== 'object') throw new Error('bad json');
-        try { localStorage.setItem(SHARED_CACHE_KEY, JSON.stringify(d)); } catch(e){}
-        applySharedData(d, true);
-      }).catch(function(){ tryNext(); });
-    })();
+    return new Promise(function(resolve){
+      (function tryNext(){
+        if(i >= SITE_DATA_URLS.length){ resolve(false); return; }
+        var url = SITE_DATA_URLS[i++] + bust;
+        fetch(url, { cache: 'no-store', signal: timeoutSignal(5000) }).then(function(r){
+          if(!r.ok) throw new Error('HTTP ' + r.status);
+          return r.json();
+        }).then(function(d){
+          if(!d || typeof d !== 'object') throw new Error('bad json');
+          try { localStorage.setItem(SHARED_CACHE_KEY, JSON.stringify(d)); } catch(e){}
+          applySharedData(d, true);
+          resolve(true);
+        }).catch(function(){ tryNext(); });
+      })();
+    });
   }
   function adminMsg(text, state, ms){
     var note = document.getElementById('adminNote');
@@ -229,7 +240,10 @@ import { ROOMS } from './rooms.js';
   function dateHuman(d){ return d ? pad(d.getDate())+'.'+pad(d.getMonth()+1)+'.'+d.getFullYear() : ''; }
 
   // ---------- общение с Google-таблицей броней ----------
-  function bookingApiReady(){ return !!(cfg.bookingApi && /^https?:\/\//i.test(cfg.bookingApi)); }
+  function bookingApiReady(){
+    var url = String(cfg.bookingApi || '').trim();
+    return /^https?:\/\//i.test(url) || /^\/(?!\/)/.test(url);
+  }
   function bookRef(){
     var r = (cfg.bookingApi||'').replace(/\W/g,'').slice(-8);
     return 'p-' + Date.now().toString(36) + '-' + (r||'x') + '-' + Math.random().toString(36).slice(2,8);
@@ -281,7 +295,7 @@ import { ROOMS } from './rooms.js';
   // ---------- год в подвале ----------
   document.getElementById('year').textContent = String(new Date().getFullYear());
   applyCfgToDom();
-  fetchSiteData();
+  siteDataReady = fetchSiteData();
   refreshSheetStatuses();
 
   // ---------- скролл: шапка, параллакс, прогресс ----------
@@ -727,36 +741,6 @@ import { ROOMS } from './rooms.js';
   }
   function showErr(id,on){ var el=document.getElementById(id); if(el) el.classList.toggle('show',!!on); }
 
-  function escapeHtml(s){ return String(s).replace(/[&<>]/g, function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;'}[c];}); }
-
-  function sendViaBotApi(data){
-    var roomName = ROOMS.find(function(r){return r.id===data.room;});
-    var payload = {
-      name: data.name, phone: data.phone, dates: data.dates, guests: data.guests, roomId: data.room,
-      roomLabel: roomName? roomName.name : (data.room||'не выбран')
-    };
-    var lines=[
-      '🌻 <b>Новая заявка — Подсолнух</b>',
-      '',
-      '👤 <b>Имя:</b> '+escapeHtml(payload.name),
-      '📞 <b>Телефон:</b> '+escapeHtml(payload.phone),
-      '📅 <b>Даты:</b> '+escapeHtml(payload.dates||'не указаны'),
-      '👥 <b>Гостей:</b> '+escapeHtml(payload.guests),
-      '🛏 <b>Номер:</b> '+escapeHtml(payload.roomLabel)
-    ];
-    var text = lines.join('\n');
-    var url = 'https://api.telegram.org/bot'+cfg.botToken+'/sendMessage';
-    var body = new URLSearchParams();
-    body.set('chat_id', cfg.chatId);
-    body.set('text', text);
-    body.set('parse_mode','HTML');
-    var options = { method:'POST', body:body };
-    if(typeof AbortSignal !== 'undefined' && typeof AbortSignal.timeout === 'function'){
-      options.signal = AbortSignal.timeout(10000);
-    }
-    return fetch(url, options).then(function(r){ return r.json(); });
-  }
-
   var form = document.getElementById('bookForm');
   if(form) form.addEventListener('submit', function(e){
     e.preventDefault();
@@ -796,27 +780,26 @@ import { ROOMS } from './rooms.js';
     };
     var btn=document.getElementById('submitBtn');
 
-    if(!bookingApiReady() && (!cfg.botToken || !cfg.chatId)){
-      setStatus('Онлайн-бронирование временно недоступно. Позвоните: '+phoneHuman(cfg.phonePrimary)+'.','error');
-      return;
-    }
-
     btn.disabled=true;
-    setStatus(bookingApiReady() ? 'Отправляем заявку в таблицу броней…' : 'Отправляем заявку…','info');
+    setStatus('Отправляем заявку в таблицу броней…','info');
 
-    // 1) основная схема: Google Таблица + уведомление модератору в Telegram
-    var flow = bookingApiReady()
-      ? submitToSheet(data)
-      // 2) резервная схема: напрямую в Telegram-бота (если таблица ещё не настроена)
-      : sendViaBotApi(data).then(function(res){
-          if(!res || !res.ok) throw new Error((res&&res.description)||'Не удалось отправить заявку');
-          return { ok:true, channel:'telegram' };
-        });
+    // Заявка считается принятой только после записи в таблицу (id/duplicate)
+    // или подтверждения через action=verify. Telegram-only больше не считается успехом.
+    var flow = siteDataReady.then(function(){
+      if(!bookingApiReady()) throw new Error('Не настроен адрес Google Apps Script.');
+      return submitToSheet(data);
+    });
 
     flow.then(function(res){
       resetBookingForm();
-      var num = res && res.id ? '№'+res.id+' ' : '';
-      setStatus('✅ Заявка '+num+'отправлена! Модератор получил её в Telegram — мы скоро свяжемся с вами.','ok');
+      var num = res && res.id ? ' №'+res.id : '';
+      if(res && res.notified === false){
+        setStatus('✅ Заявка'+num+' записана в таблицу, но уведомление в Telegram не отправлено. Мы свяжемся с вами.','ok');
+      } else if(res && res.notified === true){
+        setStatus('✅ Заявка'+num+' записана в таблицу, уведомление отправлено. Мы скоро свяжемся с вами.','ok');
+      } else {
+        setStatus('✅ Заявка'+num+' принята и записана в таблицу. Мы скоро свяжемся с вами.','ok');
+      }
     }).catch(function(err){
       console.error('Не удалось отправить заявку:', err);
       setStatus('Не удалось отправить заявку. Попробуйте ещё раз или позвоните: '+phoneHuman(cfg.phonePrimary)+'.','error');
@@ -848,11 +831,14 @@ import { ROOMS } from './rooms.js';
     };
     return sendToSheet(payload).then(function(res){
       var j = res && res.json;
-      if(j && j.ok) return j;
-      if(j && j.error) throw new Error(j.error);
+      // Apps Script нового формата возвращает id только после записи строки;
+      // не доверяем простому {ok:true} от старой Telegram-only версии.
+      if(j && j.ok && (Number(j.id) > 0 || (j.duplicate && Number(j.id) > 0))) return j;
+      var message = j && j.error ? j.error : (res && res.error ? res.error.message : 'таблица не подтвердила приём');
+      if(j && j.ignored) message = 'Заявка не прошла проверку формы.';
       return verifyInSheet(payload.ref).then(function(found){
         if(found) return { ok:true, verified:true };
-        throw new Error(res && res.error ? res.error.message : 'таблица не ответила');
+        throw new Error(message);
       });
     });
   }
@@ -865,8 +851,6 @@ import { ROOMS } from './rooms.js';
       document.getElementById('adminPanel').hidden = false;
       renderAdminRooms();
       setVal('cfgSheet', cfg.bookingApi||'');
-      document.getElementById('cfgToken').value = cfg.botToken||'';
-      document.getElementById('cfgChat').value = cfg.chatId||'';
       document.getElementById('cfgTgUrl').value = cfg.tgUrl||'';
       document.getElementById('cfgWa').value = cfg.waNumber||'';
       document.getElementById('cfgPhone').value = cfg.phonePrimary||'';
@@ -915,8 +899,6 @@ import { ROOMS } from './rooms.js';
 
   function readCfgForm(){
     cfg.bookingApi = String((document.getElementById('cfgSheet')||{}).value || '').trim();
-    cfg.botToken = document.getElementById('cfgToken').value.trim();
-    cfg.chatId = document.getElementById('cfgChat').value.trim();
     cfg.tgUrl = document.getElementById('cfgTgUrl').value.trim() || DEFAULT_CFG.tgUrl;
     cfg.waNumber = document.getElementById('cfgWa').value.trim() || DEFAULT_CFG.waNumber;
     cfg.phonePrimary = document.getElementById('cfgPhone').value.trim() || DEFAULT_CFG.phonePrimary;
