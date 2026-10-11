@@ -47,8 +47,12 @@ python3 -m http.server 4173
 
 ```bash
 node google-sheets/tests/backend.test.js   # 39 проверок логики (мок таблицы и Telegram)
-node demo/serve.js                         # демо-стенд на http://localhost:4173, «таблица» — /demo/sheet
+node demo/serve.js                         # демо-стенд: http://localhost:4173, мок-«таблица» — /demo/sheet
+LIVE=1 node demo/serve.js                  # то же, но заявки идут в настоящую таблицу; проверка — /selftest
 ```
+
+Ссылка на веб-приложение уже записана в `data/site.json` → `cfg.bookingApi`, поэтому на сайте
+(в том числе в демо-режиме `LIVE=1`) кнопка «Забронировать» отправляет заявки в таблицу «подсолнух».
 
 Пока `cfg.bookingApi` не заполнен, работает резервная схема: заявка отправляется напрямую в Telegram-бота
 (как раньше). Если не настроено ни то, ни другое, форма предложит позвонить по телефону.

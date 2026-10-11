@@ -946,7 +946,8 @@ import { ROOMS } from './rooms.js';
       .then(function(r){ return r.json(); })
       .then(function(j){
         if(j && j.ok){
-          adminMsg('✅ Таблица «' + j.sheet + '» на связи, заявок: ' + j.rows + (j.telegram ? ', Telegram подключён.' : ', но Telegram не отвечает.'), 'ok', 6000);
+          var tg = ' Telegram: ' + (j.bot || (j.telegram ? 'подключён' : 'не отвечает')) + '.';
+          adminMsg('✅ Таблица «' + j.sheet + '» на связи, заявок: ' + j.rows + '.' + tg, j.telegram ? 'ok' : 'info', 8000);
           refreshSheetStatuses();
         } else {
           adminMsg('⚠️ Таблица ответила ошибкой: ' + ((j && j.error) || 'неизвестно'), 'error', 6000);

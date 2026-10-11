@@ -169,13 +169,15 @@ function doGet(e) {
     if (action === 'verify') return json_({ ok: true, found: findRef_(String(p.ref || '')), updatedAt: nowIso_() });
     if (action === 'ping' || action === 'health') {
       var ss = getSpreadsheet_();
+      var bot = tgCheck_(); // живой запрос к Telegram: «бот @… на связи» или текст ошибки
       return json_({
         ok: true,
         service: 'podsolnuh-booking',
         sheet: ss.getName(),
         sheetUrl: ss.getUrl(),
         rows: Math.max(0, getSheet_(ss).getLastRow() - 1),
-        telegram: !!getChatIds_().length,
+        telegram: /на связи/.test(bot),
+        bot: bot,
         updatedAt: nowIso_()
       });
     }
