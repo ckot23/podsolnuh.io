@@ -14,7 +14,7 @@
 <meta property="og:image" content="https://podsolnuh.io/img/hero.jpg" />
 <link rel="canonical" href="https://podsolnuh.io/rooms.html" />
 <link rel="icon" href="img/favicon.png" type="image/png" sizes="128x128" />
-<link rel="stylesheet" href="css/site.css?v=20261012-2" />
+<link rel="stylesheet" href="css/site.css?v=20261011-booking-3" />
 
 
 <!-- Preconnect for fonts -->
@@ -147,29 +147,31 @@
 </div>
 
 <!-- ====== МОДАЛКА БРОНИРОВАНИЯ ====== -->
-<div class="modal-backdrop" id="bookModal" role="dialog" aria-modal="true" aria-hidden="true" aria-labelledby="bookTitle" hidden>
-  <div class="modal">
+<div class="modal-backdrop" id="bookModal" role="dialog" aria-modal="true" aria-hidden="true" aria-labelledby="bookTitle" aria-describedby="bookIntro" hidden>
+  <div class="modal booking-modal">
     <button class="modal-close" type="button" aria-label="Закрыть">×</button>
     <h3 id="bookTitle"><img class="sunflower-inline title-flower" src="img/sunflower.webp" alt="" aria-hidden="true" /> Заявка на бронь</h3>
-    <p class="modal-sub">Заполните заявку — она попадёт в нашу Google-таблицу броней, а модератор сразу получит уведомление в Telegram. Открывать мессенджер не нужно: мы свяжемся с вами.</p>
+    <p class="modal-sub" id="bookIntro">Оставьте имя и телефон, выберите даты и номер. Мы свяжемся с вами, чтобы подтвердить бронь.</p>
     <form id="bookForm" novalidate>
       <div class="vh" aria-hidden="true">
         <label for="website">Не заполняйте</label>
         <input id="website" name="website" type="text" tabindex="-1" autocomplete="off" />
       </div>
-      <div class="field">
-        <label for="fName">Имя</label>
-        <input id="fName" name="name" type="text" autocomplete="name" placeholder="Как к вам обращаться" required />
-        <p class="err" id="errName">Представьтесь, пожалуйста.</p>
-      </div>
-      <div class="field">
-        <label for="fPhone">Контакты (телефон)</label>
-        <input id="fPhone" name="phone" type="tel" autocomplete="tel" placeholder="+7 ___ ___-__-__" required />
-        <p class="err" id="errPhone">Нужен телефон для связи.</p>
+      <div class="field-row">
+        <div class="field">
+          <label for="fName">Имя</label>
+          <input id="fName" name="name" type="text" autocomplete="name" placeholder="Как к вам обращаться" minlength="2" maxlength="100" aria-describedby="errName" data-initial-focus required />
+          <p class="err" id="errName">Представьтесь, пожалуйста.</p>
+        </div>
+        <div class="field">
+          <label for="fPhone">Номер телефона</label>
+          <input id="fPhone" name="phone" type="tel" inputmode="tel" autocomplete="tel" placeholder="+7 ___ ___-__-__" maxlength="32" aria-describedby="errPhone" required />
+          <p class="err" id="errPhone">Укажите телефон для связи.</p>
+        </div>
       </div>
       <div class="field">
         <label id="calLabelText">Заезд и выезд</label>
-        <div class="cal" role="group" aria-labelledby="calLabelText">
+        <div class="cal" role="group" aria-labelledby="calLabelText" aria-describedby="calLabel errDates">
           <div class="cal-head">
             <button class="cal-nav" type="button" id="calPrev" aria-label="Предыдущий месяц">‹</button>
             <b id="calTitle">—</b>
@@ -178,36 +180,24 @@
           <div class="cal-week" aria-hidden="true"><span>Пн</span><span>Вт</span><span>Ср</span><span>Чт</span><span>Пт</span><span>Сб</span><span>Вс</span></div>
           <div class="cal-grid" id="calGrid"></div>
         </div>
-        <p class="hint" id="calLabel">Выберите дату заезда</p>
+        <p class="hint" id="calLabel" aria-live="polite">Выберите дату заезда</p>
+        <p class="err" id="errDates">Выберите даты заезда и выезда в календаре.</p>
         <input type="hidden" id="fDates" name="dates" />
         <input type="hidden" id="fDateFrom" name="dateFrom" />
         <input type="hidden" id="fDateTo" name="dateTo" />
       </div>
       <div class="field">
-        <label>Количество человек</label>
-        <div class="guests-picker" id="guestsPicker" role="radiogroup" aria-label="Количество человек"></div>
-        <input type="hidden" id="fGuests" name="guests" value="2" />
-      </div>
-      <div class="field">
-        <label>Номер комнаты</label>
-        <div class="room-picker" id="roomPicker" role="radiogroup" aria-label="Номер комнаты"></div>
+        <label id="roomLabel">Номер комнаты</label>
+        <div class="room-picker" id="roomPicker" role="radiogroup" aria-labelledby="roomLabel" aria-describedby="errRoom" aria-required="true"></div>
         <input type="hidden" id="fRoom" name="room" />
-      </div>
-      <div class="field">
-        <label for="fComment">Комментарий <span class="label-opt">(необязательно)</span></label>
-        <textarea id="fComment" name="comment" rows="2" maxlength="500" placeholder="Время заезда, детская кроватка, пожелания…"></textarea>
+        <p class="err" id="errRoom">Выберите свободный номер.</p>
       </div>
       <label class="consent docs-toggle">
         <input type="checkbox" id="fDocs" name="docs" />
         <span>Нужны отчётные документы (счёт, чек)</span>
       </label>
-      <div class="book-summary" id="bookSummary" aria-live="polite"></div>
-      <label class="consent">
-        <input type="checkbox" id="fConsent" checked />
-        <span>Согласие на обработку персональных данных.</span>
-      </label>
-      <button class="btn primary full-width" type="submit" id="submitBtn">Забронировать</button>
-      <p class="form-hint-under">Заявка появится в таблице броней и у модератора в Telegram. Оплата на сайте не нужна.</p>
+      <button class="btn primary full-width" type="submit" id="submitBtn">Отправить заявку</button>
+      <p class="form-hint-under">Оплата на сайте не нужна. Нажимая кнопку, вы соглашаетесь с <button class="privacy-button" type="button" data-policy>политикой обработки персональных данных</button>.</p>
       <p class="form-status" id="formStatus" role="status" aria-live="polite"></p>
     </form>
     <p class="modal-alt">Или сразу: <a href="tel:+79181164554"><b>8 918 116-45-54</b></a> · <a href="https://wa.me/79882443223" target="_blank" rel="noopener noreferrer">WhatsApp</a></p>
@@ -264,13 +254,13 @@
     <button class="modal-close" type="button" aria-label="Закрыть">×</button>
     <h3 id="policyTitle">Политика конфиденциальности</h3>
     <p>Настоящая Политика действует в отношении информации, которую сайт гостиницы «Подсолнух» получает во время его использования. Отправка формы бронирования означает согласие с Политикой.</p>
-    <p><b>1. Состав данных.</b> Имя, телефон, даты проживания, число гостей и выбранный номер — только то, что вы указываете в форме.</p>
-    <p><b>2. Цели.</b> Связь с гостем, подтверждение брони и согласование цены. Заявка доставляется собственнику в Telegram.</p>
-    <p><b>3. Конфиденциальность.</b> Данные не продаются, не публикуются и не передаются третьим лицам, кроме собственника гостиницы.</p>
+    <p><b>1. Состав данных.</b> Имя, телефон, даты проживания, выбранный номер и необходимость отчётных документов — только то, что вы указываете в форме.</p>
+    <p><b>2. Цели.</b> Связь с гостем, подтверждение брони и согласование цены. Заявка сохраняется в закрытой Google Таблице, а модератор получает уведомление в Telegram.</p>
+    <p><b>3. Конфиденциальность.</b> Данные не продаются и не публикуются. Доступ к заявкам имеют только уполномоченные сотрудники гостиницы. Для хранения заявок и уведомлений используются Google Таблицы и Telegram.</p>
     <p><b>4. Права гостя.</b> Можно попросить удалить заявку по телефону 8 918 116-45-54.</p>
   </div>
 </div>
 
-<script type="module" src="js/app.js?v=20261012-2"></script>
+<script type="module" src="js/app.js?v=20261011-booking-3"></script>
 </body>
 </html>

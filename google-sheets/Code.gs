@@ -12,8 +12,8 @@
  *
  *  Порядок настройки (подробно — в docs/booking-google-sheets.md):
  *   1. Откройте таблицу → Расширения → Apps Script.
- *   2. Вставьте этот код целиком, заполните блок НАСТРОЙКИ ниже.
- *   3. Запустите функцию setup() и разрешите доступ.
+ *   2. Вставьте код целиком, задайте BOT_TOKEN и MODERATOR_CHAT_ID в свойствах скрипта.
+ *   3. Запустите setup() и разрешите доступ (при обновлении сначала обновите развёртывание).
  *   4. Развернуть → Новое развёртывание → Веб-приложение →
  *      «Запуск от имени: я», «Доступ: все, у кого есть ссылка».
  *   5. Скопируйте URL /exec и вставьте на сайте в админ-панели в поле
@@ -23,9 +23,10 @@
 
 /* ============================== НАСТРОЙКИ ================================ */
 
-/** Токен бота из @BotFather. ВАЖНО: старый токен, лежавший в data/site.json,
- *  отзовите и создайте новый — он был виден всем посетителям сайта. */
-var BOT_TOKEN = 'ВСТАВЬТЕ_ТОКЕН_БОТА';
+/** Секреты задаются в Apps Script → Настройки проекта → Свойства скрипта.
+ *  BOT_TOKEN — новый токен из @BotFather. Никогда не публикуйте его на сайте.
+ *  Переменная оставлена для совместимости с прежней настройкой внутри Apps Script. */
+var BOT_TOKEN = '';
 
 /** Кому присылать заявки: chat_id модератора. Несколько получателей — через запятую. */
 var MODERATOR_CHAT_ID = '7114829971';
@@ -37,8 +38,9 @@ var SHEET_ID = '';
 /** Имя листа для броней. Создастся автоматически, если его нет. */
 var SHEET_NAME = 'Брони';
 
-/** Секрет для вебхука Telegram (кнопки «Подтвердить»). Придумайте свою строку. */
-var WEBHOOK_SECRET = 'podsolnuh-2026';
+/** Секрет вебхука хранится в свойствах скрипта WEBHOOK_SECRET.
+ *  Если он не задан, setupTelegram() создаст случайный секрет автоматически. */
+var WEBHOOK_SECRET = '';
 
 /** Часовой пояс для дат и времени в таблице и в сообщениях. */
 var TIMEZONE = 'Europe/Moscow';
@@ -48,30 +50,35 @@ var DEDUPE_MINUTES = 15;
 
 /* =========================== КОНЕЦ НАСТРОЕК ============================== */
 
-/* Порядок колонок на листе: первые 8 видны, остальные служебные (скрыты). */
+/* Только пять полей гостя видимы. Для доставки и модерации — пять скрытых колонок. */
 var HEADERS = [
-  '№заявки',            // 1  видимая
-  'Дата заявки',        // 2  видимая
-  'Имя',                // 3  видимая
-  'Контакты',           // 4  видимая
-  'Заезд/выезд',        // 5  видимая
-  'Количество человек', // 6  видимая
-  'Отч.доки',           // 7  видимая: Да / Нет (нужны ли отчётные документы)
-  'Номер комнаты',      // 8  видимая
-  'Статус',             // 9  служебная (скрыта)
-  'Ночей',              // 10 служебная (скрыта)
-  'Комментарий',        // 11 служебная (скрыта)
-  'Источник',           // 12 служебная (скрыта)
-  'Ref',                // 13 технический: подтверждение доставки
-  'RoomId'              // 14 технический: id номера для статусов на сайте
+  'Имя',
+  'Телефон',
+  'Заезд/выезд',
+  'Номер комнаты',
+  'Отчётные документы',
+  '№заявки',
+  'Дата заявки',
+  'Статус',
+  'Ref',
+  'RoomId'
 ];
-
-/* Индексы колонок (с нуля) — используйте их вместо чисел. */
 var COL = {
-  id: 0, created: 1, name: 2, contacts: 3, dates: 4, guests: 5, docs: 6, room: 7,
-  status: 8, nights: 9, comment: 10, source: 11, ref: 12, roomId: 13
+  name: 0, phone: 1, dates: 2, room: 3, docs: 4,
+  id: 5, created: 6, status: 7, ref: 8, roomId: 9
 };
-var VISIBLE_COUNT = 8;
+var VISIBLE_COUNT = 5;
+
+/* Не доверяем названию номера из браузера: оно определяется на сервере по id. */
+var ROOM_LABELS = {
+  'single-1': 'Номер 1',
+  'studio-4': 'Номер 2',
+  'studio-comfort': 'Номер 3',
+  'family-4': 'Номер 4',
+  'apart-2': 'Номер 5',
+  'double-2': 'Номер 6',
+  'kitchen-3': 'Номер 7'
+};
 
 var STATUS_NEW = 'Новая';
 var STATUS_OK = 'Подтверждена';
@@ -89,53 +96,30 @@ var PROP = PropertiesService.getScriptProperties();
  * красивым оформлением и выпадающим списком статусов, проверяет Telegram.
  */
 function setup() {
-  var ss = getSpreadsheet_();
-  ss.setSpreadsheetTimeZone(TIMEZONE);
-  var sheet = getSheet_(ss);
+  var lock = LockService.getScriptLock();
+  lock.waitLock(25000);
+  try {
+    var ss = getSpreadsheet_();
+    ss.setSpreadsheetTimeZone(TIMEZONE);
+    var sheet = getSheet_(ss, true); // миграция разрешена только при ручной настройке
+    applyLayout_(sheet);
+    // В веб-приложении активная таблица может быть недоступна: сохраняем её реальный id.
+    PROP.setProperty('SHEET_ID', ss.getId());
+    PROP.setProperty('SHEET_NAME', sheet.getName());
+    SpreadsheetApp.flush();
 
-  // аккуратные ширины и оформление
-  migrateLayout_(sheet);
-  sheet.setFrozenRows(1);
-  sheet.getRange(1, 1, 1, HEADERS.length)
-    .setFontWeight('bold')
-    .setBackground('#f7a93c')
-    .setFontColor('#3a2a08')
-    .setVerticalAlignment('middle');
-  sheet.setRowHeight(1, 34);
-
-  var widths = [85, 135, 150, 145, 175, 145, 95, 130, 130, 70, 240, 120, 90, 90];
-  widths.forEach(function (w, i) { sheet.setColumnWidth(i + 1, w); });
-
-  // выпадающий список статусов
-  var rule = SpreadsheetApp.newDataValidation()
-    .requireValueInList(STATUS_LIST, true)
-    .setAllowInvalid(false)
-    .build();
-  sheet.getRange(2, COL.status + 1, 1000, 1).setDataValidation(rule);
-
-  // формат дат и выравнивание
-  sheet.getRange(2, COL.id + 1, 1000, 1).setHorizontalAlignment('center');
-  sheet.getRange(2, COL.created + 1, 1000, 1).setNumberFormat('dd.MM.yyyy HH:mm');
-  sheet.getRange(2, COL.dates + 1, 1000, 3).setHorizontalAlignment('center');
-  sheet.getRange(2, COL.source + 1, 1000, 3).setFontColor('#9a9a9a').setFontSize(9);
-
-  // служебные колонки скрыты (их можно открыть через меню «Показать столбцы»)
-  sheet.showColumns(1, HEADERS.length);
-  sheet.hideColumns(VISIBLE_COUNT + 1, HEADERS.length - VISIBLE_COUNT);
-
-  PROP.setProperty('SHEET_ID', SHEET_ID);
-  PROP.setProperty('SHEET_NAME', SHEET_NAME);
-
-  var check = tgCheck_();
-  var url = '';
-  try { url = ScriptApp.getService().getUrl() || ''; } catch (e) { url = ''; }
-
-  Logger.log(
-    'Таблица готова: ' + ss.getName() + ' / лист «' + sheet.getName() + '».\n' +
-    'Telegram: ' + check + '\n' +
-    'URL веб-приложения: ' + (url || 'ещё не развёрнуто (Развернуть → Новое развёртывание → Веб-приложение)')
-  );
-  return check;
+    var check = tgCheck_();
+    var url = '';
+    try { url = ScriptApp.getService().getUrl() || ''; } catch (e) { url = ''; }
+    Logger.log(
+      'Таблица готова: ' + ss.getName() + ' / лист «' + sheet.getName() + '».\n' +
+      'Telegram: ' + check + '\n' +
+      'URL веб-приложения: ' + (url || 'ещё не развёрнуто (Развернуть → Новое развёртывание → Веб-приложение)')
+    );
+    return check;
+  } finally {
+    lock.releaseLock();
+  }
 }
 
 /**
@@ -146,8 +130,13 @@ function setup() {
 function setupTelegram() {
   var url = ScriptApp.getService().getUrl();
   if (!url) throw new Error('Сначала разверните веб-приложение (Развернуть → Новое развёртывание).');
+  var secret = webhookSecret_();
+  if (!secret) {
+    secret = Utilities.getUuid();
+    PROP.setProperty('WEBHOOK_SECRET', secret);
+  }
   var res = tg_('setWebhook', {
-    url: url + '?secret=' + encodeURIComponent(WEBHOOK_SECRET),
+    url: url + '?secret=' + encodeURIComponent(secret),
     allowed_updates: JSON.stringify(['callback_query', 'message'])
   });
   Logger.log('setWebhook: ' + JSON.stringify(res));
@@ -184,10 +173,12 @@ function doGet(e) {
       return json_({
         ok: true,
         service: 'podsolnuh-booking',
+        schemaVersion: 2,
+        fields: HEADERS.slice(0, VISIBLE_COUNT),
         sheet: ss.getName(),
         sheetUrl: ss.getUrl(),
         rows: Math.max(0, getSheet_(ss).getLastRow() - 1),
-        telegram: /на связи/.test(bot),
+        telegram: /на связи/.test(bot) && getChatIds_().length > 0,
         bot: bot,
         updatedAt: nowIso_()
       });
@@ -208,7 +199,8 @@ function doPost(e) {
   // 1) Апдейты от Telegram (кнопки «Подтвердить/Отклонить», команды бота)
   if (parsed && (parsed.callback_query || parsed.message)) {
     try {
-      handleTelegramUpdate_(parsed, (e && e.parameter && e.parameter.secret) === WEBHOOK_SECRET);
+      var secret = webhookSecret_();
+      handleTelegramUpdate_(parsed, !!secret && (e && e.parameter && e.parameter.secret) === secret);
     } catch (err) {
       console.error('telegram update: ' + err);
     }
@@ -227,93 +219,78 @@ function doPost(e) {
 /** Обработка заявки: проверка, дедупликация, запись в таблицу, уведомление. */
 function handleBooking_(data) {
   data = data || {};
+  // Не пишем без блокировки: иначе два одновременных запроса могут затереть строку.
   var lock = LockService.getScriptLock();
-  try { lock.waitLock(25000); } catch (err) { /* продолжаем без блокировки */ }
-
+  var locked = false;
   try {
-    // ловушка для ботов: скрытое поле должно быть пустым
+    lock.waitLock(25000);
+    locked = true;
     if (String(data.website || '').trim()) return { ok: true, ignored: true };
+    if (data.action && data.action !== 'book') return { ok: false, error: 'Неизвестное действие.' };
 
     var name = String(data.name || '').trim();
-    var contacts = String(data.contacts || data.phone || '').trim();
-    if (name.length < 2) return { ok: false, error: 'Укажите имя.' };
-    if (digits_(contacts).length < 10) return { ok: false, error: 'Укажите телефон.' };
-
+    var phone = String(data.phone || data.contacts || '').trim();
+    if (name.length < 2 || name.length > 100) return { ok: false, error: 'Укажите имя (от 2 до 100 символов).' };
+    if (!/^[+\d\s().-]+$/.test(phone) || digits_(phone).length < 10 || digits_(phone).length > 15 || phone.length > 32) {
+      return { ok: false, error: 'Укажите телефон.' };
+    }
     var ref = String(data.ref || '').trim();
+    if (ref && !/^[a-zA-Z0-9_-]{1,120}$/.test(ref)) return { ok: false, error: 'Неверный идентификатор заявки.' };
     if (ref) {
       var dup = findRef_(ref);
       if (dup) return { ok: true, id: dup, duplicate: true, message: 'Заявка №' + dup + ' уже принята.' };
     }
 
+    if ((data.dateFrom && !parseIso_(data.dateFrom)) || (data.dateTo && !parseIso_(data.dateTo))) {
+      return { ok: false, error: 'Проверьте даты заезда и выезда.' };
+    }
     var range = parseDates_(data);
-    var guests = String(data.people || data.guests || '').trim() || '—';
-    var roomLabel = String(data.roomNumber || data.roomLabel || data.room || '').trim() || 'не выбран';
-    var roomId = String(data.roomId || data.room || '').trim();
-    var nights = range.nights || toNumber_(data.nights);
-    var docs = /^(да|нужны|yes|1|true|on)$/i.test(String(data.docs || '').trim()) ? 'Да' : 'Нет';
-    var comment = String(data.comment || '').trim();
-    var source = String(data.page || data.source || '').trim();
+    if (!range.from || !range.to || range.nights < 1) {
+      return { ok: false, error: 'Выберите даты заезда и выезда.' };
+    }
+    var roomId = roomId_(data.roomId || data.room || data.roomLabel || data.roomNumber);
+    if (!roomId) return { ok: false, error: 'Выберите номер.' };
+    var roomLabel = ROOM_LABELS[roomId];
+    var docs = docsValue_(data.docs);
 
-    // защита от повторной отправки той же заявки в течение DEDUPE_MINUTES
-    var recent = findRecent_(contacts, range.fromIso, roomId);
+    // Сравниваем все поля: изменение выезда или галочки документов не потеряется как «дубль».
+    var recent = findRecent_(phone, range.fromIso, range.toIso, roomId, docs, name);
     if (recent) return { ok: true, id: recent, duplicate: true, message: 'Заявка №' + recent + ' уже принята.' };
 
     var ss = getSpreadsheet_();
     var sheet = getSheet_(ss);
     var row = sheet.getLastRow() + 1;
-    var num = row - 1;
+    var num = nextBookingId_(sheet);
     var createdAt = new Date();
-    var datesCell = range.pair || range.human || '';
-
+    if (row > sheet.getMaxRows()) sheet.insertRowsAfter(sheet.getMaxRows(), row - sheet.getMaxRows());
     var values = [];
+    values[COL.name] = sheetText_(name);
+    values[COL.phone] = phone;
+    values[COL.dates] = range.pair;
+    values[COL.room] = roomLabel;
+    values[COL.docs] = docs;
     values[COL.id] = num;
     values[COL.created] = createdAt;
-    values[COL.name] = name;
-    values[COL.contacts] = contacts;
-    values[COL.dates] = datesCell;
-    values[COL.guests] = guests;
-    values[COL.docs] = docs;
-    values[COL.room] = roomLabel;
     values[COL.status] = STATUS_NEW;
-    values[COL.nights] = nights || '';
-    values[COL.comment] = comment;
-    values[COL.source] = source;
     values[COL.ref] = ref;
     values[COL.roomId] = roomId;
+    sheet.getRange(row, 1, 1, VISIBLE_COUNT).setNumberFormat('@');
     sheet.getRange(row, 1, 1, HEADERS.length).setValues([values]);
     sheet.getRange(row, COL.id + 1).setHorizontalAlignment('center');
     sheet.getRange(row, COL.created + 1).setNumberFormat('dd.MM.yyyy HH:mm');
-    sheet.getRange(row, COL.dates + 1, 1, 3).setHorizontalAlignment('center');
-    sheet.getRange(row, COL.source + 1, 1, 3).setFontColor('#9a9a9a').setFontSize(9);
+    sheet.getRange(row, COL.status + 1).setDataValidation(statusRule_());
+    SpreadsheetApp.flush(); // сначала гарантируем запись, затем отправляем Telegram
+    PROP.setProperty('LAST_BOOKING_ID', String(num));
 
-    var booking = {
-      id: num,
-      created: createdAt,
-      name: name,
-      contacts: contacts,
-      datesHuman: range.human || datesCell,
-      from: range.fromIso,
-      to: range.toIso,
-      nights: nights,
-      guests: guests,
-      docs: docs,
-      room: roomLabel,
-      comment: comment,
-      source: source,
+    var notified = notifyModerator_({
+      id: num, created: createdAt, name: name, phone: phone,
+      datesHuman: range.pair, from: range.fromIso, to: range.toIso,
+      nights: range.nights, docs: docs, room: roomLabel,
       sheetUrl: sheetUrl_(ss, sheet)
-    };
-
-    var notified = notifyModerator_(booking);
-    return {
-      ok: true,
-      id: num,
-      message: 'Заявка №' + num + ' принята.',
-      row: row,
-      notified: notified,
-      nights: nights
-    };
+    });
+    return { ok: true, id: num, message: 'Заявка №' + num + ' принята.', row: row, notified: notified, nights: range.nights };
   } finally {
-    try { lock.releaseLock(); } catch (err) {}
+    if (locked) lock.releaseLock();
   }
 }
 
@@ -321,22 +298,19 @@ function handleBooking_(data) {
 
 function notifyModerator_(b) {
   var ids = getChatIds_();
-  if (!ids.length || !BOT_TOKEN) return false;
+  if (!ids.length || !botToken_()) return false;
 
   var lines = [
     '🌻 <b>Новая заявка №' + b.id + '</b>',
     '',
     '🕒 <b>Дата заявки:</b> ' + Utilities.formatDate(b.created || new Date(), TIMEZONE, 'dd.MM.yyyy HH:mm'),
     '👤 <b>Имя:</b> ' + esc_(b.name),
-    '📞 <b>Контакты:</b> <code>' + esc_(b.contacts) + '</code>',
+    '📞 <b>Телефон:</b> <code>' + esc_(b.phone) + '</code>',
     '📅 <b>Заезд/выезд:</b> ' + esc_(datesLine_(b)),
-    '👥 <b>Количество человек:</b> ' + esc_(b.guests),
-    '📄 <b>Отч. доки:</b> ' + (b.docs === 'Да' ? 'Да (нужны)' : 'Нет'),
     '🛏 <b>Номер комнаты:</b> ' + esc_(b.room),
-    b.comment ? '💬 <b>Комментарий:</b> ' + esc_(b.comment) : ''
+    '📄 <b>Отчётные документы:</b> ' + (b.docs === 'Да' ? 'Да (нужны)' : 'Нет')
   ].filter(String);
 
-  if (b.source) lines.push('🌐 Источник: ' + esc_(b.source));
   lines.push('', 'Статус в таблице: <b>' + STATUS_NEW + '</b>');
 
   var keyboard = {
@@ -372,7 +346,7 @@ function handleTelegramUpdate_(update, secretOk) {
     var cb = update.callback_query;
     if (!secretOk) return;
     var from = cb.from && String(cb.from.id);
-    if (allowed.length && allowed.indexOf(from) === -1) {
+    if (!allowed.length || allowed.indexOf(from) === -1) {
       tg_('answerCallbackQuery', { callback_query_id: cb.id, text: 'Нет доступа', show_alert: true });
       return;
     }
@@ -390,7 +364,7 @@ function handleTelegramUpdate_(update, secretOk) {
     });
     if (saved) {
       var original = cb.message && cb.message.text ? cb.message.text : '';
-      var head = original.split('\n').slice(0, 2).join('\n');
+      var head = esc_(original.replace(/\nСтатус в таблице:[\s\S]*$/, '').trim());
       var mark = status === STATUS_OK
         ? '✅ <b>Подтверждено</b> модератором'
         : '❌ <b>Отклонено</b> модератором';
@@ -409,7 +383,7 @@ function handleTelegramUpdate_(update, secretOk) {
     if (!secretOk) return;
     var chatId = String(update.message.chat && update.message.chat.id);
     var text = String(update.message.text || '').trim().toLowerCase();
-    if (!allowed.length || allowed.indexOf(chatId) !== -1) {
+    if (allowed.indexOf(chatId) !== -1) {
       if (/^\/(start|help)/.test(text)) {
         tg_('sendMessage', {
           chat_id: chatId,
@@ -421,7 +395,7 @@ function handleTelegramUpdate_(update, secretOk) {
         var busy = Object.keys(st).filter(function (k) { return st[k] === 'busy'; });
         tg_('sendMessage', {
           chat_id: chatId,
-          text: busy.length ? ('🚫 Заняты сегодня: ' + busy.join(', ')) : '🌻 Сегодня все номера свободны.',
+          text: busy.length ? ('🚫 Заняты сегодня: ' + busy.map(function(id){ return ROOM_LABELS[id] || id; }).join(', ')) : '🌻 Сегодня все номера свободны.',
           parse_mode: 'HTML'
         });
       } else if (/^\/today/.test(text)) {
@@ -456,7 +430,7 @@ function todayReport_() {
   rows.forEach(function (r) {
     var created = r[COL.created] ? Utilities.formatDate(new Date(r[COL.created]), TIMEZONE, 'dd.MM.yyyy') : '';
     if (created !== stamp) return;
-    out.push('• №' + r[COL.id] + ' — ' + r[COL.name] + ', ' + r[COL.contacts] + ', ' + r[COL.room] + ', ' + String(r[COL.status]).toLowerCase());
+    out.push('• №' + r[COL.id] + ' — ' + esc_(r[COL.name]) + ', ' + esc_(r[COL.phone]) + ', ' + esc_(r[COL.room]) + ', ' + esc_(String(r[COL.status]).toLowerCase()));
   });
   return out.length ? ('📋 Заявки за сегодня (' + stamp + '):\n' + out.join('\n')) : 'Сегодня новых заявок не было.';
 }
@@ -474,7 +448,7 @@ function computeStatuses_() {
     var last = sheet.getLastRow();
     if (last < 2) return out;
     var rows = sheet.getRange(2, 1, last - 1, HEADERS.length).getValues();
-    var today = startOfDay_(new Date());
+    var todayIso = Utilities.formatDate(new Date(), TIMEZONE, 'yyyy-MM-dd');
     rows.forEach(function (r) {
       var status = normStatus_(r[COL.status]);
       var roomId = String(r[COL.roomId] || '').trim();
@@ -484,9 +458,9 @@ function computeStatuses_() {
       var from = range.from || toDate_(r[COL.dates]);
       if (!from) return;
       var to = range.to || new Date(from.getTime() + 86400000);
-      if (today.getTime() >= startOfDay_(from).getTime() && today.getTime() < startOfDay_(to).getTime()) {
-        out[roomId] = 'busy';
-      }
+      var fromIso = range.fromIso || Utilities.formatDate(from, TIMEZONE, 'yyyy-MM-dd');
+      var toIso = range.toIso || Utilities.formatDate(to, TIMEZONE, 'yyyy-MM-dd');
+      if (todayIso >= fromIso && todayIso < toIso) out[roomId] = 'busy';
     });
   } catch (err) {
     console.error('computeStatuses_: ' + err);
@@ -496,17 +470,24 @@ function computeStatuses_() {
 
 /** Меняет статус в строке с номером заявки. Возвращает true при успехе. */
 function setStatusById_(id, status) {
-  var sheet = getSheet_(getSpreadsheet_());
-  var last = sheet.getLastRow();
-  if (last < 2) return false;
-  var ids = sheet.getRange(2, COL.id + 1, last - 1, 1).getValues();
-  for (var i = 0; i < ids.length; i++) {
-    if (parseInt(ids[i][0], 10) === id) {
-      sheet.getRange(i + 2, COL.status + 1).setValue(status);
-      return true;
+  var lock = LockService.getScriptLock();
+  lock.waitLock(25000);
+  try {
+    var sheet = getSheet_(getSpreadsheet_());
+    var last = sheet.getLastRow();
+    if (last < 2) return false;
+    var ids = sheet.getRange(2, COL.id + 1, last - 1, 1).getValues();
+    for (var i = 0; i < ids.length; i++) {
+      if (parseInt(ids[i][0], 10) === id) {
+        sheet.getRange(i + 2, COL.status + 1).setValue(status);
+        SpreadsheetApp.flush();
+        return true;
+      }
     }
+    return false;
+  } finally {
+    lock.releaseLock();
   }
-  return false;
 }
 
 /* ============================== ХЕЛПЕРЫ ================================== */
@@ -519,38 +500,61 @@ function getSpreadsheet_() {
   throw new Error('Укажите SHEET_ID в настройках скрипта.');
 }
 
-function getSheet_(ss) {
-  var name = SHEET_NAME || PROP.getProperty('SHEET_NAME') || 'Брони';
+function getSheet_(ss, allowMigration) {
+  var name = PROP.getProperty('SHEET_NAME') || SHEET_NAME || 'Брони';
   var sheet = ss.getSheetByName(name);
-  if (!sheet) {
-    sheet = ss.insertSheet(name);
+  if (!sheet) sheet = ss.insertSheet(name);
+  if (sheet.getLastRow() === 0) {
+    ensureColumns_(sheet);
     sheet.getRange(1, 1, 1, HEADERS.length).setValues([HEADERS]);
-  } else if (sheet.getLastRow() === 0) {
-    sheet.getRange(1, 1, 1, HEADERS.length).setValues([HEADERS]);
+    applyLayout_(sheet);
   } else {
-    migrateLayout_(sheet);
+    migrateLayout_(sheet, allowMigration);
   }
   return sheet;
 }
 
-/**
- * Приводит лист к актуальному порядку колонок HEADERS.
- * Данные переносятся по названиям колонок (с учётом синонимов и склейки Заезд + Выезд),
- * поэтому старые брони не теряются.
- */
+function ensureColumns_(sheet) {
+  var missing = HEADERS.length - sheet.getMaxColumns();
+  if (missing > 0) sheet.insertColumnsAfter(sheet.getMaxColumns(), missing);
+}
+
+function statusRule_() {
+  return SpreadsheetApp.newDataValidation().requireValueInList(STATUS_LIST, true).setAllowInvalid(false).build();
+}
+
+function applyLayout_(sheet) {
+  ensureColumns_(sheet);
+  if (sheet.getMaxRows() < 2) sheet.insertRowsAfter(1, 1);
+  var count = sheet.getMaxRows() - 1;
+  sheet.setFrozenRows(1);
+  sheet.getRange(1, 1, 1, HEADERS.length)
+    .setFontWeight('bold').setBackground('#f7a93c').setFontColor('#3a2a08')
+    .setVerticalAlignment('middle').setWrap(true);
+  sheet.setRowHeight(1, 40);
+  [160, 160, 230, 130, 190, 85, 150, 130, 100, 100].forEach(function(w, i){ sheet.setColumnWidth(i + 1, w); });
+  // Удаляем старые правила: бывшая колонка «Статус» теперь может содержать Ref.
+  sheet.getRange(2, 1, count, sheet.getMaxColumns()).clearDataValidations();
+  var rule = statusRule_();
+  sheet.getRange(2, COL.status + 1, count, 1).setDataValidation(rule);
+  sheet.getRange(2, 1, count, VISIBLE_COUNT).setNumberFormat('@').setVerticalAlignment('middle');
+  sheet.getRange(2, COL.dates + 1, count, 1).setWrap(true);
+  sheet.getRange(2, COL.created + 1, count, 1).setNumberFormat('dd.MM.yyyy HH:mm');
+  sheet.getRange(2, COL.id + 1, count, HEADERS.length - VISIBLE_COUNT).setFontColor('#9a9a9a').setFontSize(9);
+  sheet.showColumns(1, VISIBLE_COUNT);
+  sheet.hideColumns(VISIBLE_COUNT + 1, sheet.getMaxColumns() - VISIBLE_COUNT);
+}
+
+/* Синонимы шапок старых версий; порядок соответствует HEADERS. */
 var HEADER_ALIASES = [
+  ['имя', 'фио', 'гость'],
+  ['телефон', 'контакты', 'контакт', 'номер телефона'],
+  ['заезд/выезд', 'заезд / выезд', 'заезд-выезд', 'даты', 'даты проживания'],
+  ['номер комнаты', 'номер', 'комната'],
+  ['отчетные документы', 'отч.доки', 'отч. доки', 'документы', 'отч доки'],
   ['№заявки', '№ заявки', '№', 'номер заявки', 'id'],
   ['дата заявки', 'дата заяки', 'дата'],
-  ['имя', 'фио', 'гость'],
-  ['контакты', 'телефон', 'контакт', 'номер телефона'],
-  ['заезд/выезд', 'заезд / выезд', 'заезд-выезд', 'даты', 'даты проживания'],
-  ['количество человек', 'кол-во человек', 'гостей', 'количество гостей', 'человек'],
-  ['отч.доки', 'отч. доки', 'отчетные документы', 'документы', 'отч доки'],
-  ['номер комнаты', 'номер', 'комната'],
   ['статус'],
-  ['ночей', 'суток'],
-  ['комментарий', 'пожелания'],
-  ['источник'],
   ['ref'],
   ['roomid']
 ];
@@ -569,38 +573,62 @@ function findAliasIdx_(oldNorm, aliases) {
 
 function formatCellDate_(v) {
   var d = toDate_(v);
-  if (d) return Utilities.formatDate(d, TIMEZONE, 'dd.MM.yyyy');
-  return String(v || '').trim();
+  return d ? Utilities.formatDate(d, TIMEZONE, 'dd.MM.yyyy') : String(v || '').trim();
 }
 
-function migrateLayout_(sheet) {
+/** Перед перестройкой сохраняет весь старый лист, включая убираемые поля. */
+function backupLayout_(sheet) {
+  var ss = sheet.getParent();
+  var base = sheet.getName() + ' — архив ' + Utilities.formatDate(new Date(), TIMEZONE, 'yyyy-MM-dd HH-mm-ss');
+  var name = base, suffix = 1;
+  while (ss.getSheetByName(name)) name = base + ' (' + (++suffix) + ')';
+  var backup = sheet.copyTo(ss).setName(name);
+  backup.showColumns(1, backup.getMaxColumns());
+  backup.setTabColor('#b7b7b7');
+  Logger.log('Старый формат сохранён: «' + name + '».');
+}
+
+/** Переносит нужные поля по шапкам. Старые гости/комментарии остаются только в архиве. */
+function migrateLayout_(sheet, allowMigration) {
   var lastCol = Math.max(sheet.getLastColumn(), 1);
   var lastRow = sheet.getLastRow();
-  var oldHead = sheet.getRange(1, 1, 1, lastCol).getValues()[0].map(function (h) { return String(h).trim(); });
-  if (oldHead.slice(0, HEADERS.length).join('|') === HEADERS.join('|') && lastCol <= HEADERS.length) return;
-
+  var oldHead = sheet.getRange(1, 1, 1, lastCol).getValues()[0].map(function(h){ return String(h).trim(); });
+  if (oldHead.join('|') === HEADERS.join('|')) return;
+  if (!allowMigration) throw new Error('Обновите формат таблицы: запустите setup() в Apps Script.');
   var oldNorm = oldHead.map(normHead_);
-  var idx = HEADER_ALIASES.map(function (aliases) { return findAliasIdx_(oldNorm, aliases); });
-  var oldFromIdx = oldNorm.indexOf('заезд');
-  var oldToIdx = oldNorm.indexOf('выезд');
-
+  var idx = HEADER_ALIASES.map(function(aliases){ return findAliasIdx_(oldNorm, aliases); });
+  var oldFromIdx = oldNorm.indexOf('заезд'), oldToIdx = oldNorm.indexOf('выезд');
   var data = lastRow > 1 ? sheet.getRange(2, 1, lastRow - 1, lastCol).getValues() : [];
-  var rows = data.map(function (r, rowIdx) {
-    var outRow = HEADERS.map(function (h, i) { return idx[i] >= 0 ? r[idx[i]] : ''; });
-    if (!outRow[COL.id]) outRow[COL.id] = rowIdx + 1;
-    if (!outRow[COL.dates] && (oldFromIdx >= 0 || oldToIdx >= 0)) {
-      var fStr = oldFromIdx >= 0 ? formatCellDate_(r[oldFromIdx]) : '';
-      var tStr = oldToIdx >= 0 ? formatCellDate_(r[oldToIdx]) : '';
-      outRow[COL.dates] = (fStr && tStr) ? (fStr + ' – ' + tStr) : (fStr || tStr);
+  var rows = data.map(function(r, rowIdx){
+    var out = HEADERS.map(function(h, i){ return idx[i] >= 0 ? r[idx[i]] : ''; });
+    if (!out[COL.id]) out[COL.id] = rowIdx + 1;
+    if (!out[COL.dates] && (oldFromIdx >= 0 || oldToIdx >= 0)) {
+      var f = oldFromIdx >= 0 ? formatCellDate_(r[oldFromIdx]) : '';
+      var t = oldToIdx >= 0 ? formatCellDate_(r[oldToIdx]) : '';
+      out[COL.dates] = f && t ? f + ' – ' + t : f || t;
     }
-    return outRow;
+    var id = roomId_(out[COL.roomId]) || roomId_(out[COL.room]);
+    if (id) { out[COL.roomId] = id; out[COL.room] = ROOM_LABELS[id]; }
+    out[COL.docs] = docsValue_(out[COL.docs]);
+    out[COL.status] = normStatus_(out[COL.status]);
+    out[COL.name] = sheetText_(out[COL.name]);
+    return out;
   });
-
-  sheet.showColumns(1, Math.max(lastCol, HEADERS.length));
-  sheet.getRange(1, 1, Math.max(lastRow, 1), Math.max(lastCol, HEADERS.length)).clearContent();
+  backupLayout_(sheet); // если резервная копия не создалась, исходный лист не трогаем
+  ensureColumns_(sheet);
+  sheet.getRange(1, 1, Math.max(lastRow, 1), Math.max(lastCol, HEADERS.length)).clearContent().clearDataValidations();
   sheet.getRange(1, 1, 1, HEADERS.length).setValues([HEADERS]);
-  if (rows.length) sheet.getRange(2, 1, rows.length, HEADERS.length).setValues(rows);
-  sheet.hideColumns(VISIBLE_COUNT + 1, HEADERS.length - VISIBLE_COUNT);
+  if (rows.length) {
+    sheet.getRange(2, 1, rows.length, VISIBLE_COUNT).setNumberFormat('@');
+    sheet.getRange(2, 1, rows.length, HEADERS.length).setValues(rows);
+  }
+  applyLayout_(sheet);
+}
+
+function nextBookingId_(sheet) {
+  var last = sheet.getLastRow();
+  var ids = last > 1 ? sheet.getRange(2, COL.id + 1, last - 1, 1).getValues() : [];
+  return ids.reduce(function(max, r){ return Math.max(max, parseInt(r[0], 10) || 0); }, Number(PROP.getProperty('LAST_BOOKING_ID')) || 0) + 1;
 }
 
 function sheetUrl_(ss, sheet) {
@@ -612,19 +640,16 @@ function findRef_(ref) {
   return findRow_(function (r) { return String(r[COL.ref] || '').trim() === ref; });
 }
 
-function findRecent_(phone, fromIso, roomId) {
-  var d = digits_(phone);
-  return findRow_(function (r) {
-    if (digits_(r[COL.contacts]) !== d) return false;
+function findRecent_(phone, fromIso, toIso, roomId, docs, name) {
+  return findRow_(function(r){
+    if (phoneDigits_(r[COL.phone]) !== phoneDigits_(phone)) return false;
     if (normStatus_(r[COL.status]) !== STATUS_NEW) return false;
     var created = r[COL.created] ? new Date(r[COL.created]).getTime() : 0;
     if (!created || (Date.now() - created) > DEDUPE_MINUTES * 60000) return false;
-    if (fromIso) {
-      var range = parseDates_({ dates: r[COL.dates] });
-      if (range.fromIso && range.fromIso !== fromIso) return false;
-    }
-    if (roomId && String(r[COL.roomId] || '').trim() !== roomId) return false;
-    return true;
+    var range = parseDates_({ dates: r[COL.dates] });
+    return range.fromIso === fromIso && range.toIso === toIso &&
+      String(r[COL.roomId] || '').trim() === roomId && docsValue_(r[COL.docs]) === docs &&
+      String(r[COL.name]).replace(/^'(?==)/, '').trim() === name;
   });
 }
 
@@ -655,8 +680,9 @@ function parseDates_(data) {
       var year = Number(m[6] || m[3] || new Date().getFullYear());
       if (year < 100) year += 2000;
       var y1 = Number(m[3] || year); if (y1 < 100) y1 += 2000;
-      from = from || new Date(y1, Number(m[2]) - 1, Number(m[1]), 12, 0, 0);
-      to = to || new Date(year, Number(m[5]) - 1, Number(m[4]), 12, 0, 0);
+      if (!m[6] && Number(m[5]) < Number(m[2])) year = y1 + 1;
+      from = from || calendarDate_(y1, Number(m[2]), Number(m[1]));
+      to = to || calendarDate_(year, Number(m[5]), Number(m[4]));
     }
   }
 
@@ -667,15 +693,18 @@ function parseDates_(data) {
     out.nights = n > 0 ? n : 0;
     out.pair = Utilities.formatDate(from, TIMEZONE, 'dd.MM.yyyy') + ' – ' + Utilities.formatDate(to, TIMEZONE, 'dd.MM.yyyy');
   }
-  out.human = String(data.dates || '').trim() || out.pair;
+  out.human = out.pair; // не доверяем строке dates, когда сайт передал точные ISO-даты
   return out;
 }
 
+function calendarDate_(year, month, day) {
+  var d = new Date(year, month - 1, day, 12, 0, 0);
+  return d.getFullYear() === year && d.getMonth() === month - 1 && d.getDate() === day ? d : null;
+}
+
 function parseIso_(v) {
-  var s = String(v || '').trim();
-  var m = s.match(/^(\d{4})-(\d{2})-(\d{2})/);
-  if (!m) return null;
-  return new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]), 12, 0, 0);
+  var m = String(v || '').trim().match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  return m ? calendarDate_(Number(m[1]), Number(m[2]), Number(m[3])) : null;
 }
 
 function toDate_(v) {
@@ -697,11 +726,23 @@ function normStatus_(v) {
   return STATUS_NEW;
 }
 function digits_(v) { return String(v || '').replace(/\D/g, ''); }
-function toNumber_(v) {
-  var n = parseInt(String(v == null ? '' : v).replace(/[^\d]/g, ''), 10);
-  return isNaN(n) ? 0 : n;
+function phoneDigits_(v) {
+  var d = digits_(v);
+  return d.length === 11 && d[0] === '8' ? '7' + d.slice(1) : d;
 }
-function money_(n) { return String(n).replace(/\B(?=(\d{3})+(?!\d))/g, ' ') + ' ₽'; }
+function docsValue_(v) { return /^(да|нужны|yes|1|true|on)$/i.test(String(v || '').trim()) ? 'Да' : 'Нет'; }
+function roomId_(value) {
+  var s = String(value || '').trim();
+  if (Object.prototype.hasOwnProperty.call(ROOM_LABELS, s)) return s;
+  var ids = Object.keys(ROOM_LABELS);
+  for (var i = 0; i < ids.length; i++) if (ROOM_LABELS[ids[i]].toLowerCase() === s.toLowerCase()) return ids[i];
+  return '';
+}
+function sheetText_(v) {
+  var s = String(v || '');
+  // setValues трактует строку, начинающуюся с «=», как формулу. Пишем буквальный текст.
+  return /^\s*=/.test(s) ? "'" + s : s;
+}
 function esc_(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
 function nowIso_() { return new Date().toISOString(); }
 
@@ -717,31 +758,42 @@ function paramsToObject_(e) {
 }
 
 function getChatIds_() {
-  return String(MODERATOR_CHAT_ID || '')
+  var configured = PROP.getProperty('MODERATOR_CHAT_ID');
+  return String(configured === null ? MODERATOR_CHAT_ID : configured)
     .split(/[,\s;]+/)
     .map(function (s) { return s.trim(); })
     .filter(String);
 }
 
+function botToken_() {
+  var token = PROP.getProperty('BOT_TOKEN') || BOT_TOKEN;
+  return token && token.indexOf('ВСТАВЬТЕ') !== 0 ? token : '';
+}
+function webhookSecret_() { return PROP.getProperty('WEBHOOK_SECRET') || WEBHOOK_SECRET; }
+
 function tgCheck_() {
-  if (!BOT_TOKEN || BOT_TOKEN.indexOf('ВСТАВЬТЕ') === 0) return 'токен бота не указан';
+  if (!botToken_()) return 'токен бота не указан';
   var me = tg_('getMe', {});
   if (me && me.ok) return 'бот @' + me.result.username + ' на связи';
   return 'ошибка: ' + JSON.stringify(me);
 }
 
 function tg_(method, payload) {
-  if (!BOT_TOKEN || BOT_TOKEN.indexOf('ВСТАВЬТЕ') === 0) return { ok: false, description: 'BOT_TOKEN не настроен' };
+  var token = botToken_();
+  if (!token) return { ok: false, description: 'BOT_TOKEN не настроен' };
   try {
-    var res = UrlFetchApp.fetch('https://api.telegram.org/bot' + BOT_TOKEN + '/' + method, {
+    var res = UrlFetchApp.fetch('https://api.telegram.org/bot' + token + '/' + method, {
       method: 'post',
       payload: payload,
       muteHttpExceptions: true
     });
-    return JSON.parse(res.getContentText());
+    var result = JSON.parse(res.getContentText());
+    if (result && result.description) result.description = String(result.description).split(token).join('[скрыто]');
+    return result;
   } catch (err) {
-    console.error('tg_ ' + method + ': ' + err);
-    return { ok: false, description: String(err) };
+    // Исключение UrlFetchApp может содержать URL с токеном. Не выдаём его через публичный ping.
+    console.error('tg_ ' + method + ': ' + String(err).split(token).join('[скрыто]'));
+    return { ok: false, description: 'Не удалось связаться с Telegram.' };
   }
 }
 

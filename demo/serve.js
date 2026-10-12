@@ -34,6 +34,8 @@ const TYPES = {
   '.png': 'image/png', '.svg': 'image/svg+xml', '.ico': 'image/x-icon'
 };
 
+const escapeHtml = s => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+
 const strip = s => String(s)
   .replace(/<br\s*\/?>/g, '\n').replace(/<\/p>/g, '\n')
   .replace(/<[^>]+>/g, '').replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>');
@@ -52,11 +54,11 @@ function parseMultipart(body, boundary) {
 function demoSheetHtml() {
   const sheet = env.sheet();
   if (!sheet) return '<p>Лист ещё не создан — отправьте заявку с сайта.</p>';
-  const rows = sheet.getRange(1, 1, Math.max(1, sheet.getLastRow()), 8).getValues();
-  return '<table><thead><tr>' + rows[0].map(h => '<th>' + h + '</th>').join('') + '</tr></thead><tbody>' +
+  const rows = sheet.getRange(1, 1, Math.max(1, sheet.getLastRow()), env.api.visibleCount).getValues();
+  return '<div class="table-wrap"><table><thead><tr>' + rows[0].map(h => '<th>' + escapeHtml(h) + '</th>').join('') + '</tr></thead><tbody>' +
     rows.slice(1).map(r => '<tr>' + r.map((c, i) => '<td>' +
-      (c instanceof Date ? c.toLocaleString('ru-RU') : String(c === '' ? '—' : c)) + '</td>').join('') + '</tr>').join('') +
-    '</tbody></table>';
+      escapeHtml(c instanceof Date ? c.toLocaleString('ru-RU') : String(c === '' ? '—' : c)) + '</td>').join('') + '</tr>').join('') +
+    '</tbody></table></div>';
 }
 
 const server = http.createServer((req, res) => {
@@ -69,6 +71,7 @@ const server = http.createServer((req, res) => {
   // «веб-приложение Apps Script» — тот же код, что и в google-sheets/Code.gs
   if (url.pathname === '/macros/exec' && !LIVE) {
     if (req.method === 'GET') {
+      res.setHeader('Content-Type', 'application/json; charset=utf-8');
       return void res.end(env.api.doGet({ parameter: Object.fromEntries(url.searchParams.entries()) }).getContent());
     }
     let body = '';
@@ -121,20 +124,26 @@ const server = http.createServer((req, res) => {
     res.end(`<!doctype html><meta charset="utf-8"><title>Демо: таблица броней</title>
 <style>body{font:15px/1.5 -apple-system,Segoe UI,Roboto,sans-serif;padding:28px;color:#2b2b2b}
 h1{font-size:20px}code{background:#fff4d6;padding:2px 6px;border-radius:6px}
-table{border-collapse:collapse;margin-top:14px;font-size:13px}
+.table-wrap{overflow-x:auto}pre{white-space:pre-wrap;background:#fff4d6;padding:16px;border-radius:12px;max-width:760px}table{border-collapse:collapse;margin-top:14px;font-size:13px}
 th,td{border:1px solid #e3d9c3;padding:6px 10px;text-align:left;white-space:nowrap}
 th{background:#f7a93c;color:#3a2a08}tr:nth-child(even) td{background:#fffdf4}</style>
 <h1>🌻 Демо-«Google-таблица» броней</h1>
 <p>Это данные, которые сайт отправил на <code>/macros/exec</code> — локальный мок вместо настоящей таблицы.
 Обновите страницу после отправки заявки. <a href="/rooms.html">← к странице бронирования</a></p>
-${demoSheetHtml()}`);
+${demoSheetHtml()}
+<h2>Последнее уведомление модератору (демо)</h2>
+<p>Это предпросмотр сообщения бота, без отправки в настоящий Telegram.</p>
+<pre>${escapeHtml(strip((env.fetchLog.filter(f => /sendMessage/.test(f.url)).at(-1) || { payload: { text: 'Пока нет заявок.' } }).payload.text))}</pre>`);
     return;
   }
 
   // статика сайта
-  const rel = decodeURIComponent(url.pathname === '/' ? '/index.html' : url.pathname);
-  const file = path.join(ROOT, rel);
-  if (!file.startsWith(ROOT) || !fs.existsSync(file) || fs.statSync(file).isDirectory()) {
+  let rel;
+  try { rel = decodeURIComponent(url.pathname === '/' ? '/index.html' : url.pathname); }
+  catch { res.writeHead(400); return void res.end('Неверный адрес'); }
+  const file = path.resolve(ROOT, '.' + rel);
+  const publicFile = rel === '/index.html' || rel === '/rooms.html' || /^\/(css|js|img|data)\//.test(rel);
+  if (!publicFile || rel.split('/').some(p => p.startsWith('.')) || !file.startsWith(ROOT + path.sep) || !TYPES[path.extname(file)] || !fs.existsSync(file) || fs.statSync(file).isDirectory()) {
     res.writeHead(404, { 'Content-Type': 'text/plain; charset=utf-8' });
     return void res.end('Не найдено: ' + rel);
   }
@@ -163,6 +172,7 @@ h1{font-size:20px}a{color:#c1740a}code{background:#fff4d6;padding:2px 6px;border
 
 /** Страница самопроверки: пингует настоящее развёртывание и умеет отправить тестовую заявку. */
 function selfTestPage() {
+  const activeApi = LIVE ? LIVE_API : '/macros/exec';
   return `<!doctype html><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Проверка таблицы броней</title>
 <style>
@@ -178,7 +188,7 @@ pre{background:#1f2933;color:#d7e3ee;padding:14px;border-radius:12px;overflow:au
 a{color:#c1740a}
 </style>
 <h1>🌻 Проверка Google-таблицы броней</h1>
-<p>Таблица: <code id="api">${LIVE_API || '(не указана в data/site.json)'}</code></p>
+<p>Таблица: <code id="api">${escapeHtml(activeApi || '(не указана в data/site.json)')}</code></p>
 <p>Запросы идут прямо из вашего браузера — так же, как с сайта у гостя.</p>
 <p>
   <button id="ping">1. Проверить связь</button>
@@ -186,7 +196,7 @@ a{color:#c1740a}
 </p>
 <div id="out"><p class="warn">Начните с проверки связи.</p></div>
 <script>
-var API = ${JSON.stringify(LIVE_API)};
+var API = ${JSON.stringify(activeApi)};
 var out = document.getElementById('out');
 function show(html, json){ out.innerHTML = html + (json ? '<pre>' + JSON.stringify(json, null, 2) + '</pre>' : ''); }
 function busy(btn, on, text){ btn.disabled = on; if(text) btn.textContent = text; }
@@ -210,15 +220,14 @@ document.getElementById('ping').onclick = function(){
 
 document.getElementById('book').onclick = function(){
   var b = this;
-  if(!confirm('Настоящая тестовая заявка попадёт в таблицу и модератору в Telegram. Продолжить?')) return;
+  if(!confirm(${JSON.stringify('Тестовая заявка попадёт в ')} + ${JSON.stringify(LIVE ? 'настоящую таблицу и Telegram модератора' : 'локальную демо-таблицу')} + '. Продолжить?')) return;
   var ref = 'p-browser-' + Date.now();
   var fd = new FormData();
   var tomorrow = new Date(Date.now() + 86400000);
   var day = function(d){ return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0'); };
-  [[ 'action','book'], ['name','Проверка сайта (тест)'], ['phone','+7 918 116-45-54'], ['contacts','+7 918 116-45-54'],
-   ['dateFrom', day(tomorrow)], ['dateTo', day(new Date(tomorrow.getTime() + 2*86400000))], ['nights','2'],
-   ['guests','2'], ['people','2'], ['docs','нет'], ['room','single-1'], ['roomLabel','Номер 1'],
-   ['comment','Тестовая заявка из браузера, строку можно удалить'], ['ref', ref], ['page','/selftest']]
+  [[ 'action','book'], ['name','Проверка сайта (тест)'], ['phone','+7 918 116-45-54'],
+   ['dateFrom', day(tomorrow)], ['dateTo', day(new Date(tomorrow.getTime() + 2*86400000))],
+   ['docs','нет'], ['room','single-1'], ['ref', ref]]
     .forEach(function(p){ fd.append(p[0], p[1]); });
   busy(b, true, 'Отправляем…');
   fetch(API, { method: 'POST', body: fd }).then(function(r){ return r.text(); }).then(function(t){
