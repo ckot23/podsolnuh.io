@@ -16,7 +16,7 @@
   // Значения по умолчанию; актуальные настройки подгружаются из data/site.json.
   var DEFAULT_CFG = {
     // URL веб-приложения Google Apps Script (таблица броней)
-    bookingApi: 'https://script.google.com/macros/s/AKfycbwFY3liVkjJOY9_XHkQ4O8JvX0wkjctoQIzOglTRkmt6UuUafvpfGpIyEh82eyt-nUzzQ/exec',
+    bookingApi: 'https://script.google.com/macros/s/AKfycbyieiZSyJXjeOAweTGVn4-qtthrG_5Q1hLy0YngGc_oTxc2CIVgZlud1AJCZrUB2fzj/exec',
     tgUrl: 'https://t.me/Olgahotel23',
     maxUrl: 'https://max.ru/u/f9LHodD0cOIbLwgK-CQN6QpeLWldb0OhTsbXg4qW7stL88F9IT36nmEuScw',
     phonePrimary: '+79181164554'
