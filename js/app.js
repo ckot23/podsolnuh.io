@@ -1,26 +1,24 @@
 /* =========================================================
    Гостиница «Подсолнух» — основной скрипт
    - форма заявки на бронь (только имя и номер телефона)
-   - модалки политики конфиденциальности и админ-панели
+   - модалка политики конфиденциальности и лайтбокс галереи
    - отправка заявки только после записи в Google Таблицу
      (Google Apps Script), откуда модератору уходит уведомление в Telegram
-   - синхронизация публичных настроек через data/site.json
+   - публичные настройки (контакты, адрес таблицы) из data/site.json
    - декоративные падающие лепестки и плавные анимации скролла
    ========================================================= */
 (function () {
   'use strict';
 
   // ---------- конфигурация ----------
-  var CONFIG_KEY = 'podsolnuh_cfg_v1';
-  var AUTH_KEY   = 'podsolnuh_auth_v1';
-  var SYNC_KEY   = 'podsolnuh_sync_v1';
   var SHARED_CACHE_KEY = 'podsolnuh_shared_v1';
-  var ADMIN_PASSWORD = 'sunflower'; // <<< поменяйте на свой пароль
 
+  // Значения по умолчанию; актуальные настройки подгружаются из data/site.json.
   var DEFAULT_CFG = {
-    bookingApi: '', // URL веб-приложения Google Apps Script (таблица броней)
-    tgUrl: 'https://t.me/ckot_23',
-    maxUrl: 'https://max.ru',
+    // URL веб-приложения Google Apps Script (таблица броней)
+    bookingApi: 'https://script.google.com/macros/s/AKfycbwFY3liVkjJOY9_XHkQ4O8JvX0wkjctoQIzOglTRkmt6UuUafvpfGpIyEh82eyt-nUzzQ/exec',
+    tgUrl: 'https://t.me/Olgahotel23',
+    maxUrl: 'https://max.ru/u/f9LHodD0cOIbLwgK-CQN6QpeLWldb0OhTsbXg4qW7stL88F9IT36nmEuScw',
     phonePrimary: '+79181164554'
   };
 
@@ -30,39 +28,19 @@
     SITE_DATA_PATH,
     'https://raw.githubusercontent.com/ckot23/podsolnuh.io/main/data/site.json'
   ];
-  var DEFAULT_SYNC = { repo: 'ckot23/podsolnuh.io', branch: 'main', token: '' };
 
-  var cfg = loadCfg();
+  // Остатки старой админ-панели в браузере больше не используются — чистим.
+  ['podsolnuh_cfg_v1', 'podsolnuh_auth_v1', 'podsolnuh_sync_v1'].forEach(function(k){
+    try { localStorage.removeItem(k); } catch(e){}
+  });
+
+  var cfg = Object.assign({}, DEFAULT_CFG);
   // Публичные настройки могут загрузиться чуть позже кода страницы. Отправку
   // заявки откладываем до завершения загрузки, чтобы гарантированно использовать актуальный bookingApi.
   var siteDataReady = Promise.resolve(false);
-  var sync = loadSync();
-  var adminAuthed = !!localStorage.getItem(AUTH_KEY);
   applySharedData(loadSharedCache(), false);
 
   // ---------- утилиты ----------
-  function loadCfg(){
-    try {
-      var c = JSON.parse(localStorage.getItem(CONFIG_KEY) || '{}');
-      if(!c || typeof c !== 'object') c = {};
-      var hadLegacySecrets = Object.prototype.hasOwnProperty.call(c, 'botToken') || Object.prototype.hasOwnProperty.call(c, 'chatId') || Object.prototype.hasOwnProperty.call(c, 'waNumber');
-      delete c.botToken;
-      delete c.chatId;
-      delete c.waNumber;
-      var clean = Object.assign({}, DEFAULT_CFG, c);
-      if(hadLegacySecrets) localStorage.setItem(CONFIG_KEY, JSON.stringify(clean));
-      return clean;
-    }
-    catch(e){ return Object.assign({}, DEFAULT_CFG); }
-  }
-  function saveCfg(){ localStorage.setItem(CONFIG_KEY, JSON.stringify(cfg)); }
-
-  // ---------- синхронизация: изменения для ВСЕГО сайта ----------
-  function loadSync(){
-    try { return Object.assign({}, DEFAULT_SYNC, JSON.parse(localStorage.getItem(SYNC_KEY) || '{}')); }
-    catch(e){ return Object.assign({}, DEFAULT_SYNC); }
-  }
-  function saveSync(){ localStorage.setItem(SYNC_KEY, JSON.stringify(sync)); }
   function loadSharedCache(){
     try { return JSON.parse(localStorage.getItem(SHARED_CACHE_KEY) || 'null'); }
     catch(e){ return null; }
@@ -99,53 +77,11 @@
           cfgChanged = true;
         }
       });
-      if(cfgChanged) saveCfg();
     }
     if(cfgChanged && rerender){
       applyCfgToDom();
     }
     return cfgChanged;
-  }
-  function buildSiteData(){
-    return {
-      version: 1,
-      updatedAt: new Date().toISOString(),
-      cfg: {
-        tgUrl: cfg.tgUrl,
-        maxUrl: cfg.maxUrl,
-        phonePrimary: cfg.phonePrimary,
-        bookingApi: cfg.bookingApi
-      }
-    };
-  }
-  function pushSiteData(){
-    if(!sync.token || !sync.repo || !sync.branch){
-      return Promise.reject(new Error('не настроена GitHub-синхронизация'));
-    }
-    var content = JSON.stringify(buildSiteData(), null, 2);
-    var b64 = btoa(unescape(encodeURIComponent(content)));
-    var headers = { 'Authorization': 'Bearer ' + sync.token, 'Accept': 'application/vnd.github+json' };
-    return fetch('https://api.github.com/repos/' + sync.repo + '/contents/' + SITE_DATA_PATH + '?ref=' + encodeURIComponent(sync.branch), { headers: headers })
-      .then(function(r){
-        if(r.status === 404) return null;
-        if(!r.ok) throw new Error('чтение файла: HTTP ' + r.status);
-        return r.json();
-      })
-      .then(function(cur){
-        var body = { message: 'Update data/site.json from admin panel', content: b64, branch: sync.branch };
-        if(cur && cur.sha) body.sha = cur.sha;
-        return fetch('https://api.github.com/repos/' + sync.repo + '/contents/' + SITE_DATA_PATH, {
-          method: 'PUT',
-          headers: { 'Authorization': 'Bearer ' + sync.token, 'Content-Type': 'application/json' },
-          body: JSON.stringify(body)
-        });
-      })
-      .then(function(r){
-        return r.json().then(function(j){
-          if(!r.ok) throw new Error((j && j.message) || ('запись файла: HTTP ' + r.status));
-          return j;
-        });
-      });
   }
   function fetchSiteData(){
     var bust = '?t=' + Date.now();
@@ -166,29 +102,7 @@
       })();
     });
   }
-  function adminMsg(text, state, ms){
-    var note = document.getElementById('adminNote');
-    if(!note) return;
-    note.textContent = text;
-    if(state) note.setAttribute('data-state', state); else note.removeAttribute('data-state');
-    clearTimeout(adminMsg._t);
-    if(ms !== 0) adminMsg._t = setTimeout(function(){ note.textContent = ''; note.removeAttribute('data-state'); }, ms || 3000);
-  }
-  function maybePushGlobal(okMsg){
-    if(!sync.token){
-      adminMsg('💾 Сохранено в этом браузере. Чтобы увидели все посетители — заполните GitHub-синхронизацию ниже.', 'info', 6000);
-      return;
-    }
-    adminMsg('Синхронизируем с сайтом…', 'info', 0);
-    pushSiteData().then(function(){
-      adminMsg(okMsg || '✅ Применено для всего сайта!', 'ok');
-    }).catch(function(err){
-      adminMsg('⚠️ Локально сохранено, но не применено глобально: ' + err.message, 'error', 6000);
-    });
-  }
-
   function phoneOk(v){ var d=(v||'').replace(/\D/g,''); return /^[+\d\s().-]+$/.test(v) && d.length>=10 && d.length<=15 && v.length<=32; }
-  function setVal(id, v){ var el=document.getElementById(id); if(el) el.value = v; }
 
   // ---------- общение с Google-таблицей броней ----------
   function bookingApiReady(){
@@ -352,7 +266,6 @@
 
   // ---------- модалки ----------
   var policyModal=document.getElementById('policyModal');
-  var adminModal=document.getElementById('adminModal');
   var lightboxModal=document.getElementById('lightboxModal');
   var lightboxImg=document.getElementById('lightboxImg');
   var lightboxSource=document.getElementById('lightboxSource');
@@ -410,10 +323,8 @@
     if(e.target.closest('#lightboxPrev')){ showGallerySlide(galleryIdx - 1); return; }
     if(e.target.closest('#lightboxNext')){ showGallerySlide(galleryIdx + 1); return; }
     if(e.target.closest('#privacyLink, [data-policy]')){ e.preventDefault(); openModal(policyModal); return; }
-    if(e.target.closest('#adminLink')){ e.preventDefault(); openAdmin(); return; }
     if(e.target.closest('.modal-close')){ closeModal(e.target.closest('.modal-backdrop')); return; }
     if(e.target===policyModal) closeModal(policyModal);
-    if(e.target===adminModal) closeModal(adminModal);
     if(e.target===lightboxModal) closeModal(lightboxModal);
   });
   document.addEventListener('keydown', function(e){
@@ -529,93 +440,6 @@
       });
     });
   }
-
-  // ---------- АДМИНКА ----------
-  function openAdmin(){
-    openModal(adminModal);
-    if(adminAuthed){
-      document.getElementById('adminLogin').hidden = true;
-      document.getElementById('adminPanel').hidden = false;
-      setVal('cfgSheet', cfg.bookingApi||'');
-      document.getElementById('cfgTgUrl').value = cfg.tgUrl||'';
-      document.getElementById('cfgMaxUrl').value = cfg.maxUrl||'';
-      document.getElementById('cfgPhone').value = cfg.phonePrimary||'';
-      document.getElementById('cfgRepo').value = sync.repo||'';
-      document.getElementById('cfgBranch').value = sync.branch||'';
-      document.getElementById('cfgGitToken').value = sync.token||'';
-    } else {
-      document.getElementById('adminLogin').hidden = false;
-      document.getElementById('adminPanel').hidden = true;
-    }
-  }
-
-  document.getElementById('adminLoginBtn').addEventListener('click',function(){
-    var pass = document.getElementById('adminPass').value;
-    var err = document.getElementById('errAdmin');
-    if(pass === ADMIN_PASSWORD){
-      adminAuthed = true; localStorage.setItem(AUTH_KEY,'1');
-      err.classList.remove('show');
-      openAdmin();
-    } else {
-      err.classList.add('show');
-    }
-  });
-
-  function readCfgForm(){
-    cfg.bookingApi = String((document.getElementById('cfgSheet')||{}).value || '').trim();
-    cfg.tgUrl = document.getElementById('cfgTgUrl').value.trim() || DEFAULT_CFG.tgUrl;
-    cfg.maxUrl = document.getElementById('cfgMaxUrl').value.trim() || DEFAULT_CFG.maxUrl;
-    cfg.phonePrimary = document.getElementById('cfgPhone').value.trim() || DEFAULT_CFG.phonePrimary;
-    sync.repo = document.getElementById('cfgRepo').value.trim() || DEFAULT_SYNC.repo;
-    sync.branch = document.getElementById('cfgBranch').value.trim() || DEFAULT_SYNC.branch;
-    sync.token = document.getElementById('cfgGitToken').value.trim();
-    saveCfg(); saveSync();
-    applyCfgToDom();
-  }
-  document.getElementById('adminSaveCfg').addEventListener('click',function(){
-    readCfgForm();
-    maybePushGlobal('✅ Настройки применены для всего сайта!');
-  });
-
-  // проверка связи с Google-таблицей броней
-  var testSheetBtn = document.getElementById('adminTestSheet');
-  if(testSheetBtn) testSheetBtn.addEventListener('click', function(){
-    readCfgForm();
-    if(!bookingApiReady()){
-      adminMsg('⚠️ Укажите URL веб-приложения Google Apps Script.', 'error', 5000);
-      return;
-    }
-    adminMsg('Проверяем таблицу…', 'info', 0);
-    var url = cfg.bookingApi + (cfg.bookingApi.indexOf('?')===-1?'?':'&') + 'action=ping&t=' + Date.now();
-    fetch(url, { signal: timeoutSignal(8000) })
-      .then(function(r){ return r.json(); })
-      .then(function(j){
-        if(j && j.ok){
-          var tg = ' Telegram: ' + (j.bot || (j.telegram ? 'подключён' : 'не отвечает')) + '.';
-          var layout = j.schemaVersion === 3 ? '' : ' Обновите Code.gs, разверните новую версию Apps Script и выполните setup(), чтобы в таблице остались только Имя и Телефон.';
-          adminMsg('✅ Таблица «' + j.sheet + '» на связи, заявок: ' + j.rows + '.' + tg + layout, j.telegram && !layout ? 'ok' : 'info', 10000);
-        } else {
-          adminMsg('⚠️ Таблица ответила ошибкой: ' + ((j && j.error) || 'неизвестно'), 'error', 6000);
-        }
-      })
-      .catch(function(err){
-        adminMsg('⚠️ Не удалось связаться с таблицей: ' + err.message + '. Проверьте, что доступ у веб-приложения — «Все, у кого есть ссылка».', 'error', 8000);
-      });
-  });
-
-  document.getElementById('adminSaveGlobal').addEventListener('click',function(){
-    readCfgForm();
-    if(!sync.token){
-      adminMsg('⚠️ Укажите GitHub токен — без него изменения видны только в вашем браузере.', 'error', 5000);
-      return;
-    }
-    adminMsg('Синхронизируем с сайтом…', 'info', 0);
-    pushSiteData().then(function(){
-      adminMsg('✅ Применено для всего сайта! Посетители увидят изменения при обновлении страницы.', 'ok', 5000);
-    }).catch(function(err){
-      adminMsg('⚠️ Не удалось применить: ' + err.message, 'error', 6000);
-    });
-  });
 
   // ---------- ДЕКОРАТИВНЫЕ ПАДАЮЩИЕ ЛЕПЕСТКИ ----------
   (function petals(){
