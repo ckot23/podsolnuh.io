@@ -151,7 +151,6 @@
   var scrollSunFlower=scrollSun ? scrollSun.querySelector('.scroll-sun-flower') : null;
   var scrollRing=scrollSun ? scrollSun.querySelector('.ring-fg') : null;
   var heroWrap=document.querySelector('.hero-photo-wrap');
-  var badgeDist=document.querySelector('.badge-dist');
   var bigFlower=document.querySelector('.big-sunflower');
   var heroVisual=document.querySelector('.hero-visual');
   var scrollRaf=0;
@@ -175,13 +174,12 @@
     // большой подсолнух в hero докручивается вместе со скроллом
     if(bigFlower) bigFlower.style.rotate = (y * 0.12).toFixed(2) + 'deg';
 
-    // параллакс hero: фото и бейджи движутся с разной скоростью
+    // параллакс hero: фото движется с небольшой задержкой
     if(heroVisual){
       var r = heroVisual.getBoundingClientRect();
       if(r.bottom > -140 && r.top < window.innerHeight + 140){
         var mid = r.top + r.height / 2 - window.innerHeight / 2;
         if(heroWrap) heroWrap.style.translate = '0 ' + (mid * -0.07).toFixed(1) + 'px';
-        if(badgeDist) badgeDist.style.translate = '0 ' + (mid * -0.06).toFixed(1) + 'px';
       }
     }
   }
