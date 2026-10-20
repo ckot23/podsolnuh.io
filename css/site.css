@@ -576,7 +576,6 @@ footer button { color: #ffd33a; font-weight: 600; border-bottom: 1px dashed #ffd
 }
 @keyframes popIn { from { transform: scale(.9) translateY(20px); opacity: 0; } to { transform: scale(1); opacity: 1; } }
 .modal h3 { font-size: 24px; margin-bottom: 6px; }
-.modal .modal-sub { color: var(--muted); font-size: 14px; margin: 0 0 20px; }
 .modal-close {
   position: absolute; top: 16px; right: 16px; width: 40px; height: 40px;
   border-radius: 14px; border: 1.5px solid var(--line); background: var(--bg);
@@ -609,16 +608,6 @@ footer button { color: #ffd33a; font-weight: 600; border-bottom: 1px dashed #ffd
 .form-status[data-state="info"]  { color: var(--terra-dark); background: var(--sun-soft); }
 .err { display: none; color: #b4362b; font-size: 13px; margin-top: 6px; font-weight: 600; }
 .err.show { display: block; }
-.modal-alt { margin-top: 16px; font-size: 13.5px; color: var(--muted); text-align: center; }
-.modal-alt b { color: var(--ink); }
-
-/* ---------- АДМИН-ПАНЕЛЬ ---------- */
-.admin-note { color: var(--muted); font-size: 13.5px; padding: 12px; background: var(--sun-soft); border-radius: 12px; margin-top: 10px; }
-.admin-config { margin-top: 18px; padding: 16px; background: var(--bg); border-radius: 14px; border: 1.5px dashed var(--line); }
-.admin-config-top { margin-top: 0; }
-.admin-config label { font-size: 12px; font-weight: 700; color: var(--muted); display: block; margin-bottom: 6px; }
-.admin-config input { width:100%; padding: 10px 12px; border: 1.5px solid var(--line); border-radius: 10px; font-size: 16px; background: var(--surface); margin-bottom: 10px; font-family: inherit; }
-.admin-sync { margin-top: 14px; padding: 14px; background: var(--surface); border: 1.5px dashed var(--line); border-radius: 12px; }
 
 .policy-modal .modal { max-width: 640px; }
 .policy-modal p { font-size: 14px; color: var(--muted); line-height: 1.6; }
@@ -753,7 +742,6 @@ picture { display: block; width: 100%; }
 .full-span { grid-column: 1 / -1; }
 .badge-sun { width: 28px; height: 28px; flex: 0 0 28px; object-fit: contain; border-radius: 50%; }
 .sunflower-inline { display: inline-block; width: 19px; height: 19px; flex: 0 0 auto; object-fit: contain; vertical-align: -0.22em; }
-.title-flower { width: 27px; height: 27px; vertical-align: -0.26em; }
 .foot .footer-brand { display: flex; align-items: center; gap: 8px; }
 .foot .footer-brand .sunflower-inline { width: 25px; height: 25px; vertical-align: middle; }
 .privacy-button {
@@ -762,7 +750,6 @@ picture { display: block; width: 100%; }
   font-weight: 600;
   border-bottom: 1px dashed #ffd33a;
 }
-.admin-default { margin-top: 14px; }
 
 /* Модалки скрыты и от визуального, и от экранного читателя до открытия. */
 .modal-backdrop[hidden] { display: none; }

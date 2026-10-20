@@ -100,7 +100,7 @@ const server = http.createServer((req, res) => {
       updatedAt: new Date().toISOString(),
       cfg: LIVE
         ? Object.assign({}, realSiteData.cfg)
-        : { tgUrl: 'https://t.me/ckot_23', maxUrl: 'https://max.ru', phonePrimary: '+79181164554', bookingApi: '/macros/exec' }
+        : { tgUrl: 'https://t.me/Olgahotel23', maxUrl: 'https://max.ru/u/f9LHodD0cOIbLwgK-CQN6QpeLWldb0OhTsbXg4qW7stL88F9IT36nmEuScw', phonePrimary: '+79181164554', bookingApi: '/macros/exec' }
     });
   }
 
