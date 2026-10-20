@@ -92,7 +92,7 @@
       <div class="booking-card reveal">
         <p class="sec-kicker"><img class="sunflower-inline" src="img/sunflower.webp" alt="" aria-hidden="true" /> Онлайн-бронирование</p>
         <h1 class="booking-title" id="bookTitle">Заявка на бронь</h1>
-        <p class="booking-sub" id="bookIntro">Оставьте только имя и номер телефона — мы свяжемся с вами в ближайшее время, уточним свободные даты и точную стоимость.</p>
+        <p class="booking-sub" id="bookIntro">Оставьте только имя и контакты — мы свяжемся с вами в ближайшее время, уточним свободные даты и точную стоимость.</p>
 
         <form id="bookForm" novalidate>
           <div class="vh" aria-hidden="true">
@@ -105,9 +105,9 @@
             <p class="err" id="errName">Представьтесь, пожалуйста.</p>
           </div>
           <div class="field">
-            <label for="fPhone">Номер телефона</label>
-            <input id="fPhone" name="phone" type="tel" inputmode="tel" autocomplete="tel" placeholder="+7 ___ ___-__-__" maxlength="32" aria-describedby="errPhone" required />
-            <p class="err" id="errPhone">Укажите телефон для связи.</p>
+            <label for="fPhone">Контакты</label>
+            <input id="fPhone" name="contacts" type="tel" inputmode="tel" autocomplete="tel" placeholder="+7 ___ ___-__-__" maxlength="32" aria-describedby="errPhone" required />
+            <p class="err" id="errPhone">Укажите контакты для связи.</p>
           </div>
           <button class="btn primary full-width" type="submit" id="submitBtn">Отправить заявку</button>
           <p class="form-hint-under">Оплата на сайте не нужна. Нажимая кнопку, вы соглашаетесь с <button class="privacy-button" type="button" data-policy>политикой обработки персональных данных</button>.</p>
@@ -188,7 +188,7 @@
     <button class="modal-close" type="button" aria-label="Закрыть">×</button>
     <h3 id="policyTitle">Политика конфиденциальности</h3>
     <p>Настоящая Политика действует в отношении информации, которую сайт гостиницы «Подсолнух» получает во время его использования. Отправка формы бронирования означает согласие с Политикой.</p>
-    <p><b>1. Состав данных.</b> Имя и номер телефона — только то, что вы указываете в форме заявки.</p>
+    <p><b>1. Состав данных.</b> Имя и контакты — только то, что вы указываете в форме заявки.</p>
     <p><b>2. Цели.</b> Обратная связь с гостем, подбор свободных дат, согласование цены и подтверждение брони. Заявка сохраняется в закрытой Google Таблице, а модератор получает уведомление в Telegram.</p>
     <p><b>3. Конфиденциальность.</b> Данные не продаются и не публикуются. Доступ к заявкам имеют только уполномоченные сотрудники гостиницы. Для хранения заявок и уведомлений используются Google Таблицы и Telegram.</p>
     <p><b>4. Права гостя.</b> Можно попросить удалить заявку по телефону 8 918 116-45-54.</p>
