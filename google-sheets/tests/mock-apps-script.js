@@ -10,6 +10,7 @@ function createEnv(options = {}) {
   const sheets = [];
   const events = [];
   const fetchLog = [];
+  const logs = [];
   const props = new Map(Object.entries(Object.assign({
     BOT_TOKEN: '123456:TEST-TOKEN',
     MODERATOR_CHAT_ID: '7114829971'
@@ -103,7 +104,8 @@ function createEnv(options = {}) {
     },
     PropertiesService: { getScriptProperties: () => ({
       getProperty: k => (props.has(k) && props.get(k) !== null) ? props.get(k) : null,
-      setProperty: (k, v) => props.set(k, String(v))
+      setProperty: (k, v) => props.set(k, String(v)),
+      deleteProperty: k => props.delete(k)
     }) },
     LockService: { getScriptLock: () => ({
       waitLock() { if (options.failLock) throw new Error('Simulated lock timeout'); events.push({ type: 'lock' }); },
@@ -126,12 +128,22 @@ function createEnv(options = {}) {
         fetchLog.push(entry); events.push({ type: 'telegram', url });
         if (options.telegramThrowsToken) throw new Error('Request failed for ' + url);
         const reply = obj => ({ getContentText: () => JSON.stringify(obj) });
-        if (/getMe/.test(url)) return reply({ ok: true, result: { username: 'podsolnuh_bot', id: 1 } });
+        if (/getMe/.test(url)) {
+          if (options.telegramUnauthorized) return reply({ ok: false, error_code: 401, description: 'Unauthorized' });
+          return reply({ ok: true, result: { username: options.botUsername || 'podsolnuh_bot', id: 1 } });
+        }
+        if (/getUpdates/.test(url)) {
+          return reply({ ok: true, result: options.telegramUpdates || [] });
+        }
         if (/sendMessage/.test(url)) {
           if (options.telegramThrows) throw new Error('Simulated Telegram network failure');
-          return options.telegramSendOk === false
-            ? reply({ ok: false, description: 'Forbidden: bot was blocked by the user' })
-            : reply({ ok: true, result: { message_id: 100 + fetchLog.length } });
+          const fails = options.telegramSendFailsForChat || {};
+          const chatId = String(entry.payload.chat_id);
+          if (options.telegramSendOk === false) {
+            return reply({ ok: false, error_code: 403, description: 'Forbidden: bot was blocked by the user' });
+          }
+          if (fails[chatId]) return reply(fails[chatId]);
+          return reply({ ok: true, result: { message_id: 100 + fetchLog.length } });
         }
         return reply({ ok: false, description: 'unexpected method' });
       }
@@ -141,16 +153,17 @@ function createEnv(options = {}) {
       createTextOutput: txt => ({ setMimeType() { return this; }, getContent: () => txt })
     },
     ScriptApp: { getService: () => ({ getUrl: () => 'https://script.google.com/macros/s/TESTDEPLOY/exec' }) },
-    Logger: { log: m => options.verbose && console.log('[Logger] ' + m) },
+    Logger: { log: m => { logs.push(String(m)); if (options.verbose) console.log('[Logger] ' + m); } },
     console: options.verbose ? console : { error() {} }
   };
 
   const factory = new Function(...Object.keys(mocks), code + `
-    return { setup, testConnection, doGet, doPost,
+    return { setup, testConnection, doGet, doPost, diagnose, notifyTest, findMyChatId, saveChatId,
+      syncSettingsFromCode, retryPending, build: BUILD, moderatorChatId: MODERATOR_CHAT_ID,
       headers: HEADERS, columns: COL, visibleCount: VISIBLE_COUNT, schemaVersion: SCHEMA_VERSION };
   `);
   const api = factory(...Object.values(mocks));
-  return { api, ss, sheet: () => ss.getSheetByName('Брони') || sheets[0] || null, fetchLog, props, events };
+  return { api, ss, logs, options, sheet: () => ss.getSheetByName('Брони') || sheets[0] || null, fetchLog, props, events };
 }
 
 module.exports = { createEnv };

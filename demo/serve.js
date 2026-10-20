@@ -24,6 +24,10 @@ const LIVE = /^(1|true|yes)$/i.test(process.env.LIVE || '');
 const realSiteData = JSON.parse(fs.readFileSync(path.join(ROOT, 'data', 'site.json'), 'utf8'));
 const LIVE_API = realSiteData.cfg && realSiteData.cfg.bookingApi || '';
 
+// метка сборки из google-sheets/Code.gs: по ней видно, обновлено ли развёртывание
+const CODE_BUILD = (/var BUILD = '([^']+)'/.exec(
+  fs.readFileSync(path.join(ROOT, 'google-sheets', 'Code.gs'), 'utf8')) || [])[1] || '';
+
 const env = createEnv();
 if (!LIVE) env.api.setup();
 
@@ -196,6 +200,7 @@ a{color:#c1740a}
 <div id="out"><p class="warn">Начните с проверки связи.</p></div>
 <script>
 var API = ${JSON.stringify(activeApi)};
+var EXPECTED_BUILD = ${JSON.stringify(CODE_BUILD)};
 var out = document.getElementById('out');
 function show(html, json){ out.innerHTML = html + (json ? '<pre>' + JSON.stringify(json, null, 2) + '</pre>' : ''); }
 function busy(btn, on, text){ btn.disabled = on; if(text) btn.textContent = text; }
@@ -206,10 +211,19 @@ document.getElementById('ping').onclick = function(){
   fetch(API + '?action=ping&t=' + Date.now()).then(function(r){ return r.json(); }).then(function(j){
     busy(b, false, '1. Проверить связь');
     if(!j.ok){ show('<p class="bad">Ошибка: ' + (j.error || 'нет ответа') + '</p>', j); return; }
+    var buildOk = j.build && j.build === EXPECTED_BUILD;
+    var last = j.lastNotify
+      ? (j.lastNotify.ok ? badge(true, 'успешно', '') : badge(false, 'ОШИБКА: ' + j.lastNotify.error, ''))
+      : 'ещё не было отправок';
     show('<p>Таблица: <b>' + j.sheet + '</b> — ' + badge(true, 'доступна', '') + '<br>' +
       'Заявок в таблице: <b>' + j.rows + '</b><br>' +
       'Ссылка: <a href="' + j.sheetUrl + '" target="_blank" rel="noopener">открыть таблицу</a><br>' +
-      'Telegram: ' + (j.bot ? '<b>' + j.bot + '</b>' : badge(j.telegram, 'модератор указан', 'chat_id не задан')) + '</p>', j);
+      'Telegram: ' + (j.bot ? '<b>' + j.bot + '</b>' : badge(j.telegram, 'бот на связи', 'нет связи с ботом')) +
+      (j.chatIdsSet === false ? ' · ' + badge(false, 'chat_id не задан', '') : '') + '<br>' +
+      'Развёрнутый код: <b>' + (j.build || 'не известно') + '</b> ' +
+      (j.build ? (buildOk ? badge(true, 'актуальный', '') : badge(false, 'УСТАРЕЛ — нужен «Новая версия» в развёртывании', '')) : '') + '<br>' +
+      'Последняя доставка в Telegram: ' + last + '<br>' +
+      'Недоставленных в очереди: <b>' + (j.pending || 0) + '</b></p>', j);
   }).catch(function(e){
     busy(b, false, '1. Проверить связь');
     show('<p class="bad">Браузер не смог обратиться к таблице: ' + e.message + '</p>' +
@@ -231,8 +245,12 @@ document.getElementById('book').onclick = function(){
     if(!j){ show('<p class="warn">Ответ не разобрался, но заявка могла записаться. Проверьте таблицу и Telegram.</p><pre>' + t.slice(0,500) + '</pre>'); return; }
     if(j.ok && j.duplicate) show('<p class="warn">Такая заявка уже есть — №' + j.id + ' (защита от дублей работает).</p>', j);
     else if(j.ok) show('<p>' + badge(true, 'Заявка №' + j.id + ' принята', '') + '<br>Записана в таблицу: ' + badge(true, 'да', '?') + '<br>' +
-      'Сообщение модератору в Telegram: ' + badge(j.notified, 'отправлено', 'НЕ отправлено — проверьте токен бота и chat_id') + '</p>' +
-      '<p>Проверьте Telegram и таблицу. Строку с тестом и сообщение можно удалить.</p>', j);
+      'Сообщение модератору в Telegram: ' +
+      (j.notified ? badge(true, 'отправлено', '')
+                  : badge(false, 'НЕ отправлено' + (j.notifyError ? ' — ' + j.notifyError : ''), '')) + '</p>' +
+      '<p>' + (j.notified
+        ? 'Проверьте Telegram и таблицу. Строку с тестом и сообщение можно удалить.'
+        : 'Заявка в таблице есть, но бот не смог написать. Причина выше; подробный разбор — функция <code>diagnose()</code> в редакторе Apps Script.') + '</p>', j);
     else show('<p class="bad">Ошибка: ' + (j.error || 'неизвестно') + '</p>', j);
   }).catch(function(e){
     busy(b, false, '2. Отправить тестовую заявку');
