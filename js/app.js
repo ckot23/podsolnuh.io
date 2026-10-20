@@ -1,6 +1,6 @@
 /* =========================================================
    Гостиница «Подсолнух» — основной скрипт
-   - форма заявки на бронь (только имя и номер телефона)
+   - форма заявки на бронь (только имя и контакты)
    - модалка политики конфиденциальности и лайтбокс галереи
    - отправка заявки только после записи в Google Таблицу
      (Google Apps Script), откуда модератору уходит уведомление в Telegram
@@ -103,6 +103,7 @@
     });
   }
   function phoneOk(v){ var d=(v||'').replace(/\D/g,''); return /^[+\d\s().-]+$/.test(v) && d.length>=10 && d.length<=15 && v.length<=32; }
+  function contactsOk(v){ return phoneOk(v); }
 
   // ---------- общение с Google-таблицей броней ----------
   function bookingApiReady(){
@@ -355,7 +356,7 @@
     }
   });
 
-  // ---------- форма заявки на бронь (только имя и номер телефона) ----------
+  // ---------- форма заявки на бронь (только имя и контакты) ----------
   function setStatus(text,state){
     var el=document.getElementById('formStatus');
     if(!el) return;
@@ -378,16 +379,17 @@
     ['errName','errPhone'].forEach(function(id){ showErr(id,false); });
     setStatus('', '');
     var name = document.getElementById('fName').value.trim();
-    var phone = document.getElementById('fPhone').value.trim();
+    var contactsEl = document.getElementById('fPhone') || document.getElementById('fContacts');
+    var contacts = contactsEl ? contactsEl.value.trim() : '';
     var honeypot = document.getElementById('website').value.trim();
     if(honeypot) return;
 
     var firstInvalid = null;
     if(name.length < 2 || name.length > 100){ showErr('errName',true); firstInvalid = document.getElementById('fName'); }
-    if(!phoneOk(phone)){ showErr('errPhone',true); firstInvalid = firstInvalid || document.getElementById('fPhone'); }
+    if(!contactsOk(contacts)){ showErr('errPhone',true); firstInvalid = firstInvalid || contactsEl; }
     if(firstInvalid){ firstInvalid.focus(); return; }
 
-    var data = { name: name, phone: phone, website: honeypot };
+    var data = { name: name, contacts: contacts, phone: contacts, website: honeypot };
     var btn=document.getElementById('submitBtn');
     btn.disabled=true;
     btn.textContent='Отправляем…';
@@ -436,7 +438,8 @@
     var payload = {
       action: 'book',
       name: data.name,
-      phone: data.phone,
+      contacts: data.contacts || data.phone,
+      phone: data.phone || data.contacts,
       website: data.website,
       ref: bookRef()
     };

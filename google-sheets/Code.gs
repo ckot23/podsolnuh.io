@@ -48,17 +48,17 @@ var DEDUPE_MINUTES = 15;
 
 /* =========================== КОНЕЦ НАСТРОЕК ============================== */
 
-/* Видимы только два поля гостя: Имя и Телефон. Для доставки и модерации — четыре скрытые колонки. */
+/* Видимы только два поля гостя: Имя и Контакты. Для доставки и модерации — четыре скрытые колонки. */
 var HEADERS = [
   'Имя',
-  'Телефон',
+  'Контакты',
   '№заявки',
   'Дата заявки',
   'Статус',
   'Ref'
 ];
 var COL = {
-  name: 0, phone: 1,
+  name: 0, contacts: 1, phone: 1,
   id: 2, created: 3, status: 4, ref: 5
 };
 var VISIBLE_COUNT = 2;
@@ -213,10 +213,10 @@ function handleBooking_(data) {
     if (data.action && data.action !== 'book') return { ok: false, error: 'Неизвестное действие.' };
 
     var name = String(data.name || '').trim();
-    var phone = String(data.phone || data.contacts || '').trim();
+    var contacts = String(data.contacts || data.phone || '').trim();
     if (name.length < 2 || name.length > 100) return { ok: false, error: 'Укажите имя (от 2 до 100 символов).' };
-    if (!/^[+\d\s().-]+$/.test(phone) || digits_(phone).length < 10 || digits_(phone).length > 15 || phone.length > 32) {
-      return { ok: false, error: 'Укажите телефон.' };
+    if (!/^[+\d\s().-]+$/.test(contacts) || digits_(contacts).length < 10 || digits_(contacts).length > 15 || contacts.length > 32) {
+      return { ok: false, error: 'Укажите контакты.' };
     }
     var ref = String(data.ref || '').trim();
     if (ref && !/^[a-zA-Z0-9_-]{1,120}$/.test(ref)) return { ok: false, error: 'Неверный идентификатор заявки.' };
@@ -225,7 +225,7 @@ function handleBooking_(data) {
       if (dup) return { ok: true, id: dup, duplicate: true, message: 'Заявка №' + dup + ' уже принята.' };
     }
 
-    var recent = findRecent_(phone, name);
+    var recent = findRecent_(contacts, name);
     if (recent) return { ok: true, id: recent, duplicate: true, message: 'Заявка №' + recent + ' уже принята.' };
 
     var ss = getSpreadsheet_();
@@ -236,7 +236,7 @@ function handleBooking_(data) {
     if (row > sheet.getMaxRows()) sheet.insertRowsAfter(sheet.getMaxRows(), row - sheet.getMaxRows());
     var values = [];
     values[COL.name] = sheetText_(name);
-    values[COL.phone] = phone;
+    values[COL.contacts] = sheetText_(contacts);
     values[COL.id] = num;
     values[COL.created] = createdAt;
     values[COL.status] = STATUS_NEW;
@@ -253,7 +253,7 @@ function handleBooking_(data) {
       id: num,
       created: createdAt,
       name: name,
-      phone: phone,
+      contacts: contacts,
       sheetUrl: sheetUrl_(ss, sheet)
     });
     return { ok: true, id: num, message: 'Заявка №' + num + ' принята.', row: row, notified: notified };
@@ -273,7 +273,7 @@ function notifyModerator_(b) {
     '',
     '🕒 <b>Дата заявки:</b> ' + Utilities.formatDate(b.created || new Date(), TIMEZONE, 'dd.MM.yyyy HH:mm'),
     '👤 <b>Имя:</b> ' + esc_(b.name),
-    '📞 <b>Телефон:</b> <code>' + esc_(b.phone) + '</code>',
+    '📞 <b>Контакты:</b> <code>' + esc_(b.contacts || b.phone) + '</code>',
     '',
     'Статус в таблице: <b>' + STATUS_NEW + '</b>'
   ];
@@ -352,7 +352,7 @@ function handleTelegramUpdate_(update, secretOk) {
       if (/^\/(start|help)/.test(text)) {
         tg_('sendMessage', {
           chat_id: chatId,
-          text: '🌻 Бот броней «Подсолнух»\n\nЗаявки с сайта (имя и телефон) приходят сюда. Кнопки «Подтвердить» / «Отклонить» меняют статус заявки в таблице.\n\n/today — заявки за сегодня',
+          text: '🌻 Бот броней «Подсолнух»\n\nЗаявки с сайта (имя и контакты) приходят сюда. Кнопки «Подтвердить» / «Отклонить» меняют статус заявки в таблице.\n\n/today — заявки за сегодня',
           parse_mode: 'HTML'
         });
       } else if (/^\/(today|status)/.test(text)) {
@@ -372,7 +372,7 @@ function todayReport_() {
   rows.forEach(function (r) {
     var created = r[COL.created] ? Utilities.formatDate(new Date(r[COL.created]), TIMEZONE, 'dd.MM.yyyy') : '';
     if (created !== stamp) return;
-    out.push('• №' + r[COL.id] + ' — ' + esc_(r[COL.name]) + ', ' + esc_(r[COL.phone]) + ', ' + esc_(String(r[COL.status]).toLowerCase()));
+    out.push('• №' + r[COL.id] + ' — ' + esc_(r[COL.name]) + ', ' + esc_(r[COL.contacts]) + ', ' + esc_(String(r[COL.status]).toLowerCase()));
   });
   return out.length ? ('📋 Заявки за сегодня (' + stamp + '):\n' + out.join('\n')) : 'Сегодня новых заявок не было.';
 }
@@ -530,9 +530,9 @@ function findRef_(ref) {
   return findRow_(function (r) { return String(r[COL.ref] || '').trim() === ref; });
 }
 
-function findRecent_(phone, name) {
+function findRecent_(contacts, name) {
   return findRow_(function(r){
-    if (phoneDigits_(r[COL.phone]) !== phoneDigits_(phone)) return false;
+    if (phoneDigits_(r[COL.contacts]) !== phoneDigits_(contacts)) return false;
     if (normStatus_(r[COL.status]) !== STATUS_NEW) return false;
     var created = r[COL.created] ? new Date(r[COL.created]).getTime() : 0;
     if (!created || (Date.now() - created) > DEDUPE_MINUTES * 60000) return false;

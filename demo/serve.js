@@ -222,7 +222,7 @@ document.getElementById('book').onclick = function(){
   if(!confirm(${JSON.stringify('Тестовая заявка попадёт в ')} + ${JSON.stringify(LIVE ? 'настоящую таблицу и Telegram модератора' : 'локальную демо-таблицу')} + '. Продолжить?')) return;
   var ref = 'p-browser-' + Date.now();
   var fd = new FormData();
-  [['action', 'book'], ['name', 'Проверка сайта (тест)'], ['phone', '+7 918 116-45-54'], ['ref', ref]]
+  [['action', 'book'], ['name', 'Проверка сайта (тест)'], ['contacts', '+7 918 116-45-54'], ['phone', '+7 918 116-45-54'], ['ref', ref]]
     .forEach(function(p){ fd.append(p[0], p[1]); });
   busy(b, true, 'Отправляем…');
   fetch(API, { method: 'POST', body: fd }).then(function(r){ return r.text(); }).then(function(t){
