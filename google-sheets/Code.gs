@@ -16,6 +16,12 @@
  *      - Запуск от имени: «Меня»
  *      - У кого есть доступ: «Все»
  *   6. Нажмите «Развернуть» и скопируйте ссылку веб-приложения (заканчивается на /exec).
+ *
+ *  Не приходит заявка от бота?
+ *   Выполните функцию diagnose() и прочитайте «Журнал выполнения»: она по шагам
+ *   проверит токен, chat_id, реальную отправку и версию развёртывания.
+ *   После любой правки кода нужен «Развернуть» → «Управление развёртыванием» →
+ *   ✎ → Версия: «Новая версия», иначе сайт работает на старом коде.
  * ============================================================================
  */
 
@@ -38,6 +44,13 @@ var TIMEZONE = 'Europe/Moscow';
 
 /** Защита от повторной отправки одной и той же заявки при двойном клике (в минутах). */
 var DEDUPE_MINUTES = 15;
+
+/**
+ * Метка версии кода. Отдаётся в ответе `<адрес /exec>?action=health`.
+ * Если там старая метка — значит развёртывание не обновлено и сайт работает
+ * на прежнем коде («Развёрнуть» → «Управление развёртыванием» → ✎ → «Новая версия»).
+ */
+var BUILD = '2026-10-20-diag';
 
 /* =========================== СТРУКТУРА ТАБЛИЦЫ =========================== */
 
@@ -67,14 +80,19 @@ function setup() {
     PROP.setProperty('SHEET_NAME', sheet.getName());
     SpreadsheetApp.flush();
 
+    // настройки из кода побеждают старые значения в Свойствах скрипта
+    try { syncSettingsFromCode(); } catch (e) {}
+
     var check = tgCheck_();
     var url = '';
     try { url = ScriptApp.getService().getUrl() || ''; } catch (e) { url = ''; }
     Logger.log(
       'Таблица готова: ' + ss.getName() + ' / лист «' + sheet.getName() + '»\n' +
       'Колонки: ' + HEADERS.join(' | ') + '\n' +
+      'Сборка кода: ' + BUILD + '\n' +
       'Telegram: ' + check + '\n' +
-      'URL веб-приложения: ' + (url || 'нажмите «Развернуть» → «Новое развёртывание» → «Веб-приложение»')
+      'URL веб-приложения: ' + (url || 'нажмите «Развернуть» → «Новое развёртывание» → «Веб-приложение»') + '\n' +
+      'Не приходит заявка от бота? Выполните функцию diagnose() — она покажет точную причину.'
     );
     return check;
   } finally {
@@ -108,16 +126,24 @@ function doGet(e) {
       var ss = getSpreadsheet_();
       var sheet = getSheet_(ss);
       var bot = tgCheck_();
+      var lastNotify = getLastNotify_();
       return json_({
         ok: true,
         service: 'podsolnuh-booking',
         schemaVersion: SCHEMA_VERSION,
+        build: BUILD,
         fields: HEADERS.slice(),
         sheet: ss.getName(),
         sheetUrl: ss.getUrl(),
         rows: Math.max(0, sheet.getLastRow() - 1),
         telegram: /на связи/.test(bot) && getChatIds_().length > 0,
+        chatIdsSet: getChatIds_().length > 0,
         bot: bot,
+        // без токена и chat_id — только факт и причина, чтобы не раскрывать настройки
+        lastNotify: lastNotify
+          ? { ok: !!lastNotify.ok, at: lastNotify.at, error: lastNotify.ok ? undefined : lastNotify.error }
+          : null,
+        pending: loadPending_().length,
         updatedAt: nowIso_()
       });
     }
@@ -191,22 +217,25 @@ function handleBooking_(data) {
     var id = Math.max(1, row - 1);
     saveRecentBooking_(id, row, name, phone, ref);
 
-    var notified = notifyModerator_({
+    var notify = notifyModerator_({
       id: id,
       name: name,
       phone: phone,
       sheetUrl: ss.getUrl() + '#gid=' + sheet.getSheetId()
     });
 
-    return {
+    var answer = {
       ok: true,
       id: id,
       row: row,
       name: name,
       phone: phone,
-      notified: notified,
+      notified: !!notify.ok,
       message: 'Заявка №' + id + ' принята.'
     };
+    // причина отказа видна на сайте и в health — заявка при этом уже в таблице
+    if (!notify.ok) answer.notifyError = notify.error;
+    return answer;
   } finally {
     if (locked) lock.releaseLock();
   }
@@ -214,37 +243,357 @@ function handleBooking_(data) {
 
 /* ========================= УВЕДОМЛЕНИЕ В TELEGRAM ======================== */
 
+/**
+ * Отправка заявки модератору.
+ * Возвращает { ok: true } либо { ok: false, error: 'причина' } — причина
+ * уходит в ответ сайта и в health, чтобы отказ никогда не был молчаливым.
+ */
 function notifyModerator_(b) {
-  var ids = getChatIds_();
-  if (!ids.length || !botToken_()) return false;
+  var res = sendNotification_(b);
+  if (res.ok) {
+    setLastNotify_({ ok: true, at: nowIso_() });
+    // заодно доотправляем то, что не ушло раньше
+    try { flushPending_(); } catch (e) { console.error('flushPending_: ' + e); }
+    return { ok: true };
+  }
 
+  setLastNotify_({ ok: false, at: nowIso_(), error: res.error });
+  pushPending_(b);
+  console.error('Уведомление не отправлено: ' + res.error);
+  return res;
+}
+
+/** Одна попытка доставки по всем настроенным chat_id. */
+function sendNotification_(b) {
+  var token = botToken_();
+  if (!token) return { ok: false, error: 'не задан токен бота (BOT_TOKEN)' };
+
+  var ids = getChatIds_();
+  if (!ids.length) return { ok: false, error: 'не задан chat_id получателя (MODERATOR_CHAT_ID)' };
+
+  var text = bookingText_(b);
+  var keyboard = JSON.stringify({
+    inline_keyboard: [[{ text: '📊 Открыть таблицу', url: b.sheetUrl }]]
+  });
+
+  var errors = [];
+  for (var i = 0; i < ids.length; i++) {
+    var res = tg_('sendMessage', {
+      chat_id: ids[i],
+      text: text,
+      parse_mode: 'HTML',
+      disable_web_page_preview: true,
+      reply_markup: keyboard
+    });
+    if (res && res.ok) return { ok: true, chatId: ids[i] };
+    var err = tgErrorText_(res);
+    console.error('sendMessage ' + ids[i] + ': ' + err);
+    // наружу отдаём причину без самого chat_id — его незачем знать посетителю
+    errors.push('получатель ' + (i + 1) + ': ' + err);
+  }
+  return { ok: false, error: errors.join(' | ') };
+}
+
+function bookingText_(b) {
   var lines = [
-    '🌻 <b>Новая заявка №' + b.id + '</b>',
+    b.test ? '🌻 <b>Проверка доставки — «Подсолнух»</b>' : '🌻 <b>Новая заявка №' + b.id + '</b>',
     '',
     '👤 <b>Имя:</b> ' + esc_(b.name),
     '📞 <b>Номер телефона:</b> <code>' + esc_(b.phone) + '</code>'
   ];
-
-  var keyboard = {
-    inline_keyboard: [
-      [{ text: '📊 Открыть таблицу', url: b.sheetUrl }]
-    ]
-  };
-
-  var ok = false;
-  ids.forEach(function (chatId) {
-    var res = tg_('sendMessage', {
-      chat_id: chatId,
-      text: lines.join('\n'),
-      parse_mode: 'HTML',
-      disable_web_page_preview: true,
-      reply_markup: JSON.stringify(keyboard)
-    });
-    if (res && res.ok) ok = true;
-    else console.error('sendMessage ' + chatId + ': ' + JSON.stringify(res));
-  });
-  return ok;
+  if (b.test) lines.push('', '<i>Если видите это сообщение, уведомления работают.</i>');
+  return lines.join('\n');
 }
+
+/* ============= ОЧЕРЕДЬ НЕДОСТАВЛЕННЫХ УВЕДОМЛЕНИЙ (НЕ ТЕРЯЕМ) ============ */
+
+var PENDING_KEY = 'PENDING_NOTIFY';
+var PENDING_LIMIT = 20;
+
+function loadPending_() {
+  var list = [];
+  try { list = JSON.parse(PROP.getProperty(PENDING_KEY) || '[]'); } catch (e) { list = []; }
+  return Array.isArray(list) ? list : [];
+}
+
+function pushPending_(b) {
+  var list = loadPending_();
+  list.push({
+    id: b.id, name: b.name, phone: b.phone, sheetUrl: b.sheetUrl, ts: Date.now()
+  });
+  if (list.length > PENDING_LIMIT) list = list.slice(list.length - PENDING_LIMIT);
+  try { PROP.setProperty(PENDING_KEY, JSON.stringify(list)); } catch (e) {}
+}
+
+/**
+ * Доотправляет накопившиеся уведомления. Вызывается автоматически при каждой
+ * успешной доставке; можно запустить вручную (или повесить на триггер).
+ */
+function flushPending_() {
+  var list = loadPending_();
+  if (!list.length) return { sent: 0, left: 0 };
+  var left = [];
+  var sent = 0;
+  list.forEach(function (b) {
+    var res = sendNotification_(b);
+    if (res.ok) sent++;
+    else left.push(b);
+  });
+  try { PROP.setProperty(PENDING_KEY, JSON.stringify(left)); } catch (e) {}
+  return { sent: sent, left: left.length };
+}
+
+/** То же самое, но с записью в журнал — для ручного запуска из редактора. */
+function retryPending() {
+  var r = flushPending_();
+  Logger.log(r.sent || r.left
+    ? 'Доотправлено: ' + r.sent + ', осталось в очереди: ' + r.left
+    : 'Очередь пуста — доотправлять нечего.');
+  return { ok: true, sent: r.sent, left: r.left };
+}
+
+function setLastNotify_(state) {
+  try { PROP.setProperty('NOTIFY_LAST', JSON.stringify(state)); } catch (e) {}
+}
+
+function getLastNotify_() {
+  try { return JSON.parse(PROP.getProperty('NOTIFY_LAST') || 'null'); } catch (e) { return null; }
+}
+
+/* ============ ДИАГНОСТИКА: ПОЧЕМУ НЕ ПРИХОДИТ ЗАЯВКА ОТ БОТА ============= */
+/*  Все функции ниже запускаются В РЕДАКТОРЕ Apps Script (кнопка «Выполнить»),
+ *  отчёт виден в «Журнале выполнения» только вам. Публичный /exec их не отдаёт,
+ *  поэтому токен и chat_id не раскрываются посетителям сайта.               */
+
+/**
+ * Главная проверка доставки. Выполнить → diagnose → «Журнал выполнения».
+ * Проходит по всем звеньям: токен → бот → chat_id → реальная отправка →
+ * кто писал боту → очередь недоставленных.
+ */
+function diagnose() {
+  var log = [];
+  var problems = [];
+  function say(s) { log.push(s); }
+  function problem(s) { problems.push(s); }
+
+  say('=== ДИАГНОСТИКА УВЕДОМЛЕНИЙ · сборка ' + BUILD + ' ===');
+
+  say('');
+  say('1. ТОКЕН БОТА');
+  var tokenSource = PROP.getProperty('BOT_TOKEN') === null ? 'из кода (BOT_TOKEN)' : 'из Свойств скрипта (BOT_TOKEN)';
+  var token = botToken_();
+  if (!token) {
+    say('   ❌ токен не задан (источник: ' + tokenSource + ')');
+    say('   → выполните syncSettingsFromCode() либо впишите токен в BOT_TOKEN в этом файле.');
+    problem('не задан BOT_TOKEN');
+  } else {
+    say('   ✅ токен задан, источник: ' + tokenSource + ' (…' + token.slice(-4) + ')');
+    say('   ⚠️ если вы меняли токен в коде, а в Свойствах скрипта остался старый —');
+    say('     Свойства имеют приоритет. Выполните syncSettingsFromCode().');
+  }
+
+  say('');
+  say('2. БОТ');
+  var me = tg_('getMe', {});
+  if (me && me.ok) {
+    say('   ✅ бот @' + me.result.username + ' (id ' + me.result.id + ') на связи');
+  } else {
+    say('   ❌ ' + tgErrorText_(me));
+    sayHint_(say, me);
+    problem('бот не отвечает: ' + tgErrorText_(me));
+  }
+
+  say('');
+  say('3. CHAT_ID ПОЛУЧАТЕЛЯ');
+  var chatSource = PROP.getProperty('MODERATOR_CHAT_ID') === null
+    ? 'из кода (MODERATOR_CHAT_ID)' : 'из Свойств скрипта (MODERATOR_CHAT_ID)';
+  var ids = getChatIds_();
+  if (!ids.length) {
+    say('   ❌ не задан (источник: ' + chatSource + ')');
+    problem('не задан MODERATOR_CHAT_ID');
+  } else {
+    say('   настроен: ' + ids.join(', ') + ' (источник: ' + chatSource + ')');
+  }
+
+  say('');
+  say('4. РЕАЛЬНАЯ ОТПРАВКА ТЕСТОВОГО СООБЩЕНИЯ');
+  if (!token || !ids.length) {
+    say('   ⏭ пропущено: нет токена или chat_id — сначала пункты 1 и 3.');
+  } else {
+    ids.forEach(function (chatId) {
+      var res = tg_('sendMessage', {
+        chat_id: chatId,
+        text: '🌻 Тест доставки («Подсолнух»). Видите это сообщение — уведомления работают.'
+      });
+      if (res && res.ok) {
+        say('   ✅ ' + chatId + ' — доставлено (message_id ' + res.result.message_id + ')');
+      } else {
+        say('   ❌ ' + chatId + ' — ' + tgErrorText_(res));
+        sayHint_(say, res);
+        problem('сообщение не уходит в ' + chatId + ': ' + tgErrorText_(res));
+      }
+    });
+  }
+
+  say('');
+  say('5. КТО ПИСАЛ БОТУ (getUpdates)');
+  var found = discoverChats_();
+  if (!found.length) {
+    problem('боту никто не писал — он не может написать первым');
+    say('   ⚠️ пусто. Бот не имеет права написать первым: откройте бота в Telegram');
+    say('     и нажмите «Старт» (Start), затем запустите diagnose() ещё раз.');
+    say('     Пусто бывает и если обновления уже кто-то прочитал — тогда берите id из @userinfobot.');
+  } else {
+    found.forEach(function (c) {
+      var mark = ids.indexOf(String(c.id)) !== -1 ? '  ← настроен как получатель' : '  ← НЕ настроен как получатель';
+      say('   • chat_id ' + c.id + ' — ' + c.title + (c.username ? ' ' + c.username : '') + mark);
+    });
+    say('   → если нужный id отличается от настроенного, выполните saveChatId() и впишите его.');
+  }
+
+  say('');
+  say('6. ОЧЕРЕДЬ НЕДОСТАВЛЕННЫХ');
+  var pending = loadPending_();
+  say(pending.length ? '   ⚠️ в очереди ' + pending.length + ' — запустите retryPending()' : '   ✅ пуста');
+  if (pending.length) problem('в очереди ' + pending.length + ' недоставленных уведомлений');
+  var last = getLastNotify_();
+  if (last) {
+    say('   Последняя попытка: ' + (last.ok ? 'успешно' : 'ошибка — ' + last.error) + ' (' + last.at + ')');
+  }
+
+  say('');
+  say('7. РАЗВЁРТЫВАНИЕ');
+  var url = '';
+  try { url = ScriptApp.getService().getUrl() || ''; } catch (e) { url = ''; }
+  say(url ? '   ✅ веб-приложение: ' + url : '   ❌ нет ни одного развёртывания — «Развернуть» → «Новое развёртывание».');
+  if (!url) problem('нет развёртывания веб-приложения');
+  say('   Проверьте, что сайт использует именно эту ссылку (data/site.json → cfg.bookingApi).');
+  say('   После правки кода нужен НЕ «Сохранить», а «Развернуть» → «Управление развёртыванием»');
+  say('   → ✎ → Версия: «Новая версия» → «Развернуть». Иначе /exec отдаёт старый код.');
+
+  say('');
+  say('ИТОГ: ' + (problems.length ? problems.join('; ') : 'доставка работает — тестовое сообщение должно быть у вас в Telegram.'));
+
+  var text = log.join('\n');
+  Logger.log(text);
+  return text;
+}
+
+/** Быстрый тест: отправить тестовое сообщение модератору. */
+function notifyTest() {
+  var res = sendNotification_({
+    id: 'тест', test: true, name: 'Проверка связи', phone: '+7 900 000-00-00',
+    sheetUrl: (function () { try { return getSpreadsheet_().getUrl(); } catch (e) { return 'https://t.me/'; } })()
+  });
+  var msg = res.ok
+    ? '✅ Тестовое сообщение отправлено в chat_id ' + res.chatId
+    : '❌ ' + res.error;
+  Logger.log(msg);
+  if (!res.ok) Logger.log(tgHintText_(res.error));
+  return msg;
+}
+
+/** Показать chat_id всех, кто писал боту. */
+function findMyChatId() {
+  var found = discoverChats_();
+  if (!found.length) {
+    Logger.log('Никто ещё не писал боту. Откройте бота, нажмите «Старт» и запустите снова.');
+    return [];
+  }
+  var lines = found.map(function (c) {
+    return 'chat_id ' + c.id + ' — ' + c.title + (c.username ? ' ' + c.username : '');
+  });
+  Logger.log(lines.join('\n'));
+  return found;
+}
+
+/**
+ * Сохранить chat_id в Свойства скрипта.
+ * Впишите значение в NEW_CHAT_ID и нажмите «Выполнить».
+ */
+function saveChatId(newChatId) {
+  var NEW_CHAT_ID = 'ВСТАВЬТЕ_CHAT_ID';
+  var id = String(newChatId || NEW_CHAT_ID).trim();
+  if (!/^-?\d{4,}$/.test(id)) {
+    Logger.log('❌ Замените ВСТАВЬТЕ_CHAT_ID на числовой chat_id из findMyChatId() и запустите снова.');
+    return false;
+  }
+  PROP.setProperty('MODERATOR_CHAT_ID', id);
+  Logger.log('✅ chat_id ' + id + ' сохранён в Свойства скрипта. Запустите notifyTest() для проверки.');
+  return true;
+}
+
+/**
+ * Перезаписать BOT_TOKEN и MODERATOR_CHAT_ID в Свойствах скрипта значениями
+ * из этого файла. Нужно, когда код обновили, а старые Свойства всё ещё побеждают.
+ */
+function syncSettingsFromCode() {
+  var token = String(BOT_TOKEN || '').trim();
+  var chatId = String(MODERATOR_CHAT_ID || '').trim();
+  if (token) PROP.setProperty('BOT_TOKEN', token);
+  else PROP.deleteProperty('BOT_TOKEN');
+  if (chatId) PROP.setProperty('MODERATOR_CHAT_ID', chatId);
+  else PROP.deleteProperty('MODERATOR_CHAT_ID');
+  Logger.log('✅ Настройки синхронизированы с кодом: токен …' + token.slice(-4) + ', chat_id ' + (chatId || '—'));
+  return true;
+}
+
+/** Список чатов из getUpdates (кто нажимал «Старт» / писал боту). */
+function discoverChats_() {
+  var out = [];
+  var seen = {};
+  [tg_('getUpdates', { limit: 100 }), tg_('getUpdates', { offset: -1, limit: 1 })].forEach(function (res) {
+    if (!res || !res.ok || !res.result || !res.result.length) return;
+    res.result.forEach(function (u) {
+      var src = u.message || u.edited_message || u.channel_post ||
+        (u.my_chat_member && u.my_chat_member.chat ? u.my_chat_member : null);
+      var chat = src && (src.chat || src);
+      if (!chat || !chat.id || seen[chat.id]) return;
+      seen[chat.id] = true;
+      out.push({
+        id: chat.id,
+        title: chat.title ||
+          [chat.first_name, chat.last_name].filter(Boolean).join(' ') ||
+          chat.username || 'без имени',
+        username: chat.username ? '@' + chat.username : ''
+      });
+    });
+  });
+  return out;
+}
+
+function sayHint_(say, res) {
+  var hint = tgHintText_(tgErrorText_(res));
+  if (hint) say('   → ' + hint);
+}
+
+/** Человекое объяснение ошибки Telegram. */
+function tgHintText_(errorText) {
+  var d = String(errorText || '').toLowerCase();
+  if (d.indexOf('unauthorized') !== -1 || d.indexOf('401') === 0) {
+    return 'Токен неверный или отозван. @BotFather → /mybots → ваш бот → API Token: скопируйте актуальный, вставьте в BOT_TOKEN и выполните syncSettingsFromCode().';
+  }
+  if (d.indexOf('chat not found') !== -1) {
+    return 'Бот не знает такой chat_id. Откройте бота, нажмите «Старт», затем findMyChatId() → saveChatId().';
+  }
+  if (d.indexOf('blocked') !== -1 || d.indexOf("can't initiate") !== -1 || d.indexOf('forbidden') !== -1) {
+    return 'Бот не может писать первым: вы не нажимали «Старт» или заблокировали бота. Откройте бота и нажмите «Старт» / «Разблокировать».';
+  }
+  if (d.indexOf('too many requests') !== -1 || d.indexOf('429') === 0) {
+    return 'Telegram ограничил частоту запросов — повторите через минуту.';
+  }
+  if (d.indexOf('parse mode') !== -1 || d.indexOf("can't parse") !== -1) {
+    return 'Ошибка HTML-разметки сообщения.';
+  }
+  if (d.indexOf('не удалось связаться') !== -1) {
+    return 'Apps Script не достучался до api.telegram.org: нет разрешения на внешние запросы. В «Настройки проекта» включите показ файла appsscript.json и добавьте scope https://www.googleapis.com/auth/script.external_request (есть в google-sheets/appsscript.json).';
+  }
+  if (d.indexOf('bot token is not specified') !== -1 || d.indexOf('не задан') !== -1) {
+    return 'Задайте BOT_TOKEN и MODERATOR_CHAT_ID (в коде или в Свойствах скрипта), затем syncSettingsFromCode().';
+  }
+  return '';
+}
+
 
 /* ============================== ТАБЛИЦА ================================== */
 
@@ -447,15 +796,19 @@ function nowIso_() {
 
 function getChatIds_() {
   var configured = PROP.getProperty('MODERATOR_CHAT_ID');
-  return String(configured === null ? MODERATOR_CHAT_ID : configured)
+  // пустое Свойство не должно глушить значение из кода
+  var value = String(configured == null ? '' : configured).trim();
+  if (!value) value = String(MODERATOR_CHAT_ID || '');
+  return value
     .split(/[,\s;]+/)
     .map(function (s) { return s.trim(); })
-    .filter(String);
+    .filter(function (s) { return s && s.indexOf('ВСТАВЬТЕ') !== 0; });
 }
 
 function botToken_() {
   var configured = PROP.getProperty('BOT_TOKEN');
-  var token = String(configured === null ? BOT_TOKEN : configured).trim();
+  var token = String(configured == null ? '' : configured).trim();
+  if (!token) token = String(BOT_TOKEN || '').trim();
   return token && token.indexOf('ВСТАВЬТЕ') !== 0 ? token : '';
 }
 
@@ -463,7 +816,15 @@ function tgCheck_() {
   if (!botToken_()) return 'токен бота не указан';
   var me = tg_('getMe', {});
   if (me && me.ok) return 'бот @' + me.result.username + ' на связи';
-  return 'ошибка: ' + JSON.stringify(me);
+  return 'ошибка: ' + tgErrorText_(me);
+}
+
+/** Короткое описание ошибки Telegram: «400 Bad Request: chat not found». */
+function tgErrorText_(res) {
+  if (!res) return 'нет ответа от Telegram';
+  if (res.ok) return '';
+  var code = res.error_code ? res.error_code + ' ' : '';
+  return String(code + (res.description || 'неизвестная ошибка')).trim();
 }
 
 function tg_(method, payload) {

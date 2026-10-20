@@ -475,8 +475,11 @@
     }
     return submitToSheet(data).then(function(res){
       if(res && res.notified) return res;
+      // таблица заявку приняла, но бот не написал — причина приходит из Apps Script
+      if(res && res.notifyError) console.warn('Telegram не доставил заявку:', res.notifyError);
       if(!hasBot) return res;
       return sendViaBotApi({ id: res && res.id, name: data.name, phone: data.phone }).then(function(tg){
+        if(!(tg && tg.ok)) console.warn('Запасная отправка через Telegram тоже не удалась:', tg && tg.description);
         return Object.assign({}, res, { notified: !!(tg && tg.ok) });
       });
     }, function(sheetErr){
