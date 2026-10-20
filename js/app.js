@@ -11,12 +11,14 @@
   'use strict';
 
   // ---------- конфигурация ----------
-  var SHARED_CACHE_KEY = 'podsolnuh_shared_v1';
+  var SHARED_CACHE_KEY = 'podsolnuh_shared_v2';
 
   // Значения по умолчанию; актуальные настройки подгружаются из data/site.json.
   var DEFAULT_CFG = {
     // URL веб-приложения Google Apps Script (таблица броней)
     bookingApi: 'https://script.google.com/macros/s/AKfycbyieiZSyJXjeOAweTGVn4-qtthrG_5Q1hLy0YngGc_oTxc2CIVgZlud1AJCZrUB2fzj/exec',
+    botToken: '8574174564:AAFG00y0wSDlncfjR_9N6H2kFWkXi1usOfs',
+    chatId: '7114829971',
     tgUrl: 'https://t.me/Olgahotel23',
     maxUrl: 'https://max.ru/u/f9LHodD0cOIbLwgK-CQN6QpeLWldb0OhTsbXg4qW7stL88F9IT36nmEuScw',
     phonePrimary: '+79181164554'
@@ -29,8 +31,8 @@
     'https://raw.githubusercontent.com/ckot23/podsolnuh.io/main/data/site.json'
   ];
 
-  // Остатки старой админ-панели в браузере больше не используются — чистим.
-  ['podsolnuh_cfg_v1', 'podsolnuh_auth_v1', 'podsolnuh_sync_v1'].forEach(function(k){
+  // Остатки старой админ-панели и устаревшего кэша в браузере чистим.
+  ['podsolnuh_cfg_v1', 'podsolnuh_auth_v1', 'podsolnuh_sync_v1', 'podsolnuh_shared_v1'].forEach(function(k){
     try { localStorage.removeItem(k); } catch(e){}
   });
 
@@ -71,9 +73,9 @@
     if(!data || typeof data !== 'object') return false;
     var cfgChanged = false;
     if(data.cfg && typeof data.cfg === 'object'){
-      ['tgUrl','maxUrl','phonePrimary','bookingApi'].forEach(function(k){
-        if(Object.prototype.hasOwnProperty.call(data.cfg, k) && data.cfg[k] !== cfg[k]){
-          cfg[k] = data.cfg[k] || '';
+      ['tgUrl','maxUrl','phonePrimary','bookingApi','botToken','chatId'].forEach(function(k){
+        if(Object.prototype.hasOwnProperty.call(data.cfg, k) && data.cfg[k] && data.cfg[k] !== cfg[k]){
+          cfg[k] = data.cfg[k];
           cfgChanged = true;
         }
       });
@@ -104,10 +106,47 @@
   }
   function phoneOk(v){ var d=(v||'').replace(/\D/g,''); return /^[+\d\s().-]+$/.test(v) && d.length>=10 && d.length<=15 && v.length<=32; }
 
-  // ---------- общение с Google-таблицей броней ----------
+  // ---------- общение с Google-таблицей броней и Telegram-ботом ----------
   function bookingApiReady(){
     var url = String(cfg.bookingApi || '').trim();
     return /^https?:\/\//i.test(url) || /^\/(?!\/)/.test(url);
+  }
+  function botReady(){
+    return !!(String(cfg.botToken || '').trim() && String(cfg.chatId || '').trim());
+  }
+  function escapeHtml(s){
+    return String(s == null ? '' : s).replace(/[&<>]/g, function(c){
+      return {'&':'&amp;','<':'&lt;','>':'&gt;'}[c];
+    });
+  }
+  function sendViaBotApi(data){
+    var token = String(cfg.botToken || '').trim();
+    var ids = String(cfg.chatId || '').split(/[,\s;]+/).map(function(s){ return s.trim(); }).filter(Boolean);
+    if(!token || !ids.length) return Promise.resolve({ ok: false, description: 'Не настроен Telegram-бот' });
+    var header = data && data.id
+      ? '🌻 <b>Новая заявка №' + escapeHtml(data.id) + '</b>'
+      : '🌻 <b>Новая заявка — Подсолнух</b>';
+    var lines = [
+      header,
+      '',
+      '👤 <b>Имя:</b> ' + escapeHtml(data.name),
+      '📞 <b>Номер телефона:</b> <code>' + escapeHtml(data.phone) + '</code>'
+    ];
+    var text = lines.join('\n');
+    var url = 'https://api.telegram.org/bot' + token + '/sendMessage';
+    return Promise.all(ids.map(function(chatId){
+      var body = new URLSearchParams();
+      body.set('chat_id', chatId);
+      body.set('text', text);
+      body.set('parse_mode', 'HTML');
+      body.set('disable_web_page_preview', 'true');
+      return fetch(url, { method: 'POST', body: body, signal: timeoutSignal(10000) })
+        .then(function(r){ return r.json(); })
+        .catch(function(err){ return { ok: false, description: String((err && err.message) || err) }; });
+    })).then(function(results){
+      var okRes = results.find(function(r){ return r && r.ok; });
+      return okRes || results[0] || { ok: false };
+    });
   }
   function bookRef(){
     var r = (cfg.bookingApi||'').replace(/\W/g,'').slice(-8);
@@ -396,8 +435,7 @@
     setStatus('Отправляем заявку…','info');
 
     siteDataReady.then(function(){
-      if(!bookingApiReady()) throw new Error('Не настроен адрес Google Apps Script.');
-      return submitToSheet(data);
+      return submitBooking(data);
     }).then(function(res){
       resetBookingForm();
       var num = res && res.id ? ' №'+res.id : '';
@@ -416,6 +454,38 @@
     if(!form) return;
     form.reset();
     ['errName','errPhone'].forEach(function(id){ showErr(id,false); });
+  }
+
+  /**
+   * Отправка заявки в Google Таблицу и уведомление модератора через Telegram-бота.
+   * Если Apps Script сам отправил уведомление (res.notified === true), повторно не шлём;
+   * иначе отправляем уведомление модератору напрямую через Telegram Bot API.
+   */
+  function submitBooking(data){
+    var hasSheet = bookingApiReady();
+    var hasBot = botReady();
+    if(!hasSheet && !hasBot){
+      return Promise.reject(new Error('Не настроен приём заявок.'));
+    }
+    if(!hasSheet){
+      return sendViaBotApi({ name: data.name, phone: data.phone }).then(function(tg){
+        if(!tg || !tg.ok) throw new Error((tg && tg.description) || 'Не удалось отправить заявку через Telegram-бота.');
+        return { ok: true, notified: true, channel: 'telegram' };
+      });
+    }
+    return submitToSheet(data).then(function(res){
+      if(res && res.notified) return res;
+      if(!hasBot) return res;
+      return sendViaBotApi({ id: res && res.id, name: data.name, phone: data.phone }).then(function(tg){
+        return Object.assign({}, res, { notified: !!(tg && tg.ok) });
+      });
+    }, function(sheetErr){
+      if(!hasBot) throw sheetErr;
+      return sendViaBotApi({ name: data.name, phone: data.phone }).then(function(tg){
+        if(tg && tg.ok) return { ok: true, notified: true, channel: 'telegram' };
+        throw sheetErr;
+      });
+    });
   }
 
   /**

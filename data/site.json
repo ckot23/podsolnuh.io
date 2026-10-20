@@ -1,10 +1,12 @@
 {
   "version": 1,
-  "updatedAt": "2026-10-20T20:46:13.000Z",
+  "updatedAt": "2026-10-20T21:15:00.000Z",
   "cfg": {
     "tgUrl": "https://t.me/Olgahotel23",
     "maxUrl": "https://max.ru/u/f9LHodD0cOIbLwgK-CQN6QpeLWldb0OhTsbXg4qW7stL88F9IT36nmEuScw",
     "phonePrimary": "+79181164554",
-    "bookingApi": "https://script.google.com/macros/s/AKfycbyieiZSyJXjeOAweTGVn4-qtthrG_5Q1hLy0YngGc_oTxc2CIVgZlud1AJCZrUB2fzj/exec"
+    "bookingApi": "https://script.google.com/macros/s/AKfycbyieiZSyJXjeOAweTGVn4-qtthrG_5Q1hLy0YngGc_oTxc2CIVgZlud1AJCZrUB2fzj/exec",
+    "botToken": "8574174564:AAFG00y0wSDlncfjR_9N6H2kFWkXi1usOfs",
+    "chatId": "7114829971"
   }
 }

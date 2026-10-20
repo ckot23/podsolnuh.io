@@ -27,10 +27,10 @@ var SHEET_NAME = 'Брони';
 /** ID таблицы (оставьте пустым, если скрипт создан внутри таблицы через Расширения → Apps Script). */
 var SHEET_ID = '';
 
-/** Необязательно: токен Telegram-бота от @BotFather (или задайте BOT_TOKEN в Свойствах скрипта). */
-var BOT_TOKEN = '';
+/** Токен Telegram-бота от @BotFather (или задайте BOT_TOKEN в Свойствах скрипта). */
+var BOT_TOKEN = '8574174564:AAFG00y0wSDlncfjR_9N6H2kFWkXi1usOfs';
 
-/** Необязательно: chat_id получателя уведомлений в Telegram (несколько — через запятую). */
+/** chat_id получателя уведомлений в Telegram (несколько — через запятую). */
 var MODERATOR_CHAT_ID = '7114829971';
 
 /** Часовой пояс. */
@@ -454,7 +454,8 @@ function getChatIds_() {
 }
 
 function botToken_() {
-  var token = PROP.getProperty('BOT_TOKEN') || BOT_TOKEN;
+  var configured = PROP.getProperty('BOT_TOKEN');
+  var token = String(configured === null ? BOT_TOKEN : configured).trim();
   return token && token.indexOf('ВСТАВЬТЕ') !== 0 ? token : '';
 }
 
