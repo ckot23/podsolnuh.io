@@ -150,9 +150,7 @@
   var scrollSun=document.getElementById('scrollSun');
   var scrollSunFlower=scrollSun ? scrollSun.querySelector('.scroll-sun-flower') : null;
   var scrollRing=scrollSun ? scrollSun.querySelector('.ring-fg') : null;
-  var heroWrap=document.querySelector('.hero-photo-wrap');
   var bigFlower=document.querySelector('.big-sunflower');
-  var heroVisual=document.querySelector('.hero-visual');
   var scrollRaf=0;
   var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
@@ -174,14 +172,6 @@
     // большой подсолнух в hero докручивается вместе со скроллом
     if(bigFlower) bigFlower.style.rotate = (y * 0.12).toFixed(2) + 'deg';
 
-    // параллакс hero: фото движется с небольшой задержкой
-    if(heroVisual){
-      var r = heroVisual.getBoundingClientRect();
-      if(r.bottom > -140 && r.top < window.innerHeight + 140){
-        var mid = r.top + r.height / 2 - window.innerHeight / 2;
-        if(heroWrap) heroWrap.style.translate = '0 ' + (mid * -0.07).toFixed(1) + 'px';
-      }
-    }
   }
   function onScroll(){
     if(scrollRaf) return;
@@ -205,6 +195,30 @@
     },{threshold:0.1, rootMargin:'0px 0px -50px 0px'});
     revealEls.forEach(function(el){ io.observe(el); });
   }
+
+  // Первый экран и карточки-цифры показываем сразу: они стоят у линии сгиба,
+  // и ожидание скролла оставляло на телефоне пустое место под кнопками.
+  document.querySelectorAll('.hero .reveal, .hero .reveal-left, .hero .reveal-right, .hero .reveal-scale, .hero .reveal-clip, .stats .reveal, .stats .reveal-scale').forEach(function(el){
+    el.classList.add('visible');
+  });
+
+  // Страховка на случай, если IntersectionObserver не сработал (бывает во
+  // встроенных браузерах мессенджеров): показываем блоки, дошедшие до экрана.
+  var revealPending = Array.prototype.slice.call(document.querySelectorAll('.reveal, .reveal-left, .reveal-right, .reveal-scale, .reveal-clip'))
+    .filter(function(el){ return !el.classList.contains('visible'); });
+  function revealNearViewport(){
+    if(!revealPending.length) return;
+    var vh = window.innerHeight || 0;
+    revealPending = revealPending.filter(function(el){
+      var r = el.getBoundingClientRect();
+      if(r.top < vh - 40 && r.bottom > 0){ el.classList.add('visible'); return false; }
+      return true;
+    });
+  }
+  window.addEventListener('scroll', function(){ requestAnimationFrame(revealNearViewport); }, {passive:true});
+  revealNearViewport();
+  // Скрипт на месте — анимации появления можно оставить включёнными.
+  document.documentElement.classList.add('anim-ready');
 
   // ---------- слова заголовков выезжают по одному ----------
   function splitWords(el){

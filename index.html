@@ -7,15 +7,23 @@
 <meta name="description" content="Гостиница «Подсолнух» в Краснодаре — уютные номера, своя кухня, парковка, видеонаблюдение. Цена зависит от даты и количества гостей — уточняйте по телефону 8 918 116-45-54." />
 <meta name="theme-color" content="#ad805c" />
 <meta name="color-scheme" content="light" />
+<script>
+/* Анимации появления включаем только при работающем JS: если скрипт не
+   загрузился, класс снимается и весь контент остаётся видимым. */
+(function () {
+  var d = document.documentElement;
+  d.classList.add('has-js');
+  setTimeout(function () { if (!d.classList.contains('anim-ready')) d.classList.remove('has-js'); }, 2500);
+})();
+</script>
 <meta property="og:type" content="website" />
 <meta property="og:locale" content="ru_RU" />
 <meta property="og:title" content="Подсолнух — уютные номера в Краснодаре" />
 <meta property="og:description" content="Уютные номера, своя кухня и парковка. Цена зависит от даты и количества гостей — уточняйте по телефону." />
-<meta property="og:image" content="https://podsolnuh.io/img/hero.jpg" />
+<meta property="og:image" content="https://podsolnuh.io/img/our-room-1.jpg" />
 <link rel="canonical" href="https://podsolnuh.io/" />
 <link rel="icon" href="img/favicon.png" type="image/png" sizes="128x128" />
-<link rel="stylesheet" href="css/site.css?v=20261020-spacing-8" />
-<link rel="preload" as="image" href="img/hero.webp" type="image/webp" fetchpriority="high" />
+<link rel="stylesheet" href="css/site.css?v=20261020-hero-10" />
 
 <!-- Preconnect for fonts -->
 <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -29,7 +37,7 @@
   "description": "Уютные номера с кухней и парковкой в Краснодаре, напрямую от собственника.",
   "url": "https://podsolnuh.io/",
   "telephone": "+7-918-116-45-54",
-  "image": "https://podsolnuh.io/img/hero.jpg",
+  "image": "https://podsolnuh.io/img/our-room-1.jpg",
   "address": {
     "@type": "PostalAddress",
     "addressLocality": "Краснодар",
@@ -83,9 +91,9 @@
     <!-- большой подсолнух -->
     <img class="big-sunflower" src="img/sunflower.webp" alt="" aria-hidden="true" width="150" height="150" />
 
-    <div class="reveal-left">
+    <div class="hero-copy reveal-left">
       <p class="kicker"><span class="dot"></span>Напрямую от собственника · без комиссий</p>
-      <h1 id="hero-title">Гостиница «Подсолнух» —<br/>уютные номера в&nbsp;Краснодаре</h1>
+      <h1 id="hero-title">Гостиница «Подсолнух» — уютные номера в&nbsp;Краснодаре</h1>
       <p class="lead">Светлые номера с собственной кухней — как дома, только солнечнее. <b>Всё необходимое уже ждёт вас.</b></p>
       <ul class="hero-points">
         <li><span class="check" aria-hidden="true"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span>Без комиссий и скрытых платежей</li>
@@ -107,14 +115,6 @@
       </div>
     </div>
 
-    <div class="hero-visual reveal-right">
-      <div class="hero-photo-wrap reveal-clip">
-        <picture>
-          <source srcset="img/hero.webp" type="image/webp" />
-          <img class="hero-photo" src="img/hero.jpg" alt="Светлый уютный номер гостиницы Подсолнух с кухонной зоной" width="1408" height="768" fetchpriority="high" decoding="async" />
-        </picture>
-      </div>
-    </div>
   </section>
 
   <!-- ====== ЦИФРЫ ====== -->
@@ -160,25 +160,19 @@
       <p class="sec-sub">Уютная обстановка, удобные спальные места и всё необходимое для комфортного отдыха.</p>
     </div>
     <div class="our-rooms-grid">
-      <figure class="our-room-card reveal" data-gallery-item data-full="img/our-room-1.jpg" data-webp="img/our-room-1.webp" data-alt="Просторный номер с зоной отдыха, диваном и двуспальной кроватью">
+      <figure class="our-room-card is-featured reveal" data-gallery-item data-full="img/our-room-1.jpg" data-webp="img/our-room-1.webp" data-alt="Просторный номер с зоной отдыха, диваном и двуспальной кроватью">
         <picture>
           <source srcset="img/our-room-1.webp" type="image/webp" />
           <img src="img/our-room-1.jpg" alt="Просторный номер с зоной отдыха, диваном и двуспальной кроватью" width="1600" height="1067" loading="lazy" decoding="async" />
         </picture>
       </figure>
-      <figure class="our-room-card reveal d1" data-gallery-item data-full="img/our-room-2.jpg" data-webp="img/our-room-2.webp" data-alt="Уютный номер с двуспальной кроватью и свежими полотенцами">
+      <figure class="our-room-card reveal d1" data-gallery-item data-full="img/our-room-5.jpg" data-webp="img/our-room-5.webp" data-alt="Уютная студия с кухонной зоной, холодильником и кроватью с зелёным покрывалом">
         <picture>
-          <source srcset="img/our-room-2.webp" type="image/webp" />
-          <img src="img/our-room-2.jpg" alt="Уютный номер с двуспальной кроватью и свежими полотенцами" width="1600" height="1067" loading="lazy" decoding="async" />
+          <source srcset="img/our-room-5.webp" type="image/webp" />
+          <img src="img/our-room-5.jpg" alt="Уютная студия с кухонной зоной, холодильником и кроватью с зелёным покрывалом" width="1600" height="1067" loading="lazy" decoding="async" />
         </picture>
       </figure>
-      <figure class="our-room-card reveal" data-gallery-item data-full="img/our-room-3.jpg" data-webp="img/our-room-3.webp" data-alt="Светлый номер в солнечных жёлтых тонах с двуспальной кроватью">
-        <picture>
-          <source srcset="img/our-room-3.webp" type="image/webp" />
-          <img src="img/our-room-3.jpg" alt="Светлый номер в солнечных жёлтых тонах с двуспальной кроватью" width="1600" height="1067" loading="lazy" decoding="async" />
-        </picture>
-      </figure>
-      <figure class="our-room-card reveal d1" data-gallery-item data-full="img/our-room-4.jpg" data-webp="img/our-room-4.webp" data-alt="Комфортный номер с кроватью, диваном и морским панно">
+      <figure class="our-room-card reveal" data-gallery-item data-full="img/our-room-4.jpg" data-webp="img/our-room-4.webp" data-alt="Комфортный номер с кроватью, диваном и морским панно">
         <picture>
           <source srcset="img/our-room-4.webp" type="image/webp" />
           <img src="img/our-room-4.jpg" alt="Комфортный номер с кроватью, диваном и морским панно" width="1600" height="1067" loading="lazy" decoding="async" />
@@ -337,10 +331,10 @@
         <img id="lightboxImg" src="img/our-room-1.jpg" alt="" width="1600" height="1067" decoding="async" />
       </picture>
     </div>
-    <p class="lightbox-count" id="lightboxCount" aria-live="polite">1 / 4</p>
+    <p class="lightbox-count" id="lightboxCount" aria-live="polite">1 / 3</p>
   </div>
 </div>
 
-<script type="module" src="js/app.js?v=20261020-spacing-8"></script>
+<script type="module" src="js/app.js?v=20261020-hero-10"></script>
 </body>
 </html>
