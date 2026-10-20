@@ -1,6 +1,6 @@
 /* =========================================================
    Гостиница «Подсолнух» — основной скрипт
-   - форма заявки на бронь (только имя и контакты)
+   - форма заявки на бронь (только имя и номер телефона)
    - модалка политики конфиденциальности и лайтбокс галереи
    - отправка заявки только после записи в Google Таблицу
      (Google Apps Script), откуда модератору уходит уведомление в Telegram
@@ -103,7 +103,6 @@
     });
   }
   function phoneOk(v){ var d=(v||'').replace(/\D/g,''); return /^[+\d\s().-]+$/.test(v) && d.length>=10 && d.length<=15 && v.length<=32; }
-  function contactsOk(v){ return phoneOk(v); }
 
   // ---------- общение с Google-таблицей броней ----------
   function bookingApiReady(){
@@ -118,10 +117,10 @@
     if(typeof AbortSignal !== 'undefined' && typeof AbortSignal.timeout === 'function') return AbortSignal.timeout(ms);
     return undefined;
   }
-  // POST в Apps Script делаем «простым» multipart-запросом: браузер не делает
-  // preflight, который веб-приложение Google не поддерживает.
+  // POST в Apps Script делаем «простым» x-www-form-urlencoded запросом:
+  // браузер не делает CORS preflight, а Apps Script сразу разбирает поля в e.parameter.
   function sendToSheet(payload){
-    var body = new FormData();
+    var body = new URLSearchParams();
     Object.keys(payload).forEach(function(k){ body.append(k, payload[k]==null?'':String(payload[k])); });
     return fetch(cfg.bookingApi, { method:'POST', body: body, signal: timeoutSignal(12000) })
       .then(function(r){ if(!r.ok) throw new Error('HTTP ' + r.status); return r.text(); })
@@ -356,7 +355,7 @@
     }
   });
 
-  // ---------- форма заявки на бронь (только имя и контакты) ----------
+  // ---------- форма заявки на бронь (только имя и номер телефона) ----------
   function setStatus(text,state){
     var el=document.getElementById('formStatus');
     if(!el) return;
@@ -379,43 +378,33 @@
     ['errName','errPhone'].forEach(function(id){ showErr(id,false); });
     setStatus('', '');
     var name = document.getElementById('fName').value.trim();
-    var contactsEl = document.getElementById('fPhone') || document.getElementById('fContacts');
-    var contacts = contactsEl ? contactsEl.value.trim() : '';
+    var phoneEl = document.getElementById('fPhone');
+    var phone = phoneEl ? phoneEl.value.trim() : '';
     var honeypot = document.getElementById('website').value.trim();
     if(honeypot) return;
 
     var firstInvalid = null;
     if(name.length < 2 || name.length > 100){ showErr('errName',true); firstInvalid = document.getElementById('fName'); }
-    if(!contactsOk(contacts)){ showErr('errPhone',true); firstInvalid = firstInvalid || contactsEl; }
+    if(!phoneOk(phone)){ showErr('errPhone',true); firstInvalid = firstInvalid || phoneEl; }
     if(firstInvalid){ firstInvalid.focus(); return; }
 
-    var data = { name: name, contacts: contacts, phone: contacts, website: honeypot };
+    var data = { name: name, phone: phone, website: honeypot };
     var btn=document.getElementById('submitBtn');
     btn.disabled=true;
     btn.textContent='Отправляем…';
     form.setAttribute('aria-busy','true');
     setStatus('Отправляем заявку…','info');
 
-    // Успех только после записи в таблицу (id или action=verify), не по отправке в Telegram.
     siteDataReady.then(function(){
       if(!bookingApiReady()) throw new Error('Не настроен адрес Google Apps Script.');
       return submitToSheet(data);
     }).then(function(res){
       resetBookingForm();
       var num = res && res.id ? ' №'+res.id : '';
-      if(res && res.notified === false){
-        setStatus('Заявка'+num+' записана в таблицу, но уведомление модератору не отправлено. Для быстрой связи позвоните: '+phoneHuman(cfg.phonePrimary)+'.','info');
-      } else {
-        setStatus('✅ Заявка'+num+' принята. Мы скоро свяжемся с вами для подтверждения брони.','ok');
-      }
+      setStatus('✅ Заявка'+num+' принята. Мы скоро свяжемся с вами для подтверждения брони.','ok');
     }).catch(function(err){
       console.error('Не удалось отправить заявку:', err);
-      var msg = String((err && err.message) || '');
-      if(/даты|номер|setup\(\)/i.test(msg)){
-        setStatus('Не удалось отправить заявку: обновите скрипт Google Apps Script (Code.gs), разверните новую версию и выполните setup(), либо позвоните нам: '+phoneHuman(cfg.phonePrimary)+'.','error');
-      } else {
-        setStatus('Не удалось отправить заявку. Попробуйте ещё раз или позвоните: '+phoneHuman(cfg.phonePrimary)+'.','error');
-      }
+      setStatus('Не удалось отправить заявку. Попробуйте ещё раз или позвоните: '+phoneHuman(cfg.phonePrimary)+'.','error');
     }).finally(function(){
       btn.disabled=false;
       btn.textContent='Отправить заявку';
@@ -438,15 +427,13 @@
     var payload = {
       action: 'book',
       name: data.name,
-      contacts: data.contacts || data.phone,
-      phone: data.phone || data.contacts,
+      phone: data.phone,
       website: data.website,
       ref: bookRef()
     };
     return sendToSheet(payload).then(function(res){
       var j = res && res.json;
-      // Apps Script возвращает id только после записи строки в таблицу.
-      if(j && j.ok && Number(j.id) > 0) return j;
+      if(j && j.ok && !j.ignored) return j;
       var message = j && j.error ? j.error : (res && res.error ? res.error.message : 'таблица не подтвердила приём');
       if(j && j.ignored) message = 'Заявка не прошла проверку формы.';
       return verifyInSheet(payload.ref).then(function(found){

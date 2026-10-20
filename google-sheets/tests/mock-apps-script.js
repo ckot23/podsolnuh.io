@@ -12,12 +12,11 @@ function createEnv(options = {}) {
   const fetchLog = [];
   const props = new Map(Object.entries(Object.assign({
     BOT_TOKEN: '123456:TEST-TOKEN',
-    MODERATOR_CHAT_ID: '7114829971',
-    WEBHOOK_SECRET: 'test-webhook-secret'
+    MODERATOR_CHAT_ID: '7114829971'
   }, options.properties)));
   const nonempty = v => v !== '' && v !== null && v !== undefined;
   const overlaps = (a, b) => a.row < b.row + b.numRows && b.row < a.row + a.numRows &&
-    a.col < b.col + b.numCols && b.col < a.col + a.numCols;
+    a.col < b.col + b.numCols && b.col < a.col + b.numCols;
 
   function makeRange(sheet, row, col, numRows = 1, numCols = 1) {
     if (row < 1 || col < 1 || row + numRows - 1 > sheet.maxRows || col + numCols - 1 > sheet.maxCols) {
@@ -30,12 +29,6 @@ function createEnv(options = {}) {
         if (vals.length !== numRows || vals.some(r => r.length !== numCols)) throw new Error('Range size mismatch');
         vals.forEach((r, i) => r.forEach((v, j) => {
           const ri = row + i, ci = col + j;
-          sheet.validations.forEach(rule => {
-            if (ri >= rule.row && ri < rule.row + rule.numRows && ci >= rule.col && ci < rule.col + rule.numCols &&
-                rule.validation.allowInvalid === false && nonempty(v) && !rule.validation.values.includes(v)) {
-              throw new Error('Data validation rejected ' + v);
-            }
-          });
           sheet.data[ri - 1] = sheet.data[ri - 1] || [];
           sheet.data[ri - 1][ci - 1] = v;
         }));
@@ -84,16 +77,6 @@ function createEnv(options = {}) {
         sheet.hiddenCols.sort((x, y) => x - y);
       },
       showColumns(start, n) { sheet.hiddenCols = sheet.hiddenCols.filter(c => c < start || c >= start + n); },
-      copyTo(target) {
-        if (options.failBackup) throw new Error('Simulated backup failure');
-        const copy = makeSheet('Копия ' + sheet.name);
-        copy.data = sheet.data.map(r => r.map(v => v instanceof Date ? new Date(v) : v));
-        copy.maxRows = sheet.maxRows; copy.maxCols = sheet.maxCols;
-        copy.hiddenCols = sheet.hiddenCols.slice();
-        copy.validations = sheet.validations.slice(); copy.formats = sheet.formats.slice();
-        target.sheets.push(copy);
-        return copy;
-      },
       getRange: (r, c, nr, nc) => makeRange(sheet, r, c, nr, nc)
     };
     return sheet;
@@ -101,24 +84,21 @@ function createEnv(options = {}) {
 
   const ss = {
     sheets, name: 'Подсолнух — брони', tz: 'UTC', url: 'https://docs.google.com/spreadsheets/d/TESTID/edit',
-    getId: () => 'TESTID', getSheetByName: n => sheets.find(s => s.name === n) || null,
+    getId: () => 'TESTID',
+    getSheets: () => sheets,
+    getSheetByName: n => sheets.find(s => s.name === n) || null,
     insertSheet: n => { const s = makeSheet(n); sheets.push(s); return s; },
     getName: () => ss.name, getUrl: () => ss.url,
     setSpreadsheetTimeZone: tz => { ss.tz = tz; }, getSpreadsheetTimeZone: () => ss.tz
   };
 
-  function newValidation() {
-    const rule = { values: [], allowInvalid: true };
-    return {
-      requireValueInList(values) { rule.values = values; return this; },
-      setAllowInvalid(value) { rule.allowInvalid = value; return this; },
-      build() { return rule; }
-    };
+  if (options.initialSheetName) {
+    ss.insertSheet(options.initialSheetName);
   }
 
   const mocks = {
     SpreadsheetApp: {
-      getActiveSpreadsheet: () => ss, openById: () => ss, newDataValidation: newValidation,
+      getActiveSpreadsheet: () => ss, openById: () => ss,
       flush() { events.push({ type: 'flush' }); }
     },
     PropertiesService: { getScriptProperties: () => ({
@@ -153,8 +133,6 @@ function createEnv(options = {}) {
             ? reply({ ok: false, description: 'Forbidden: bot was blocked by the user' })
             : reply({ ok: true, result: { message_id: 100 + fetchLog.length } });
         }
-        if (/answerCallbackQuery|editMessageText|deleteWebhook/.test(url)) return reply({ ok: true, result: true });
-        if (/setWebhook/.test(url)) return reply({ ok: true, result: true, description: 'Webhook was set' });
         return reply({ ok: false, description: 'unexpected method' });
       }
     },
@@ -168,11 +146,11 @@ function createEnv(options = {}) {
   };
 
   const factory = new Function(...Object.keys(mocks), code + `
-    return { setup, setupTelegram, removeTelegramWebhook, testConnection, doGet, doPost,
+    return { setup, testConnection, doGet, doPost,
       headers: HEADERS, columns: COL, visibleCount: VISIBLE_COUNT, schemaVersion: SCHEMA_VERSION };
   `);
   const api = factory(...Object.values(mocks));
-  return { api, ss, sheet: () => ss.getSheetByName('Брони'), fetchLog, props, events };
+  return { api, ss, sheet: () => ss.getSheetByName('Брони') || sheets[0] || null, fetchLog, props, events };
 }
 
 module.exports = { createEnv };
