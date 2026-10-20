@@ -98,10 +98,9 @@ const server = http.createServer((req, res) => {
     return void sendJson({
       version: 1,
       updatedAt: new Date().toISOString(),
-      statuses: LIVE ? (realSiteData.statuses || {}) : {},
       cfg: LIVE
         ? Object.assign({}, realSiteData.cfg)
-        : { tgUrl: 'https://t.me/ckot_23', waNumber: '79882443223', phonePrimary: '+79181164554', bookingApi: '/macros/exec' }
+        : { tgUrl: 'https://t.me/ckot_23', maxUrl: 'https://max.ru', phonePrimary: '+79181164554', bookingApi: '/macros/exec' }
     });
   }
 
@@ -223,11 +222,7 @@ document.getElementById('book').onclick = function(){
   if(!confirm(${JSON.stringify('Тестовая заявка попадёт в ')} + ${JSON.stringify(LIVE ? 'настоящую таблицу и Telegram модератора' : 'локальную демо-таблицу')} + '. Продолжить?')) return;
   var ref = 'p-browser-' + Date.now();
   var fd = new FormData();
-  var tomorrow = new Date(Date.now() + 86400000);
-  var day = function(d){ return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0'); };
-  [[ 'action','book'], ['name','Проверка сайта (тест)'], ['phone','+7 918 116-45-54'],
-   ['dateFrom', day(tomorrow)], ['dateTo', day(new Date(tomorrow.getTime() + 2*86400000))],
-   ['docs','нет'], ['room','single-1'], ['ref', ref]]
+  [['action', 'book'], ['name', 'Проверка сайта (тест)'], ['phone', '+7 918 116-45-54'], ['ref', ref]]
     .forEach(function(p){ fd.append(p[0], p[1]); });
   busy(b, true, 'Отправляем…');
   fetch(API, { method: 'POST', body: fd }).then(function(r){ return r.text(); }).then(function(t){
@@ -236,8 +231,7 @@ document.getElementById('book').onclick = function(){
     if(!j){ show('<p class="warn">Ответ не разобрался, но заявка могла записаться. Проверьте таблицу и Telegram.</p><pre>' + t.slice(0,500) + '</pre>'); return; }
     if(j.ok && j.duplicate) show('<p class="warn">Такая заявка уже есть — №' + j.id + ' (защита от дублей работает).</p>', j);
     else if(j.ok) show('<p>' + badge(true, 'Заявка №' + j.id + ' принята', '') + '<br>Записана в таблицу: ' + badge(true, 'да', '?') + '<br>' +
-      'Сообщение модератору в Telegram: ' + badge(j.notified, 'отправлено', 'НЕ отправлено — проверьте токен бота и chat_id') + '<br>' +
-      'Ночей: <b>' + (j.nights || '—') + '</b></p>' +
+      'Сообщение модератору в Telegram: ' + badge(j.notified, 'отправлено', 'НЕ отправлено — проверьте токен бота и chat_id') + '</p>' +
       '<p>Проверьте Telegram и таблицу. Строку с тестом и сообщение можно удалить.</p>', j);
     else show('<p class="bad">Ошибка: ' + (j.error || 'неизвестно') + '</p>', j);
   }).catch(function(e){

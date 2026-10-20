@@ -3,19 +3,18 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-<title>Номера — Гостиница «Подсолнух» в Краснодаре</title>
-<meta name="description" content="Семь номеров гостиницы «Подсолнух» в Краснодаре. Цена зависит от даты и количества гостей — уточняйте по телефону 8 918 116-45-54." />
+<title>Заявка на бронь — Гостиница «Подсолнух» в Краснодаре</title>
+<meta name="description" content="Оставьте заявку на бронь в гостинице «Подсолнух» в Краснодаре — укажите только имя и номер телефона, и мы свяжемся с вами." />
 <meta name="theme-color" content="#ad805c" />
 <meta name="color-scheme" content="light" />
 <meta property="og:type" content="website" />
 <meta property="og:locale" content="ru_RU" />
-<meta property="og:title" content="Номера — гостиница «Подсолнух» в Краснодаре" />
-<meta property="og:description" content="Выберите один из семи номеров гостиницы «Подсолнух». Цена зависит от даты и количества гостей — уточняйте по телефону." />
+<meta property="og:title" content="Заявка на бронь — гостиница «Подсолнух» в Краснодаре" />
+<meta property="og:description" content="Оставьте имя и номер телефона — мы свяжемся с вами, уточним свободные даты и точную стоимость." />
 <meta property="og:image" content="https://podsolnuh.io/img/hero.jpg" />
 <link rel="canonical" href="https://podsolnuh.io/rooms.html" />
 <link rel="icon" href="img/favicon.png" type="image/png" sizes="128x128" />
-<link rel="stylesheet" href="css/site.css?v=20261011-booking-3" />
-
+<link rel="stylesheet" href="css/site.css?v=20261020-booking-7" />
 
 <!-- Preconnect for fonts -->
 <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -40,7 +39,7 @@
 </script>
 </head>
 <body>
-<noscript><div class="noscript-notice">Для просмотра фотографий и отправки онлайн-заявки включите JavaScript. Или уточните наличие и цену по телефону <a href="tel:+79181164554">8 918 116-45-54</a>.</div></noscript>
+<noscript><div class="noscript-notice">Для отправки онлайн-заявки включите JavaScript или позвоните нам напрямую: <a href="tel:+79181164554">8 918 116-45-54</a>.</div></noscript>
 
 <!-- Декоративный фон: плавающие лепестки/листья -->
 <div class="deco-layer" id="decoLayer" aria-hidden="true"></div>
@@ -59,7 +58,8 @@
     </a>
     <nav aria-label="Основная навигация">
       <ul>
-        <li><a href="#rooms">Номера</a></li>
+        <li><a href="index.html#our-rooms">Наши номера</a></li>
+        <li><a href="#booking" aria-current="page">Бронирование</a></li>
         <li><a href="index.html#benefits">Почему мы</a></li>
         <li><a href="index.html#near">Рядом</a></li>
         <li><a href="index.html#faq">Вопросы</a></li>
@@ -68,7 +68,7 @@
     </nav>
     <div class="top-contacts">
       <a class="top-phone" href="tel:+79181164554">8 918 116-45-54<small>бронирование</small></a>
-      <a class="btn tg small header-tg-btn" href="https://t.me/ckot_23" target="_blank" rel="noopener noreferrer">Telegram</a>
+      <a class="btn max small header-max-btn" data-max href="https://max.ru" target="_blank" rel="noopener noreferrer">MAX</a>
       <button class="btn primary small header-book-btn" type="button" data-book="">Забронировать</button>
     </div>
   </div>
@@ -78,27 +78,57 @@
 <div class="wrap" id="top">
   <a class="page-back" href="index.html">← На главную</a>
 
-  <section class="rooms-page-intro" id="rooms" aria-labelledby="rooms-page-title">
-    <p class="sec-kicker"><img class="sunflower-inline" src="img/sunflower.webp" alt="" aria-hidden="true" /> Номера гостиницы</p>
-    <h1 id="rooms-page-title">Выберите свой номер</h1>
-    <p class="lead">Посмотрите фотографии семи номеров и выберите подходящий. Наличие уточняйте по телефону.</p>
-    <div class="rooms-price-note reveal" role="note">
-      <span class="price-note-icon" aria-hidden="true">☀️</span>
-      <div class="price-note-copy">
-        <strong>Цена зависит от даты и количества гостей</strong>
-        <p>Стоимость рассчитывается индивидуально для каждой брони. Уточните цену по телефону.</p>
-      </div>
-      <a class="btn ghost" href="tel:+79181164554">Уточнить цену</a>
-    </div>
-  </section>
+  <section class="booking-page" id="booking" aria-labelledby="bookTitle" aria-describedby="bookIntro">
+    <div class="booking-shell">
+      <div class="booking-card reveal">
+        <p class="sec-kicker"><img class="sunflower-inline" src="img/sunflower.webp" alt="" aria-hidden="true" /> Онлайн-бронирование</p>
+        <h1 class="booking-title" id="bookTitle">Заявка на бронь</h1>
+        <p class="booking-sub" id="bookIntro">Оставьте только имя и номер телефона — мы свяжемся с вами в ближайшее время, уточним свободные даты и точную стоимость.</p>
 
-  <section class="room-catalog" aria-labelledby="room-catalog-title">
-    <div class="sec-head reveal">
-      <p class="sec-kicker">🌼 Фотогалерея</p>
-      <h2 id="room-catalog-title">Номера 1–7</h2>
-      <p class="sec-sub">Выберите номер для заявки или позвоните, чтобы уточнить цену.</p>
+        <form id="bookForm" novalidate>
+          <div class="vh" aria-hidden="true">
+            <label for="website">Не заполняйте</label>
+            <input id="website" name="website" type="text" tabindex="-1" autocomplete="off" />
+          </div>
+          <div class="field">
+            <label for="fName">Имя</label>
+            <input id="fName" name="name" type="text" autocomplete="name" placeholder="Как к вам обращаться" minlength="2" maxlength="100" aria-describedby="errName" required />
+            <p class="err" id="errName">Представьтесь, пожалуйста.</p>
+          </div>
+          <div class="field">
+            <label for="fPhone">Номер телефона</label>
+            <input id="fPhone" name="phone" type="tel" inputmode="tel" autocomplete="tel" placeholder="+7 ___ ___-__-__" maxlength="32" aria-describedby="errPhone" required />
+            <p class="err" id="errPhone">Укажите телефон для связи.</p>
+          </div>
+          <button class="btn primary full-width" type="submit" id="submitBtn">Отправить заявку</button>
+          <p class="form-hint-under">Оплата на сайте не нужна. Нажимая кнопку, вы соглашаетесь с <button class="privacy-button" type="button" data-policy>политикой обработки персональных данных</button>.</p>
+          <p class="form-status" id="formStatus" role="status" aria-live="polite"></p>
+        </form>
+
+        <div class="booking-alt">
+          <p class="booking-alt-label">Или свяжитесь с нами сразу</p>
+          <div class="booking-alt-actions">
+            <a class="btn max small" data-max href="https://max.ru" target="_blank" rel="noopener noreferrer">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 11.5a8.5 8.5 0 0 1-12.7 7.4L3 20.5l1.6-5.3A8.5 8.5 0 1 1 21 11.5z"/><path d="M8.5 14v-4.5L12 12.5l3.5-3V14"/></svg>
+              MAX
+            </a>
+            <a class="btn tg small" href="https://t.me/ckot_23" target="_blank" rel="noopener noreferrer">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M9.78 18.65l.28-4.23 7.68-6.92c.34-.31-.07-.46-.52-.19L7.74 13.3 3.64 12c-.88-.25-.89-.86.2-1.3l15.97-6.16c.73-.33 1.43.18 1.15 1.3l-2.72 12.81c-.19.91-.74 1.13-1.5.71L12.6 16.3l-1.99 1.93c-.23.23-.42.42-.83.42z"/></svg>
+              Telegram
+            </a>
+            <a class="btn ghost small" href="tel:+79181164554">8 918 116-45-54</a>
+          </div>
+        </div>
+      </div>
+
+      <div class="rooms-price-note booking-price-note reveal" role="note">
+        <span class="price-note-icon" aria-hidden="true">☀️</span>
+        <div class="price-note-copy">
+          <strong>Напрямую от собственника — без комиссий</strong>
+          <p>Стоимость зависит от даты и количества гостей и рассчитывается индивидуально.</p>
+        </div>
+      </div>
     </div>
-    <div class="rooms" id="roomsList" aria-label="Номера гостиницы с 1 по 7"></div>
   </section>
 </div>
 </main>
@@ -121,8 +151,8 @@
       <p><a href="tel:+79181164554">8 918 116-45-54</a></p>
       <p><a href="tel:+79189451223">8 918 945-12-23</a></p>
       <p>
-        <a href="https://t.me/ckot_23" target="_blank" rel="noopener noreferrer">Telegram</a>
-        · <a href="https://wa.me/79882443223" target="_blank" rel="noopener noreferrer">WhatsApp</a>
+        <a data-max href="https://max.ru" target="_blank" rel="noopener noreferrer">MAX</a>
+        · <a href="https://t.me/ckot_23" target="_blank" rel="noopener noreferrer">Telegram</a>
       </p>
       <p><button type="button" class="privacy-button" id="privacyLink">Политика конфиденциальности</button></p>
       <p class="foot-note"><a href="#" id="adminLink">Админ-панель</a></p>
@@ -142,66 +172,8 @@
 <!-- Липкая панель для мобильных -->
 <div class="sticky-cta">
   <a class="btn ghost" href="tel:+79181164554">Звонок</a>
-  <a class="btn tg" href="https://t.me/ckot_23" target="_blank" rel="noopener noreferrer">TG</a>
+  <a class="btn max" data-max href="https://max.ru" target="_blank" rel="noopener noreferrer">MAX</a>
   <button class="btn primary" type="button" data-book="">Бронь</button>
-</div>
-
-<!-- ====== МОДАЛКА БРОНИРОВАНИЯ ====== -->
-<div class="modal-backdrop" id="bookModal" role="dialog" aria-modal="true" aria-hidden="true" aria-labelledby="bookTitle" aria-describedby="bookIntro" hidden>
-  <div class="modal booking-modal">
-    <button class="modal-close" type="button" aria-label="Закрыть">×</button>
-    <h3 id="bookTitle"><img class="sunflower-inline title-flower" src="img/sunflower.webp" alt="" aria-hidden="true" /> Заявка на бронь</h3>
-    <p class="modal-sub" id="bookIntro">Оставьте имя и телефон, выберите даты и номер. Мы свяжемся с вами, чтобы подтвердить бронь.</p>
-    <form id="bookForm" novalidate>
-      <div class="vh" aria-hidden="true">
-        <label for="website">Не заполняйте</label>
-        <input id="website" name="website" type="text" tabindex="-1" autocomplete="off" />
-      </div>
-      <div class="field-row">
-        <div class="field">
-          <label for="fName">Имя</label>
-          <input id="fName" name="name" type="text" autocomplete="name" placeholder="Как к вам обращаться" minlength="2" maxlength="100" aria-describedby="errName" data-initial-focus required />
-          <p class="err" id="errName">Представьтесь, пожалуйста.</p>
-        </div>
-        <div class="field">
-          <label for="fPhone">Номер телефона</label>
-          <input id="fPhone" name="phone" type="tel" inputmode="tel" autocomplete="tel" placeholder="+7 ___ ___-__-__" maxlength="32" aria-describedby="errPhone" required />
-          <p class="err" id="errPhone">Укажите телефон для связи.</p>
-        </div>
-      </div>
-      <div class="field">
-        <label id="calLabelText">Заезд и выезд</label>
-        <div class="cal" role="group" aria-labelledby="calLabelText" aria-describedby="calLabel errDates">
-          <div class="cal-head">
-            <button class="cal-nav" type="button" id="calPrev" aria-label="Предыдущий месяц">‹</button>
-            <b id="calTitle">—</b>
-            <button class="cal-nav" type="button" id="calNext" aria-label="Следующий месяц">›</button>
-          </div>
-          <div class="cal-week" aria-hidden="true"><span>Пн</span><span>Вт</span><span>Ср</span><span>Чт</span><span>Пт</span><span>Сб</span><span>Вс</span></div>
-          <div class="cal-grid" id="calGrid"></div>
-        </div>
-        <p class="hint" id="calLabel" aria-live="polite">Выберите дату заезда</p>
-        <p class="err" id="errDates">Выберите даты заезда и выезда в календаре.</p>
-        <input type="hidden" id="fDates" name="dates" />
-        <input type="hidden" id="fDateFrom" name="dateFrom" />
-        <input type="hidden" id="fDateTo" name="dateTo" />
-      </div>
-      <div class="field">
-        <label id="roomLabel">Номер комнаты</label>
-        <div class="room-picker" id="roomPicker" role="radiogroup" aria-labelledby="roomLabel" aria-describedby="errRoom" aria-required="true"></div>
-        <input type="hidden" id="fRoom" name="room" />
-        <p class="err" id="errRoom">Выберите свободный номер.</p>
-      </div>
-      <label class="consent docs-toggle">
-        <input type="checkbox" id="fDocs" name="docs" />
-        <span>Нужны отчётные документы (счёт, чек)</span>
-      </label>
-      <button class="btn primary full-width" type="submit" id="submitBtn">Отправить заявку</button>
-      <p class="form-hint-under">Оплата на сайте не нужна. Нажимая кнопку, вы соглашаетесь с <button class="privacy-button" type="button" data-policy>политикой обработки персональных данных</button>.</p>
-      <p class="form-status" id="formStatus" role="status" aria-live="polite"></p>
-    </form>
-    <p class="modal-alt">Или сразу: <a href="tel:+79181164554"><b>8 918 116-45-54</b></a> · <a href="https://wa.me/79882443223" target="_blank" rel="noopener noreferrer">WhatsApp</a></p>
-  </div>
 </div>
 
 <!-- ====== МОДАЛКА АДМИНКИ ====== -->
@@ -209,7 +181,7 @@
   <div class="modal">
     <button class="modal-close" type="button" aria-label="Закрыть">×</button>
     <h3 id="adminTitle"><img class="sunflower-inline title-flower" src="img/sunflower.webp" alt="" aria-hidden="true" /> Панель управления</h3>
-    <p class="modal-sub">Меняйте статусы «свободен / занят» — они сразу видны на сайте. Для онлайн-заявок здесь настраивается подключение Google-таблицы.</p>
+    <p class="modal-sub">Настройка подключения Google-таблицы для онлайн-заявок и контактов на сайте.</p>
     <div id="adminLogin">
       <div class="field">
         <label for="adminPass">Пароль администратора</label>
@@ -220,16 +192,15 @@
       <p class="modal-alt admin-default">По умолчанию пароль: <b>sunflower</b> (смените в коде).</p>
     </div>
     <div id="adminPanel" hidden>
-      <ul id="adminRooms" class="admin-rooms"></ul>
-      <div class="admin-config">
+      <div class="admin-config admin-config-top">
         <label>📊 Google-таблица броней (URL веб-приложения Apps Script)</label>
         <input id="cfgSheet" type="text" placeholder="https://script.google.com/macros/s/AKfy.../exec" />
         <button class="btn ghost full-width" type="button" id="adminTestSheet">🔍 Проверить связь с таблицей и Telegram</button>
         <p class="admin-note">🌻 Заявка считается отправленной только после записи в Google-таблицу; уведомление с кнопками модератору отправляет Apps Script. Как подключить — см. <b>docs/booking-google-sheets.md</b>.</p>
-        <label>🔗 Ссылка на Telegram (для ручной отправки)</label>
+        <label>💬 Ссылка на MAX (для кнопки MAX)</label>
+        <input id="cfgMaxUrl" type="text" placeholder="https://max.ru/u/..." />
+        <label>🔗 Ссылка на Telegram (для кнопки Telegram)</label>
         <input id="cfgTgUrl" type="text" placeholder="https://t.me/ckot_23" />
-        <label>📱 Номер WhatsApp (цифры, для кнопки WhatsApp)</label>
-        <input id="cfgWa" type="text" placeholder="79882443223" />
         <label>📞 Основной телефон (для кнопок «Звонок»)</label>
         <input id="cfgPhone" type="text" placeholder="+79181164554" />
         <button class="btn primary full-width" type="button" id="adminSaveCfg">Сохранить настройки</button>
@@ -240,7 +211,7 @@
           <input id="cfgBranch" type="text" placeholder="main" />
           <input id="cfgGitToken" type="password" autocomplete="off" placeholder="GitHub токен (права Contents: read & write)" />
           <button class="btn green full-width" type="button" id="adminSaveGlobal">🔄 Применить для всего сайта</button>
-          <p class="admin-note">С GitHub-токеном статусы и публичные настройки сохраняются в data/site.json и применяются ко всему сайту. GitHub-токен хранится только в вашем браузере.</p>
+          <p class="admin-note">С GitHub-токеном публичные настройки сохраняются в data/site.json и применяются ко всему сайту. GitHub-токен хранится только в вашем браузере.</p>
         </div>
       </div>
       <p class="form-status" id="adminNote" role="status" aria-live="polite"></p>
@@ -254,13 +225,13 @@
     <button class="modal-close" type="button" aria-label="Закрыть">×</button>
     <h3 id="policyTitle">Политика конфиденциальности</h3>
     <p>Настоящая Политика действует в отношении информации, которую сайт гостиницы «Подсолнух» получает во время его использования. Отправка формы бронирования означает согласие с Политикой.</p>
-    <p><b>1. Состав данных.</b> Имя, телефон, даты проживания, выбранный номер и необходимость отчётных документов — только то, что вы указываете в форме.</p>
-    <p><b>2. Цели.</b> Связь с гостем, подтверждение брони и согласование цены. Заявка сохраняется в закрытой Google Таблице, а модератор получает уведомление в Telegram.</p>
+    <p><b>1. Состав данных.</b> Имя и номер телефона — только то, что вы указываете в форме заявки.</p>
+    <p><b>2. Цели.</b> Обратная связь с гостем, подбор свободных дат, согласование цены и подтверждение брони. Заявка сохраняется в закрытой Google Таблице, а модератор получает уведомление в Telegram.</p>
     <p><b>3. Конфиденциальность.</b> Данные не продаются и не публикуются. Доступ к заявкам имеют только уполномоченные сотрудники гостиницы. Для хранения заявок и уведомлений используются Google Таблицы и Telegram.</p>
     <p><b>4. Права гостя.</b> Можно попросить удалить заявку по телефону 8 918 116-45-54.</p>
   </div>
 </div>
 
-<script type="module" src="js/app.js?v=20261011-booking-3"></script>
+<script type="module" src="js/app.js?v=20261020-booking-7"></script>
 </body>
 </html>
