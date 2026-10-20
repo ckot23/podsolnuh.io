@@ -1,20 +1,17 @@
-import { ROOMS } from './rooms.js?v=20261011-booking-3';
-
 /* =========================================================
    Гостиница «Подсолнух» — основной скрипт
-   - календарь выбора диапазона
-   - модалки, валидация
-   - бронирование: заявка принимается только после записи в Google Таблицу
-     (Google Apps Script), откуда модератору уходит уведомление в Telegram;
-   - админ-панель со статусами номеров (сохраняются в localStorage)
-   - декоративные падающие лепестки
+   - форма заявки на бронь (только имя и номер телефона)
+   - модалки политики конфиденциальности и админ-панели
+   - отправка заявки только после записи в Google Таблицу
+     (Google Apps Script), откуда модератору уходит уведомление в Telegram
+   - синхронизация публичных настроек через data/site.json
+   - декоративные падающие лепестки и плавные анимации скролла
    ========================================================= */
 (function () {
   'use strict';
 
   // ---------- конфигурация ----------
   var CONFIG_KEY = 'podsolnuh_cfg_v1';
-  var STATUS_KEY = 'podsolnuh_status_v1';
   var AUTH_KEY   = 'podsolnuh_auth_v1';
   var SYNC_KEY   = 'podsolnuh_sync_v1';
   var SHARED_CACHE_KEY = 'podsolnuh_shared_v1';
@@ -23,8 +20,8 @@ import { ROOMS } from './rooms.js?v=20261011-booking-3';
   var DEFAULT_CFG = {
     bookingApi: '', // URL веб-приложения Google Apps Script (таблица броней)
     tgUrl: 'https://t.me/ckot_23',
-    waNumber: '79882443223',
-    phonePrimary: '+79181164554',
+    maxUrl: 'https://max.ru',
+    phonePrimary: '+79181164554'
   };
 
   // общие данные сайта — видны всем посетителям
@@ -37,27 +34,21 @@ import { ROOMS } from './rooms.js?v=20261011-booking-3';
 
   var cfg = loadCfg();
   // Публичные настройки могут загрузиться чуть позже кода страницы. Отправку
-  // заявки откладываем до завершения загрузки, чтобы не уйти в Telegram-only путь.
+  // заявки откладываем до завершения загрузки, чтобы гарантированно использовать актуальный bookingApi.
   var siteDataReady = Promise.resolve(false);
-  var statuses = loadStatuses();
-  // статусы из Google Таблицы (подтверждённые брони на сегодня) — отдельно от ручных
-  var sheetStatuses = {};
   var sync = loadSync();
   var adminAuthed = !!localStorage.getItem(AUTH_KEY);
   applySharedData(loadSharedCache(), false);
 
-  var MONTHS = ['Январь','Февраль','Март','Апрель','Май','Июнь','Июль','Август','Сентябрь','Октябрь','Ноябрь','Декабрь'];
-
   // ---------- утилиты ----------
-  function pad(n){ return n<10 ? '0'+n : ''+n; }
   function loadCfg(){
     try {
       var c = JSON.parse(localStorage.getItem(CONFIG_KEY) || '{}');
       if(!c || typeof c !== 'object') c = {};
-      // Удаляем сохранённые секреты старого прямого Telegram API.
-      var hadLegacySecrets = Object.prototype.hasOwnProperty.call(c, 'botToken') || Object.prototype.hasOwnProperty.call(c, 'chatId');
+      var hadLegacySecrets = Object.prototype.hasOwnProperty.call(c, 'botToken') || Object.prototype.hasOwnProperty.call(c, 'chatId') || Object.prototype.hasOwnProperty.call(c, 'waNumber');
       delete c.botToken;
       delete c.chatId;
+      delete c.waNumber;
       var clean = Object.assign({}, DEFAULT_CFG, c);
       if(hadLegacySecrets) localStorage.setItem(CONFIG_KEY, JSON.stringify(clean));
       return clean;
@@ -65,14 +56,6 @@ import { ROOMS } from './rooms.js?v=20261011-booking-3';
     catch(e){ return Object.assign({}, DEFAULT_CFG); }
   }
   function saveCfg(){ localStorage.setItem(CONFIG_KEY, JSON.stringify(cfg)); }
-  function loadStatuses(){
-    try {
-      var s = JSON.parse(localStorage.getItem(STATUS_KEY) || '{}');
-      ROOMS.forEach(function(r){ if (s[r.id] !== 'busy' && s[r.id] !== 'free') s[r.id] = 'free'; });
-      return s;
-    } catch(e){ var m={}; ROOMS.forEach(function(r){ m[r.id]='free'; }); return m; }
-  }
-  function saveStatuses(){ localStorage.setItem(STATUS_KEY, JSON.stringify(statuses)); }
 
   // ---------- синхронизация: изменения для ВСЕГО сайта ----------
   function loadSync(){
@@ -91,14 +74,12 @@ import { ROOMS } from './rooms.js?v=20261011-booking-3';
     }
     return String(p || '');
   }
-  // применяем настройки ко всем ссылкам сайта, а не только к панели
   function applyCfgToDom(){
     if(cfg.tgUrl){
       document.querySelectorAll('a[href*="t.me/"]').forEach(function(a){ a.href = cfg.tgUrl; });
     }
-    if(cfg.waNumber){
-      var wa = 'https://wa.me/' + String(cfg.waNumber).replace(/\D/g, '');
-      document.querySelectorAll('a[href*="wa.me/"]').forEach(function(a){ a.href = wa; });
+    if(cfg.maxUrl){
+      document.querySelectorAll('a[data-max], a[href*="max.ru"]').forEach(function(a){ a.href = cfg.maxUrl; });
     }
     if(cfg.phonePrimary){
       var defDigits = DEFAULT_CFG.phonePrimary.replace(/\D/g, '');
@@ -110,9 +91,9 @@ import { ROOMS } from './rooms.js?v=20261011-booking-3';
   }
   function applySharedData(data, rerender){
     if(!data || typeof data !== 'object') return false;
-    var cfgChanged = false, stChanged = false;
+    var cfgChanged = false;
     if(data.cfg && typeof data.cfg === 'object'){
-      ['tgUrl','waNumber','phonePrimary','bookingApi'].forEach(function(k){
+      ['tgUrl','maxUrl','phonePrimary','bookingApi'].forEach(function(k){
         if(Object.prototype.hasOwnProperty.call(data.cfg, k) && data.cfg[k] !== cfg[k]){
           cfg[k] = data.cfg[k] || '';
           cfgChanged = true;
@@ -120,29 +101,18 @@ import { ROOMS } from './rooms.js?v=20261011-booking-3';
       });
       if(cfgChanged) saveCfg();
     }
-    if(data.statuses && typeof data.statuses === 'object'){
-      ROOMS.forEach(function(r){
-        var v = data.statuses[r.id];
-        if((v === 'busy' || v === 'free') && statuses[r.id] !== v){ statuses[r.id] = v; stChanged = true; }
-      });
-      if(stChanged) saveStatuses();
-    }
-    if((cfgChanged || stChanged) && rerender){
+    if(cfgChanged && rerender){
       applyCfgToDom();
-      renderRooms();
-      // URL таблицы мог появиться только сейчас, вместе с настройками с сайта
-      refreshSheetStatuses();
     }
-    return cfgChanged || stChanged;
+    return cfgChanged;
   }
   function buildSiteData(){
     return {
       version: 1,
       updatedAt: new Date().toISOString(),
-      statuses: statuses,
       cfg: {
         tgUrl: cfg.tgUrl,
-        waNumber: cfg.waNumber,
+        maxUrl: cfg.maxUrl,
         phonePrimary: cfg.phonePrimary,
         bookingApi: cfg.bookingApi
       }
@@ -217,27 +187,8 @@ import { ROOMS } from './rooms.js?v=20261011-booking-3';
     });
   }
 
-  function monthMatrix(y,m){
-    var first = new Date(y,m,1);
-    var offset = (first.getDay()+6) % 7;
-    var days = new Date(y,m+1,0).getDate();
-    var cells=[];
-    for(var i=0;i<offset;i++) cells.push(null);
-    for(var d=1;d<=days;d++) cells.push(new Date(y,m,d));
-    return cells;
-  }
-  function nightsBetween(a,b){ return Math.round((b-a)/86400000); }
-  function sameDay(a,b){ return a && b && a.getFullYear()===b.getFullYear() && a.getMonth()===b.getMonth() && a.getDate()===b.getDate(); }
-  function rangeLabel(a,b){
-    if(!a) return '';
-    if(!b) return dateHuman(a)+' — выберите выезд';
-    return dateHuman(a)+' – '+dateHuman(b)+' ('+nightsBetween(a,b)+' сут.)';
-  }
   function phoneOk(v){ var d=(v||'').replace(/\D/g,''); return /^[+\d\s().-]+$/.test(v) && d.length>=10 && d.length<=15 && v.length<=32; }
-  // номер занят, если админ отметил вручную или по нему есть подтверждённая бронь в таблице
-  function isBusy(id){ return statuses[id]==='busy' || sheetStatuses[id]==='busy'; }
-  function isoDay(d){ return d ? d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate()) : ''; }
-  function dateHuman(d){ return d ? pad(d.getDate())+'.'+pad(d.getMonth()+1)+'.'+d.getFullYear() : ''; }
+  function setVal(id, v){ var el=document.getElementById(id); if(el) el.value = v; }
 
   // ---------- общение с Google-таблицей броней ----------
   function bookingApiReady(){
@@ -255,7 +206,7 @@ import { ROOMS } from './rooms.js?v=20261011-booking-3';
   // POST в Apps Script делаем «простым» multipart-запросом: браузер не делает
   // preflight, который веб-приложение Google не поддерживает.
   function sendToSheet(payload){
-    var body = new FormData();               // multipart: тоже не вызывает preflight
+    var body = new FormData();
     Object.keys(payload).forEach(function(k){ body.append(k, payload[k]==null?'':String(payload[k])); });
     return fetch(cfg.bookingApi, { method:'POST', body: body, signal: timeoutSignal(12000) })
       .then(function(r){ if(!r.ok) throw new Error('HTTP ' + r.status); return r.text(); })
@@ -274,29 +225,11 @@ import { ROOMS } from './rooms.js?v=20261011-booking-3';
       .then(function(j){ return !!(j && j.found); })
       .catch(function(){ return false; });
   }
-  // статусы номеров из таблицы: занято/свободно на сегодня
-  function refreshSheetStatuses(){
-    if(!bookingApiReady()) return;
-    var url = cfg.bookingApi + (cfg.bookingApi.indexOf('?')===-1?'?':'&') + 'action=status&t=' + Date.now();
-    fetch(url, { signal: timeoutSignal(8000) })
-      .then(function(r){ return r.json(); })
-      .then(function(j){
-        if(!j || !j.ok || !j.statuses) return;
-        var changed = false;
-        Object.keys(j.statuses).forEach(function(id){
-          var v = j.statuses[id];
-          if(sheetStatuses[id] !== v){ sheetStatuses[id] = v; changed = true; }
-        });
-        if(changed && document.getElementById('roomsList')) renderRooms();
-      })
-      .catch(function(){});
-  }
 
   // ---------- год в подвале ----------
   document.getElementById('year').textContent = String(new Date().getFullYear());
   applyCfgToDom();
   siteDataReady = fetchSiteData();
-  refreshSheetStatuses();
 
   // ---------- скролл: шапка, параллакс, прогресс ----------
   var header=document.getElementById('header');
@@ -308,6 +241,7 @@ import { ROOMS } from './rooms.js?v=20261011-booking-3';
   var bigFlower=document.querySelector('.big-sunflower');
   var heroVisual=document.querySelector('.hero-visual');
   var scrollRaf=0;
+  var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
   function updateScroll(){
     var y = window.scrollY || 0;
@@ -351,7 +285,6 @@ import { ROOMS } from './rooms.js?v=20261011-booking-3';
 
   // ---------- reveal на скролле ----------
   var revealEls = document.querySelectorAll('.reveal, .reveal-left, .reveal-right, .reveal-scale, .reveal-clip');
-  var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   if (reduce || typeof IntersectionObserver==='undefined') {
     revealEls.forEach(function(el){ el.classList.add('visible'); });
   } else {
@@ -417,175 +350,34 @@ import { ROOMS } from './rooms.js?v=20261011-booking-3';
     document.querySelectorAll('.stat').forEach(function(st){ nio.observe(st); });
   }
 
-  // ---------- слайдер фотографий номера ----------
-  function webpPath(src){ return src.replace(/\.jpe?g$/i, '.webp'); }
-  function pictureMarkup(photo, className, loading){
-    var cls = className ? ' class="'+className+'"' : '';
-    return '<picture>' +
-      '<source srcset="'+webpPath(photo.src)+'" type="image/webp" />' +
-      '<img'+cls+' src="'+photo.src+'" alt="'+photo.alt+'" width="1408" height="768" loading="'+(loading || 'lazy')+'" decoding="async" />' +
-    '</picture>';
-  }
-  function buildSlider(room){
-    var photos = room.photos || [];
-    if(!photos.length) return '';
-    var many = photos.length > 1;
-    var slides = photos.map(function(p){
-      return '<div class="slide">'+pictureMarkup(p, '', 'lazy')+'</div>';
-    }).join('');
-    var html = '<div class="photo-slider" data-slider>' +
-      '<div class="slider-track" tabindex="0" role="group" aria-label="Фотографии: '+room.name+'">'+slides+'</div>';
-    if(many){
-      var dots = photos.map(function(_, i){
-        return '<button type="button" class="slider-dot'+(i===0?' active':'')+'" data-idx="'+i+'" aria-label="Фото '+(i+1)+' из '+photos.length+'"></button>';
-      }).join('');
-      html += '<button type="button" class="slider-nav slider-prev" aria-label="Предыдущее фото">‹</button>' +
-        '<button type="button" class="slider-nav slider-next" aria-label="Следующее фото">›</button>' +
-        '<div class="slider-ind"><span class="slider-dots">'+dots+'</span><span class="slider-count">1/'+photos.length+'</span></div>';
-    }
-    return html + '</div>';
-  }
-
-  function initSliders(root){
-    (root || document).querySelectorAll('[data-slider]').forEach(function(sl){
-      if(sl.dataset.sliderReady) return;
-      sl.dataset.sliderReady = '1';
-      var track = sl.querySelector('.slider-track');
-      var total = track ? track.children.length : 0;
-      if(!total) return;
-      // Оставляем изображения lazy: браузер сам подгрузит их перед свайпом.
-      if(total < 2) return;
-      var dots = sl.querySelectorAll('.slider-dot');
-      var count = sl.querySelector('.slider-count');
-      var prev = sl.querySelector('.slider-prev');
-      var next = sl.querySelector('.slider-next');
-      var cur = 0, rafId = 0;
-      function idx(){
-        return Math.max(0, Math.min(total-1, Math.round(track.scrollLeft / Math.max(1, track.clientWidth))));
-      }
-      function sync(i){
-        dots.forEach(function(d, di){ d.classList.toggle('active', di === i); });
-        if(count) count.textContent = (i+1)+'/'+total;
-        if(prev) prev.disabled = (i === 0);
-        if(next) next.disabled = (i === total-1);
-      }
-      function paint(i){ if(i !== cur){ cur = i; sync(i); } }
-      function goTo(i){
-        i = Math.max(0, Math.min(total-1, i));
-        cur = i; sync(i);
-        track.scrollTo({ left: i * track.clientWidth, behavior: reduce ? 'auto' : 'smooth' });
-      }
-      track.addEventListener('scroll', function(){
-        if(rafId) return;
-        rafId = requestAnimationFrame(function(){ rafId = 0; paint(idx()); });
-      }, {passive: true});
-      track.addEventListener('keydown', function(e){
-        if(e.key === 'ArrowLeft'){ e.preventDefault(); goTo(idx()-1); }
-        if(e.key === 'ArrowRight'){ e.preventDefault(); goTo(idx()+1); }
-      });
-      if(prev) prev.addEventListener('click', function(){ goTo(idx()-1); });
-      if(next) next.addEventListener('click', function(){ goTo(idx()+1); });
-      dots.forEach(function(d){
-        d.addEventListener('click', function(){ goTo(parseInt(d.dataset.idx, 10) || 0); });
-      });
-      window.addEventListener('resize', function(){
-        track.scrollLeft = cur * track.clientWidth;
-      }, {passive: true});
-      if(prev) prev.disabled = true;
-    });
-  }
-
-  // ---------- рендер карточек номеров ----------
-  function renderRooms(){
-    var list = document.getElementById('roomsList');
-    // Каталог показывается только на отдельной странице rooms.html.
-    if(!list) return;
-    list.innerHTML = '';
-    ROOMS.forEach(function(r, i){
-      var busy = isBusy(r.id);
-      var art = document.createElement('article');
-      art.className = 'room reveal ' + (i%2 ? 'd1' : '') + (busy?' room-busy':'');
-      art.dataset.room = r.id;
-      art.innerHTML =
-        '<div class="room-photo">' +
-          buildSlider(r) +
-          '<span class="status-chip '+(busy?'busy':'free')+'">'+(busy?'🚫 Занят':'Свободен')+'</span>' +
-        '</div>' +
-        '<div class="room-body">' +
-          '<h3>'+r.name+'</h3>' +
-          '<div class="room-cta">' +
-            '<button class="btn primary" type="button" data-book="'+r.id+'" '+(busy?'disabled':'')+'>'+(busy?'Сейчас занят':'Забронировать')+'</button>' +
-            '<a class="btn ghost" href="tel:'+cfg.phonePrimary+'">Позвонить</a>' +
-          '</div>' +
-        '</div>';
-      list.appendChild(art);
-    });
-    initSliders(list);
-    if (io) {
-      list.querySelectorAll('.reveal').forEach(function(el){ io.observe(el); });
-    } else {
-      list.querySelectorAll('.reveal').forEach(function(el){ el.classList.add('visible'); });
-    }
-    renderRoomPicker();
-  }
-
-  // ---------- компактный выбор номера в модалке ----------
-  var selectedRoom = '';
-  function selectRoom(id){
-    selectedRoom = id;
-    setVal('fRoom', id);
-    var picker = document.getElementById('roomPicker');
-    if(!picker) return;
-    picker.querySelectorAll('.room-option').forEach(function(btn){
-      var selected = btn.dataset.room === id;
-      btn.classList.toggle('selected', selected);
-      btn.setAttribute('aria-checked', selected ? 'true' : 'false');
-      btn.tabIndex = selected ? 0 : -1;
-    });
-    showErr('errRoom', !id);
-  }
-  function renderRoomPicker(){
-    var picker = document.getElementById('roomPicker');
-    if(!picker) return;
-    var current = ROOMS.find(function(r){ return r.id === selectedRoom; });
-    if(!current || isBusy(selectedRoom)){
-      var firstFree = ROOMS.find(function(r){ return !isBusy(r.id); });
-      selectedRoom = firstFree ? firstFree.id : '';
-    }
-    picker.innerHTML = '';
-    ROOMS.forEach(function(r){
-      var busy = isBusy(r.id);
-      var btn = document.createElement('button');
-      btn.type = 'button';
-      btn.className = 'room-option' + (busy ? ' busy' : '');
-      btn.setAttribute('role', 'radio');
-      btn.dataset.room = r.id;
-      btn.disabled = busy;
-      btn.innerHTML = '<span class="opt-name">'+r.name+'</span><span class="opt-status">'+(busy ? 'Занят' : 'Свободен')+'</span>';
-      btn.addEventListener('click', function(){ selectRoom(r.id); });
-      picker.appendChild(btn);
-    });
-    selectRoom(selectedRoom);
-  }
-  var roomPickerEl = document.getElementById('roomPicker');
-  if(roomPickerEl) roomPickerEl.addEventListener('keydown', function(e){
-    if(['ArrowLeft','ArrowRight','ArrowUp','ArrowDown','Home','End'].indexOf(e.key) === -1) return;
-    var buttons = Array.prototype.slice.call(roomPickerEl.querySelectorAll('button:not(:disabled)'));
-    if(!buttons.length) return;
-    e.preventDefault();
-    var index = buttons.indexOf(document.activeElement);
-    if(e.key === 'Home') index = 0;
-    else if(e.key === 'End') index = buttons.length - 1;
-    else index = (index + (e.key === 'ArrowLeft' || e.key === 'ArrowUp' ? -1 : 1) + buttons.length) % buttons.length;
-    selectRoom(buttons[index].dataset.room);
-    buttons[index].focus();
-  });
-  renderRooms();
-
   // ---------- модалки ----------
-  var bookModal=document.getElementById('bookModal');
   var policyModal=document.getElementById('policyModal');
   var adminModal=document.getElementById('adminModal');
+  var lightboxModal=document.getElementById('lightboxModal');
+  var lightboxImg=document.getElementById('lightboxImg');
+  var lightboxSource=document.getElementById('lightboxSource');
+  var lightboxCount=document.getElementById('lightboxCount');
+  var galleryItems=Array.prototype.slice.call(document.querySelectorAll('[data-gallery-item]'));
+  var galleryIdx=0;
+  var form = document.getElementById('bookForm');
+
+  function showGallerySlide(idx){
+    if(!galleryItems.length || !lightboxImg) return;
+    galleryIdx = (idx + galleryItems.length) % galleryItems.length;
+    var item = galleryItems[galleryIdx];
+    if(lightboxSource) lightboxSource.srcset = item.getAttribute('data-webp') || '';
+    lightboxImg.src = item.getAttribute('data-full') || '';
+    lightboxImg.alt = item.getAttribute('data-alt') || '';
+    if(lightboxCount) lightboxCount.textContent = (galleryIdx + 1) + ' / ' + galleryItems.length;
+  }
+  galleryItems.forEach(function(item, i){
+    item.tabIndex = 0;
+    item.setAttribute('role', 'button');
+    item.addEventListener('click', function(){ showGallerySlide(i); openModal(lightboxModal); });
+    item.addEventListener('keydown', function(ev){
+      if(ev.key === 'Enter' || ev.key === ' '){ ev.preventDefault(); showGallerySlide(i); openModal(lightboxModal); }
+    });
+  });
 
   function openModal(m){
     if(!m || m.classList.contains('open')) return;
@@ -609,29 +401,28 @@ import { ROOMS } from './rooms.js?v=20261011-booking-3';
   document.addEventListener('click', function(e){
     var b = e.target.closest('[data-book]');
     if(b){
-      var rid = b.getAttribute('data-book');
-      if(rid && !isBusy(rid)){
-        selectedRoom = rid;
-      } else {
-        var ff = ROOMS.find(function(r){ return !isBusy(r.id); });
-        selectedRoom = ff ? ff.id : '';
-      }
-      renderRoomPicker();
-      if(form && form.getAttribute('aria-busy') !== 'true') setStatus('', '');
-      openModal(bookModal); return;
+      var section = document.getElementById('booking') || form;
+      if(section) section.scrollIntoView({ behavior: reduce ? 'auto' : 'smooth', block: 'start' });
+      var nameInput = document.getElementById('fName');
+      if(nameInput) nameInput.focus();
+      return;
     }
+    if(e.target.closest('#lightboxPrev')){ showGallerySlide(galleryIdx - 1); return; }
+    if(e.target.closest('#lightboxNext')){ showGallerySlide(galleryIdx + 1); return; }
     if(e.target.closest('#privacyLink, [data-policy]')){ e.preventDefault(); openModal(policyModal); return; }
     if(e.target.closest('#adminLink')){ e.preventDefault(); openAdmin(); return; }
     if(e.target.closest('.modal-close')){ closeModal(e.target.closest('.modal-backdrop')); return; }
-    if(e.target===bookModal) closeModal(bookModal);
     if(e.target===policyModal) closeModal(policyModal);
     if(e.target===adminModal) closeModal(adminModal);
+    if(e.target===lightboxModal) closeModal(lightboxModal);
   });
   document.addEventListener('keydown', function(e){
     var opened = document.querySelectorAll('.modal-backdrop.open');
     var activeModal = opened[opened.length - 1];
     if(!activeModal) return;
     if(e.key==='Escape'){ closeModal(activeModal); return; }
+    if(activeModal===lightboxModal && e.key==='ArrowLeft'){ e.preventDefault(); showGallerySlide(galleryIdx - 1); return; }
+    if(activeModal===lightboxModal && e.key==='ArrowRight'){ e.preventDefault(); showGallerySlide(galleryIdx + 1); return; }
     if(e.key==='Tab'){
       var focusable = Array.prototype.slice.call(activeModal.querySelectorAll('button, input, a[href], [tabindex]'))
         .filter(function(el){ return !el.disabled && el.tabIndex >= 0 && el.getClientRects().length; });
@@ -641,69 +432,16 @@ import { ROOMS } from './rooms.js?v=20261011-booking-3';
     }
   });
 
-  // ---------- календарь ----------
-  var calGrid=document.getElementById('calGrid');
-  var calTitle=document.getElementById('calTitle');
-  var calLabel=document.getElementById('calLabel');
-  var datesInput=document.getElementById('fDates');
-  var today=new Date(); today.setHours(0,0,0,0);
-  var view={y:today.getFullYear(), m:today.getMonth()};
-  var selStart=null, selEnd=null;
-
-  function renderCalendar(){
-    if(!calGrid) return;
-    calTitle.textContent = MONTHS[view.m]+' '+view.y;
-    calGrid.innerHTML='';
-    monthMatrix(view.y,view.m).forEach(function(day){
-      var cell=document.createElement('button');
-      cell.type='button';
-      if(!day){ cell.className='cal-day empty'; cell.disabled=true; calGrid.appendChild(cell); return; }
-      cell.className='cal-day';
-      cell.textContent = String(day.getDate());
-      cell.setAttribute('data-date', isoDay(day)); // локальная дата, без сдвига по UTC
-      cell.setAttribute('aria-label', dateHuman(day));
-      cell.setAttribute('aria-pressed', sameDay(day,selStart) || sameDay(day,selEnd) ? 'true' : 'false');
-      if(day < today) cell.disabled=true;
-      if(sameDay(day,today)) cell.classList.add('today');
-      if(sameDay(day,selStart)) cell.classList.add('range-start');
-      if(sameDay(day,selEnd)) cell.classList.add('range-end');
-      if(selStart && selEnd && day>selStart && day<selEnd) cell.classList.add('in-range');
-      calGrid.appendChild(cell);
-    });
-    calLabel.textContent = selStart ? rangeLabel(selStart,selEnd) : 'Выберите дату заезда';
-    datesInput.value = (selStart && selEnd) ? rangeLabel(selStart,selEnd) : '';
-    setVal('fDateFrom', selStart ? isoDay(selStart) : '');
-    setVal('fDateTo',   selEnd   ? isoDay(selEnd)   : '');
-    if(selStart && selEnd) showErr('errDates', false);
-  }
-  function setVal(id, v){ var el=document.getElementById(id); if(el) el.value = v; }
-
-  if(calGrid){
-    calGrid.addEventListener('click',function(e){
-      var btn=e.target.closest('.cal-day');
-      if(!btn||btn.disabled||!btn.getAttribute('data-date')) return;
-      var parts=String(btn.getAttribute('data-date')).split('-');
-      var day=new Date(Number(parts[0]), Number(parts[1])-1, Number(parts[2]));
-      if(!selStart || (selStart&&selEnd)){ selStart=day; selEnd=null; }
-      else if(day<selStart){ selStart=day; }
-      else if(sameDay(day,selStart)){ selStart=null; }
-      else { selEnd=day; }
-      renderCalendar();
-    });
-    document.getElementById('calPrev').addEventListener('click',function(){ view.m--; if(view.m<0){view.m=11;view.y--;} renderCalendar(); });
-    document.getElementById('calNext').addEventListener('click',function(){ view.m++; if(view.m>11){view.m=0;view.y++;} renderCalendar(); });
-    renderCalendar();
-  }
-
-  // ---------- форма брони ----------
+  // ---------- форма заявки на бронь (только имя и номер телефона) ----------
   function setStatus(text,state){
     var el=document.getElementById('formStatus');
+    if(!el) return;
     el.textContent=text||''; el.setAttribute('data-state', state||'');
   }
   function showErr(id,on){
     var el=document.getElementById(id);
     if(el) el.classList.toggle('show',!!on);
-    var control = document.getElementById({errName:'fName',errPhone:'fPhone',errDates:'calGrid',errRoom:'roomPicker'}[id]);
+    var control = document.getElementById({errName:'fName',errPhone:'fPhone'}[id]);
     if(control) control.setAttribute('aria-invalid', on ? 'true' : 'false');
   }
   ['fName','fPhone'].forEach(function(id){
@@ -711,36 +449,22 @@ import { ROOMS } from './rooms.js?v=20261011-booking-3';
     if(el) el.addEventListener('input', function(){ showErr(id === 'fName' ? 'errName' : 'errPhone', false); });
   });
 
-  var form = document.getElementById('bookForm');
   if(form) form.addEventListener('submit', function(e){
     e.preventDefault();
     if(form.getAttribute('aria-busy') === 'true') return;
-    ['errName','errPhone','errDates','errRoom'].forEach(function(id){ showErr(id,false); });
+    ['errName','errPhone'].forEach(function(id){ showErr(id,false); });
     setStatus('', '');
     var name = document.getElementById('fName').value.trim();
     var phone = document.getElementById('fPhone').value.trim();
-    var room = document.getElementById('fRoom').value;
-    var roomObj = ROOMS.find(function(r){return r.id===room;});
     var honeypot = document.getElementById('website').value.trim();
     if(honeypot) return;
 
     var firstInvalid = null;
     if(name.length < 2 || name.length > 100){ showErr('errName',true); firstInvalid = document.getElementById('fName'); }
     if(!phoneOk(phone)){ showErr('errPhone',true); firstInvalid = firstInvalid || document.getElementById('fPhone'); }
-    if(!selStart || !selEnd){ showErr('errDates',true); firstInvalid = firstInvalid || calGrid.querySelector('button:not(:disabled)') || document.getElementById('calNext'); }
-    if(!roomObj || isBusy(room)){
-      showErr('errRoom',true);
-      firstInvalid = firstInvalid || document.querySelector('#roomPicker button:not(:disabled)') || document.getElementById('submitBtn');
-    }
     if(firstInvalid){ firstInvalid.focus(); return; }
 
-    var data = {
-      name: name, phone: phone, dates: datesInput.value.trim(),
-      dateFrom: isoDay(selStart), dateTo: isoDay(selEnd),
-      room: room, roomLabel: roomObj.name,
-      docs: document.getElementById('fDocs').checked ? 'да' : 'нет',
-      website: honeypot
-    };
+    var data = { name: name, phone: phone, website: honeypot };
     var btn=document.getElementById('submitBtn');
     btn.disabled=true;
     btn.textContent='Отправляем…';
@@ -750,7 +474,6 @@ import { ROOMS } from './rooms.js?v=20261011-booking-3';
     // Успех только после записи в таблицу (id или action=verify), не по отправке в Telegram.
     siteDataReady.then(function(){
       if(!bookingApiReady()) throw new Error('Не настроен адрес Google Apps Script.');
-      if(isBusy(data.room)) throw new Error('Выбранный номер уже занят.');
       return submitToSheet(data);
     }).then(function(res){
       resetBookingForm();
@@ -762,7 +485,12 @@ import { ROOMS } from './rooms.js?v=20261011-booking-3';
       }
     }).catch(function(err){
       console.error('Не удалось отправить заявку:', err);
-      setStatus('Не удалось отправить заявку. Попробуйте ещё раз или позвоните: '+phoneHuman(cfg.phonePrimary)+'.','error');
+      var msg = String((err && err.message) || '');
+      if(/даты|номер|setup\(\)/i.test(msg)){
+        setStatus('Не удалось отправить заявку: обновите скрипт Google Apps Script (Code.gs), разверните новую версию и выполните setup(), либо позвоните нам: '+phoneHuman(cfg.phonePrimary)+'.','error');
+      } else {
+        setStatus('Не удалось отправить заявку. Попробуйте ещё раз или позвоните: '+phoneHuman(cfg.phonePrimary)+'.','error');
+      }
     }).finally(function(){
       btn.disabled=false;
       btn.textContent='Отправить заявку';
@@ -773,10 +501,7 @@ import { ROOMS } from './rooms.js?v=20261011-booking-3';
   function resetBookingForm(){
     if(!form) return;
     form.reset();
-    selStart=null; selEnd=null; renderCalendar();
-    ['errName','errPhone','errDates','errRoom'].forEach(function(id){ showErr(id,false); });
-    var ff=ROOMS.find(function(x){return !isBusy(x.id);});
-    selectedRoom=ff?ff.id:''; renderRoomPicker();
+    ['errName','errPhone'].forEach(function(id){ showErr(id,false); });
   }
 
   /**
@@ -786,15 +511,15 @@ import { ROOMS } from './rooms.js?v=20261011-booking-3';
    */
   function submitToSheet(data){
     var payload = {
-      action: 'book', name: data.name, phone: data.phone,
-      dates: data.dates, dateFrom: data.dateFrom, dateTo: data.dateTo,
-      room: data.room, roomLabel: data.roomLabel, docs: data.docs,
-      website: data.website, ref: bookRef()
+      action: 'book',
+      name: data.name,
+      phone: data.phone,
+      website: data.website,
+      ref: bookRef()
     };
     return sendToSheet(payload).then(function(res){
       var j = res && res.json;
-      // Apps Script нового формата возвращает id только после записи строки;
-      // не доверяем простому {ok:true} от старой Telegram-only версии.
+      // Apps Script возвращает id только после записи строки в таблицу.
       if(j && j.ok && Number(j.id) > 0) return j;
       var message = j && j.error ? j.error : (res && res.error ? res.error.message : 'таблица не подтвердила приём');
       if(j && j.ignored) message = 'Заявка не прошла проверку формы.';
@@ -811,10 +536,9 @@ import { ROOMS } from './rooms.js?v=20261011-booking-3';
     if(adminAuthed){
       document.getElementById('adminLogin').hidden = true;
       document.getElementById('adminPanel').hidden = false;
-      renderAdminRooms();
       setVal('cfgSheet', cfg.bookingApi||'');
       document.getElementById('cfgTgUrl').value = cfg.tgUrl||'';
-      document.getElementById('cfgWa').value = cfg.waNumber||'';
+      document.getElementById('cfgMaxUrl').value = cfg.maxUrl||'';
       document.getElementById('cfgPhone').value = cfg.phonePrimary||'';
       document.getElementById('cfgRepo').value = sync.repo||'';
       document.getElementById('cfgBranch').value = sync.branch||'';
@@ -823,28 +547,6 @@ import { ROOMS } from './rooms.js?v=20261011-booking-3';
       document.getElementById('adminLogin').hidden = false;
       document.getElementById('adminPanel').hidden = true;
     }
-  }
-
-  function renderAdminRooms(){
-    var list=document.getElementById('adminRooms');
-    list.innerHTML='';
-    ROOMS.forEach(function(r){
-      var busy = statuses[r.id]==='busy';
-      var li=document.createElement('li'); li.className='admin-room';
-      li.innerHTML =
-        '<span class="admin-name">'+r.name+'</span>' +
-        '<b class="admin-chip '+(busy?'busy':'free')+'">'+(busy?'Занят':'Свободен')+'</b>';
-      var btn=document.createElement('button');
-      btn.type='button'; btn.className='btn ghost admin-toggle';
-      btn.textContent = busy?'Освободить':'Занять';
-      btn.addEventListener('click',function(){
-        statuses[r.id] = busy?'free':'busy';
-        saveStatuses(); renderRooms(); renderRoomPicker(); renderAdminRooms();
-        maybePushGlobal('✅ Статус обновлён и применён для всего сайта!');
-      });
-      li.appendChild(btn);
-      list.appendChild(li);
-    });
   }
 
   document.getElementById('adminLoginBtn').addEventListener('click',function(){
@@ -862,17 +564,16 @@ import { ROOMS } from './rooms.js?v=20261011-booking-3';
   function readCfgForm(){
     cfg.bookingApi = String((document.getElementById('cfgSheet')||{}).value || '').trim();
     cfg.tgUrl = document.getElementById('cfgTgUrl').value.trim() || DEFAULT_CFG.tgUrl;
-    cfg.waNumber = document.getElementById('cfgWa').value.trim() || DEFAULT_CFG.waNumber;
+    cfg.maxUrl = document.getElementById('cfgMaxUrl').value.trim() || DEFAULT_CFG.maxUrl;
     cfg.phonePrimary = document.getElementById('cfgPhone').value.trim() || DEFAULT_CFG.phonePrimary;
     sync.repo = document.getElementById('cfgRepo').value.trim() || DEFAULT_SYNC.repo;
     sync.branch = document.getElementById('cfgBranch').value.trim() || DEFAULT_SYNC.branch;
     sync.token = document.getElementById('cfgGitToken').value.trim();
     saveCfg(); saveSync();
-    applyCfgToDom(); renderRooms();
+    applyCfgToDom();
   }
   document.getElementById('adminSaveCfg').addEventListener('click',function(){
     readCfgForm();
-    refreshSheetStatuses();
     maybePushGlobal('✅ Настройки применены для всего сайта!');
   });
 
@@ -891,9 +592,8 @@ import { ROOMS } from './rooms.js?v=20261011-booking-3';
       .then(function(j){
         if(j && j.ok){
           var tg = ' Telegram: ' + (j.bot || (j.telegram ? 'подключён' : 'не отвечает')) + '.';
-          var layout = j.schemaVersion === 2 ? '' : ' Обновите Code.gs и развёртывание Apps Script, чтобы в таблице осталось пять полей.';
+          var layout = j.schemaVersion === 3 ? '' : ' Обновите Code.gs, разверните новую версию Apps Script и выполните setup(), чтобы в таблице остались только Имя и Телефон.';
           adminMsg('✅ Таблица «' + j.sheet + '» на связи, заявок: ' + j.rows + '.' + tg + layout, j.telegram && !layout ? 'ok' : 'info', 10000);
-          refreshSheetStatuses();
         } else {
           adminMsg('⚠️ Таблица ответила ошибкой: ' + ((j && j.error) || 'неизвестно'), 'error', 6000);
         }
@@ -921,8 +621,8 @@ import { ROOMS } from './rooms.js?v=20261011-booking-3';
   (function petals(){
     if(reduce) return;
     var layer = document.getElementById('decoLayer');
+    if(!layer) return;
     var isSmall = window.innerWidth < 700;
-    // статические элементы
     for(var i=0;i<(isSmall?5:10);i++){
       var d = document.createElement('div');
       var isLeaf = Math.random()>0.6;
@@ -936,7 +636,6 @@ import { ROOMS } from './rooms.js?v=20261011-booking-3';
       d.style.opacity = 0.25+Math.random()*0.35;
       layer.appendChild(d);
     }
-    // падающие лепестки
     function spawnFallingPetal(){
       var p = document.createElement('div');
       p.className='falling-petal';
@@ -957,7 +656,5 @@ import { ROOMS } from './rooms.js?v=20261011-booking-3';
     setInterval(spawnFallingPetal, isSmall?3600:2200);
     for(var k=0;k<(isSmall?3:6);k++) setTimeout(spawnFallingPetal, k*400);
   })();
-
-  // курсор ничего не двигает: параллакс мыши убран
 
 })();

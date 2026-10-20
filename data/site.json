@@ -1,18 +1,9 @@
 {
   "version": 1,
-  "updatedAt": "2026-10-11T15:07:00.000Z",
-  "statuses": {
-    "single-1": "free",
-    "studio-4": "free",
-    "studio-comfort": "free",
-    "family-4": "free",
-    "apart-2": "free",
-    "double-2": "free",
-    "kitchen-3": "free"
-  },
+  "updatedAt": "2026-10-20T10:20:00.000Z",
   "cfg": {
     "tgUrl": "https://t.me/ckot_23",
-    "waNumber": "79882443223",
+    "maxUrl": "https://max.ru",
     "phonePrimary": "+79181164554",
     "bookingApi": "https://script.google.com/macros/s/AKfycbwFY3liVkjJOY9_XHkQ4O8JvX0wkjctoQIzOglTRkmt6UuUafvpfGpIyEh82eyt-nUzzQ/exec"
   }

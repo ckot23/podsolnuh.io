@@ -169,7 +169,7 @@ function createEnv(options = {}) {
 
   const factory = new Function(...Object.keys(mocks), code + `
     return { setup, setupTelegram, removeTelegramWebhook, testConnection, doGet, doPost,
-      computeStatuses_, parseDates_, headers: HEADERS, columns: COL, visibleCount: VISIBLE_COUNT };
+      headers: HEADERS, columns: COL, visibleCount: VISIBLE_COUNT, schemaVersion: SCHEMA_VERSION };
   `);
   const api = factory(...Object.values(mocks));
   return { api, ss, sheet: () => ss.getSheetByName('Брони'), fetchLog, props, events };
