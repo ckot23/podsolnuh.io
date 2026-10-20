@@ -102,7 +102,7 @@ function createEnv(options = {}) {
       flush() { events.push({ type: 'flush' }); }
     },
     PropertiesService: { getScriptProperties: () => ({
-      getProperty: k => props.has(k) ? props.get(k) : null,
+      getProperty: k => (props.has(k) && props.get(k) !== null) ? props.get(k) : null,
       setProperty: (k, v) => props.set(k, String(v))
     }) },
     LockService: { getScriptLock: () => ({

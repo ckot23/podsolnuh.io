@@ -109,5 +109,10 @@ check('имя с «=» экранируется от формул', escapedReq.p
 escapedReq.post({ ...booking, name: '<b>Анна & Иван</b>', ref: 'p-html' });
 check('HTML-символы экранируются в сообщении Telegram', messages(escaped).at(-1).payload.text.includes('&lt;b&gt;Анна &amp; Иван&lt;/b&gt;'));
 
+const freshProps = createEnv({ properties: { BOT_TOKEN: null, MODERATOR_CHAT_ID: null } });
+const freshRes = requests(freshProps).post(booking);
+check('в новой таблице без Свойств скрипта бот оповещает модератора по встроенным BOT_TOKEN и MODERATOR_CHAT_ID',
+  freshRes.ok === true && freshRes.notified === true && messages(freshProps).length === 1 && messages(freshProps)[0].payload.chat_id === '7114829971');
+
 console.log('\nИтого: ' + pass + ' успешно, ' + fail + ' провалено\n');
 process.exit(fail ? 1 : 0);
