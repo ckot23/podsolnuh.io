@@ -7,14 +7,23 @@
 <meta name="description" content="Оставьте заявку на бронь в гостинице «Подсолнух» в Краснодаре — укажите только имя и номер телефона, и мы свяжемся с вами." />
 <meta name="theme-color" content="#ad805c" />
 <meta name="color-scheme" content="light" />
+<script>
+/* Анимации появления включаем только при работающем JS: если скрипт не
+   загрузился, класс снимается и весь контент остаётся видимым. */
+(function () {
+  var d = document.documentElement;
+  d.classList.add('has-js');
+  setTimeout(function () { if (!d.classList.contains('anim-ready')) d.classList.remove('has-js'); }, 2500);
+})();
+</script>
 <meta property="og:type" content="website" />
 <meta property="og:locale" content="ru_RU" />
 <meta property="og:title" content="Заявка на бронь — гостиница «Подсолнух» в Краснодаре" />
 <meta property="og:description" content="Оставьте имя и номер телефона — мы свяжемся с вами, уточним свободные даты и точную стоимость." />
-<meta property="og:image" content="https://podsolnuh.io/img/hero.jpg" />
+<meta property="og:image" content="https://podsolnuh.io/img/our-room-1.jpg" />
 <link rel="canonical" href="https://podsolnuh.io/rooms.html" />
 <link rel="icon" href="img/favicon.png" type="image/png" sizes="128x128" />
-<link rel="stylesheet" href="css/site.css?v=20261020-spacing-8" />
+<link rel="stylesheet" href="css/site.css?v=20261020-hero-10" />
 
 <!-- Preconnect for fonts -->
 <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -28,7 +37,7 @@
   "description": "Уютные номера с кухней и парковкой в Краснодаре, напрямую от собственника.",
   "url": "https://podsolnuh.io/",
   "telephone": "+7-918-116-45-54",
-  "image": "https://podsolnuh.io/img/hero.jpg",
+  "image": "https://podsolnuh.io/img/our-room-1.jpg",
   "address": {
     "@type": "PostalAddress",
     "addressLocality": "Краснодар",
@@ -186,6 +195,6 @@
   </div>
 </div>
 
-<script type="module" src="js/app.js?v=20261020-spacing-8"></script>
+<script type="module" src="js/app.js?v=20261020-hero-10"></script>
 </body>
 </html>
