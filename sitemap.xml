@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">
+  <url>
+    <loc>https://podsolnuh.io/</loc>
+    <lastmod>2026-10-22</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>1.0</priority>
+    <image:image>
+      <image:loc>https://podsolnuh.io/img/our-room-1.jpg</image:loc>
+      <image:title>Просторный номер с зоной отдыха, диваном и двуспальной кроватью</image:title>
+    </image:image>
+    <image:image>
+      <image:loc>https://podsolnuh.io/img/our-room-5.jpg</image:loc>
+      <image:title>Уютная студия с кухонной зоной и холодильником</image:title>
+    </image:image>
+    <image:image>
+      <image:loc>https://podsolnuh.io/img/our-room-4.jpg</image:loc>
+      <image:title>Комфортный номер с кроватью и диваном</image:title>
+    </image:image>
+  </url>
+  <url>
+    <loc>https://podsolnuh.io/rooms.html</loc>
+    <lastmod>2026-10-22</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+</urlset>

@@ -8,6 +8,9 @@
 
 - `index.html` — главная страница и SEO-метаданные.
 - `rooms.html` — страница заявки на бронь (только имя и номер телефона).
+- `robots.txt`, `sitemap.xml`, `404.html` — файлы для поисковых систем.
+- `docs/seo.md` — SEO-стратегия, ключевые запросы и список ручных действий (Яндекс Вебмастер, Яндекс Бизнес, 2ГИС).
+- `scripts/seo-check.js` — проверка SEO-разметки.
 - `css/site.css` — стили, адаптивная сетка и анимации.
 - `js/app.js` — валидация формы, модалки и отправка заявки в Google Таблицу.
 - `data/site.json` — общие контакты и URL Apps Script в `cfg.bookingApi`.
@@ -43,5 +46,6 @@
 
 ```bash
 node google-sheets/tests/backend.test.js   # автотесты скрипта таблицы
+node scripts/seo-check.js                  # проверка SEO-разметки
 node demo/serve.js                         # локальное демо (http://localhost:4173/rooms.html)
 ```

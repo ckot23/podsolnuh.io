@@ -1,0 +1,9 @@
+# https://podsolnuh.io/robots.txt
+User-agent: *
+Allow: /
+Disallow: /data/
+Disallow: /demo/
+Disallow: /docs/
+Disallow: /google-sheets/
+
+Sitemap: https://podsolnuh.io/sitemap.xml
