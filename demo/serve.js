@@ -35,7 +35,9 @@ const TYPES = {
   '.html': 'text/html; charset=utf-8', '.css': 'text/css; charset=utf-8',
   '.js': 'text/javascript; charset=utf-8', '.json': 'application/json; charset=utf-8',
   '.webp': 'image/webp', '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg',
-  '.png': 'image/png', '.svg': 'image/svg+xml', '.ico': 'image/x-icon'
+  '.png': 'image/png', '.svg': 'image/svg+xml', '.ico': 'image/x-icon',
+  '.xml': 'application/xml; charset=utf-8', '.txt': 'text/plain; charset=utf-8',
+  '.webmanifest': 'application/manifest+json'
 };
 
 const escapeHtml = s => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
@@ -145,7 +147,8 @@ ${demoSheetHtml()}
   try { rel = decodeURIComponent(url.pathname === '/' ? '/index.html' : url.pathname); }
   catch { res.writeHead(400); return void res.end('Неверный адрес'); }
   const file = path.resolve(ROOT, '.' + rel);
-  const publicFile = rel === '/index.html' || rel === '/rooms.html' || /^\/(css|js|img|data)\//.test(rel);
+  const publicFile = /^\/(index\.html|rooms\.html|sitemap\.xml|robots\.txt)$/.test(rel) ||
+    /^\/(css|js|img|data|near)\//.test(rel);
   if (!publicFile || rel.split('/').some(p => p.startsWith('.')) || !file.startsWith(ROOT + path.sep) || !TYPES[path.extname(file)] || !fs.existsSync(file) || fs.statSync(file).isDirectory()) {
     res.writeHead(404, { 'Content-Type': 'text/plain; charset=utf-8' });
     return void res.end('Не найдено: ' + rel);

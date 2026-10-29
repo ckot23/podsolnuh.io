@@ -24,8 +24,14 @@
     phonePrimary: '+79181164554'
   };
 
-  // общие данные сайта — видны всем посетителям
-  var SITE_DATA_PATH = 'data/site.json';
+  // общие данные сайта — видны всем посетителям.
+  // Страницы во вложенных папках (near/*.html) обращаются к тому же файлу
+  // через «../», поэтому путь считаем от текущего адреса страницы.
+  var SITE_DATA_PATH = (function(){
+    var dir = location.pathname.replace(/\/[^/]*$/, '/');
+    var prefix = dir.split('/').filter(Boolean).map(function(){ return '../'; }).join('');
+    return prefix + 'data/site.json';
+  })();
   var SITE_DATA_URLS = [
     SITE_DATA_PATH,
     'https://raw.githubusercontent.com/ckot23/podsolnuh.io/main/data/site.json'
