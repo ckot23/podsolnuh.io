@@ -19,8 +19,8 @@ const path = require('path');
 const ROOT = path.join(__dirname, '..');
 const OUT_DIR = path.join(ROOT, 'near');
 const SITE = 'https://podsolnuh.io';
-const CSS_VERSION = '20261029-near-2';
-const JS_VERSION = '20261029-near-2';
+const CSS_VERSION = '20261031-near-1';
+const JS_VERSION = '20261031-near-1';
 
 const data = JSON.parse(fs.readFileSync(path.join(ROOT, 'data', 'near-places.json'), 'utf8'));
 const hotel = data.hotel;
@@ -156,7 +156,7 @@ ${JSON.stringify(entity, null, 2)}
 }
 
 function isPlace(p) {
-  return p.slug !== 'bystroe-zaselenie';
+  return p.type !== 'service';
 }
 
 function header() {
