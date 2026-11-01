@@ -76,7 +76,7 @@ function head(p) {
   };
   const entity = isPlace(p) ? {
     '@context': 'https://schema.org',
-    '@type': 'TouristAttraction',
+    '@type': p.entityType || 'TouristAttraction',
     name: p.entityName,
     description: p.seoDescription,
     url: url,
@@ -89,8 +89,7 @@ function head(p) {
       addressCountry: 'RU'
     },
     touristType: p.touristType,
-    isAccessibleForFree: true,
-    publicAccess: true
+    ...(p.entityType === 'StadiumOrArena' ? {} : { isAccessibleForFree: true, publicAccess: true })
   } : {
     '@context': 'https://schema.org',
     '@type': 'WebPage',
@@ -396,7 +395,7 @@ function footer() {
 
 function page(p) {
   return [head(p), header(), crumbs(p), hero(p), intro(p), gallery(p), mapBlock(p), related(p), cta(p), footer()]
-    .filter(Boolean).join('\n\n') + '\n';
+    .filter(Boolean).join('\n\n').trimEnd() + '\n';
 }
 
 /* ---------- сборка ---------- */
