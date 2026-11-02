@@ -19,8 +19,13 @@ const path = require('path');
 const ROOT = path.join(__dirname, '..');
 const OUT_DIR = path.join(ROOT, 'near');
 const SITE = 'https://podsolnuh.io';
-const CSS_VERSION = '20261031-near-1';
-const JS_VERSION = '20261031-near-1';
+const CSS_VERSION = '20261102-map-1';
+const JS_VERSION = '20261102-map-1';
+
+/* Точка гостиницы на Яндекс Картах: СНТ Топольки-4, ул. Цветочная, 162.
+   Координаты берём из data/near-places.json (hotel.lat / hotel.lon) —
+   поиск по тексту «Краснодар, улица Цветочная, 162» уводит в другое СНТ
+   («Дружба-1»), поэтому карта строится по координатам, а не по строке. */
 
 const data = JSON.parse(fs.readFileSync(path.join(ROOT, 'data', 'near-places.json'), 'utf8'));
 const hotel = data.hotel;
@@ -102,9 +107,15 @@ function head(p) {
       telephone: '+7-918-116-45-54',
       address: {
         '@type': 'PostalAddress',
-        streetAddress: 'ул. Цветочная, 162',
+        streetAddress: 'СТ4 Топольки, ул. Цветочная, 162',
         addressLocality: 'Краснодар',
+        addressRegion: 'Краснодарский край',
         addressCountry: 'RU'
+      },
+      geo: {
+        '@type': 'GeoCoordinates',
+        latitude: hotel.lat,
+        longitude: hotel.lon
       }
     }
   };
@@ -272,9 +283,21 @@ ${items}
   </section>`;
 }
 
+const mapLL = (lon, lat) => Number(lon).toFixed(6) + ',' + Number(lat).toFixed(6);
+
+/**
+ * src виджета Яндекс Карт с меткой ровно на доме гостиницы.
+ * Тот же src вручную вставлен в index.html (главная собирается не скриптом):
+ * меняете координаты в data/near-places.json — обновите и там.
+ */
+const hotelMapSrc = 'https://yandex.ru/map-widget/v1/?lang=ru_RU&z=17' +
+  '&ll=' + encodeURIComponent(mapLL(hotel.lon, hotel.lat)) +
+  '&pt=' + encodeURIComponent(mapLL(hotel.lon, hotel.lat) + ',pm2rdm');
+console.log('Карта гостиницы (src виджета для index.html):\n  ' + hotelMapSrc);
+
 function mapBlock(p) {
   if (!isPlace(p)) return '';
-  const q = encodeURIComponent(p.mapQuery || 'Краснодар, ' + hotel.address);
+  const q = encodeURIComponent(p.mapQuery || hotel.mapQuery || 'Краснодар, ' + hotel.address);
   return `  <section class="place-map-sec" aria-labelledby="mapTitle">
     <div class="sec-head reveal">
       <p class="sec-kicker">📍 На карте</p>
@@ -282,6 +305,7 @@ function mapBlock(p) {
     </div>
     <div class="map-wrap reveal">
       <iframe class="map-frame" title="Карта: ${esc(p.cardTitle)} в Краснодаре" src="https://yandex.ru/map-widget/v1/?text=${q}&amp;z=15" loading="lazy"></iframe>
+      <a class="map-link reveal" href="${esc(hotel.mapUrl)}" target="_blank" rel="noopener noreferrer">Гостиница «Подсолнух»: ${esc(hotel.address)} — открыть в Яндекс Картах</a>
     </div>
   </section>`;
 }
