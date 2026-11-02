@@ -1,11 +1,16 @@
 {
-  "updatedAt": "2026-11-01",
+  "updatedAt": "2026-11-02",
   "hotel": {
     "name": "Гостиница «Подсолнух»",
     "url": "https://podsolnuh.io/",
     "phone": "+79181164554",
     "phoneHuman": "8 918 116-45-54",
     "address": "Краснодар, СТ4 Топольки, ул. Цветочная, 162",
+    "addressGeo": "Краснодар, садовое товарищество Топольки-4, улица Цветочная, 162",
+    "mapQuery": "Краснодар, садовое товарищество Топольки-4, улица Цветочная, 162",
+    "mapUrl": "https://yandex.ru/maps/35/krasnodar/house/tsvetochnaya_ulitsa_162/Z0EYfw5gTkQHQFpvfXx4d3lgYA==/?ll=38.990710%2C45.096534&z=17",
+    "lat": 45.096534,
+    "lon": 38.99071,
     "tg": "https://t.me/Olgahotel23",
     "max": "https://max.ru/u/f9LHodD0cOIbLwgK-CQN6QpeLWldb0OhTsbXg4qW7stL88F9IT36nmEuScw"
   },

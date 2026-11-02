@@ -23,7 +23,7 @@
 <meta property="og:image" content="https://podsolnuh.io/img/our-room-1.jpg" />
 <link rel="canonical" href="https://podsolnuh.io/" />
 <link rel="icon" href="img/favicon.png" type="image/png" sizes="128x128" />
-<link rel="stylesheet" href="css/site.css?v=20261031-near-1" />
+<link rel="stylesheet" href="css/site.css?v=20261102-map-1" />
 
 <!-- Preconnect for fonts -->
 <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -40,9 +40,17 @@
   "image": "https://podsolnuh.io/img/our-room-1.jpg",
   "address": {
     "@type": "PostalAddress",
+    "streetAddress": "СТ4 Топольки, ул. Цветочная, 162",
     "addressLocality": "Краснодар",
-    "streetAddress": "ул. Цветочная, 162"
+    "addressRegion": "Краснодарский край",
+    "addressCountry": "RU"
   },
+  "geo": {
+    "@type": "GeoCoordinates",
+    "latitude": 45.096534,
+    "longitude": 38.990710
+  },
+  "hasMap": "https://yandex.ru/maps/35/krasnodar/house/tsvetochnaya_ulitsa_162/Z0EYfw5gTkQHQFpvfXx4d3lgYA==/?ll=38.990710%2C45.096534&z=17",
   "sameAs": ["https://t.me/Olgahotel23", "https://max.ru/u/f9LHodD0cOIbLwgK-CQN6QpeLWldb0OhTsbXg4qW7stL88F9IT36nmEuScw"]
 }
 </script>
@@ -240,7 +248,10 @@
           Гостиница «Подсолнух»
         </h3>
         <p>Краснодар, СТ4 Топольки,<br>ул. Цветочная, 162</p>
-        <div class="mess-row"><a class="btn ghost" href="tel:+79181164554">8 918 116-45-54</a></div>
+        <div class="mess-row">
+          <a class="btn ghost" href="tel:+79181164554">8 918 116-45-54</a>
+          <a class="btn ghost" href="https://yandex.ru/maps/35/krasnodar/house/tsvetochnaya_ulitsa_162/Z0EYfw5gTkQHQFpvfXx4d3lgYA==/?ll=38.990710%2C45.096534&amp;z=17" target="_blank" rel="noopener noreferrer">Маршрут до гостиницы</a>
+        </div>
       </div>
       <div class="addr-card reveal d1">
         <h3>Мессенджеры</h3>
@@ -258,7 +269,10 @@
         </div>
       </div>
       <div class="map-wrap full-span">
-        <iframe class="map-frame" title="Карта: гостиница «Подсолнух» на ул. Цветочной, 162" src="https://yandex.ru/map-widget/v1/?text=%D0%9A%D1%80%D0%B0%D1%81%D0%BD%D0%BE%D0%B4%D0%B0%D1%80%2C%20%D1%83%D0%BB%D0%B8%D1%86%D0%B0%20%D0%A6%D0%B2%D0%B5%D1%82%D0%BE%D1%87%D0%BD%D0%B0%D1%8F%2C%20162&amp;z=16" loading="lazy"></iframe>
+        <!-- Метка стоит по координатам дома (СНТ Топольки-4, ул. Цветочная, 162):
+             текстовый поиск «Краснодар, улица Цветочная, 162» уводит в СНТ «Дружба-1». -->
+        <iframe class="map-frame" title="Карта: гостиница «Подсолнух» — Краснодар, СТ4 Топольки, ул. Цветочная, 162" src="https://yandex.ru/map-widget/v1/?lang=ru_RU&amp;z=17&amp;ll=38.990710%2C45.096534&amp;pt=38.990710%2C45.096534%2Cpm2rdm" loading="lazy"></iframe>
+        <a class="map-link" href="https://yandex.ru/maps/35/krasnodar/house/tsvetochnaya_ulitsa_162/Z0EYfw5gTkQHQFpvfXx4d3lgYA==/?ll=38.990710%2C45.096534&amp;z=17" target="_blank" rel="noopener noreferrer">Открыть в Яндекс Картах: Краснодар, СТ4 Топольки, ул. Цветочная, 162</a>
       </div>
     </div>
   </section>
@@ -277,6 +291,7 @@
     <div>
       <strong>Адрес</strong>
       <p>Краснодар, СТ4 Топольки,<br>ул. Цветочная, 162</p>
+      <p><a href="https://yandex.ru/maps/35/krasnodar/house/tsvetochnaya_ulitsa_162/Z0EYfw5gTkQHQFpvfXx4d3lgYA==/?ll=38.990710%2C45.096534&amp;z=17" target="_blank" rel="noopener noreferrer">Показать на карте</a></p>
     </div>
     <div>
       <strong>Связь</strong>
@@ -335,6 +350,6 @@
   </div>
 </div>
 
-<script type="module" src="js/app.js?v=20261031-near-1"></script>
+<script type="module" src="js/app.js?v=20261102-map-1"></script>
 </body>
 </html>

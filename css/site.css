@@ -511,6 +511,19 @@ h2 { font-size: clamp(26px, 4vw, 38px); }
   box-shadow: var(--shadow); background: var(--surface);
 }
 
+/* Ссылка под картой: ведёт на карточку дома в Яндекс Картах
+   (Краснодар, СТ4 Топольки, ул. Цветочная, 162). */
+.map-link {
+  display: inline-flex; align-items: center; gap: 8px;
+  margin-top: 12px; padding: 8px 14px;
+  border: 1px solid var(--line); border-radius: 999px;
+  background: var(--surface); color: var(--muted);
+  font-size: 13.5px; line-height: 1.35; text-decoration: none;
+  transition: color .2s ease, border-color .2s ease, transform .2s ease;
+}
+.map-link::before { content: "📍"; font-size: 14px; }
+.map-link:hover { color: var(--terra); border-color: currentColor; transform: translateY(-1px); }
+
 /* ---------- ПОДВАЛ ---------- */
 footer {
   background: linear-gradient(135deg, #2a2215, #3a2e1c);
